@@ -3,15 +3,15 @@
 #include <cmath>
 
 template<typename Timestamp, typename Value>
-TimeSeriesBuffer<Timestamp, Value>::TimeSeriesBuffer(TimeSeriesBuffer&& other) noexcept
-    : data_(std::move(other.data_)),
-      current_start_(other.current_start_),
-      current_end_(other.current_end_),
-      preload_factor_(other.preload_factor_),
-      preload_callback_(std::move(other.preload_callback_)),
-      background_thread_(std::move(other.background_thread_)),
-      stop_background_thread_(other.stop_background_thread_) {
-    other.stop_background_thread_ = true;
+TimeSeriesBuffer<Timestamp, Value>::TimeSeriesBuffer(double preload_factor)
+    : preload_factor_(preload_factor), stop_background_thread_(false) {}
+
+template<typename Timestamp, typename Value>
+TimeSeriesBuffer<Timestamp, Value>::~TimeSeriesBuffer() {
+    stop_background_thread_ = true;
+    if (background_thread_.joinable()) {
+        background_thread_.join();
+    }
 }
 
 template<typename Timestamp, typename Value>
@@ -35,19 +35,7 @@ TimeSeriesBuffer<Timestamp, Value>& TimeSeriesBuffer<Timestamp, Value>::operator
 }
 
 template<typename Timestamp, typename Value>
-TimeSeriesBuffer<Timestamp, Value>::TimeSeriesBuffer(double preload_factor)
-    : preload_factor_(preload_factor), stop_background_thread_(false) {}
-
-template<typename Timestamp, typename Value>
-TimeSeriesBuffer<Timestamp, Value>::~TimeSeriesBuffer() {
-    stop_background_thread_ = true;
-    if (background_thread_.joinable()) {
-        background_thread_.join();
-    }
-}
-
-template<typename Timestamp, typename Value>
-void TimeSeriesBuffer<Timestamp, Value>::initialize(const std::vector<std::pair<Timestamp, Value>>& initial_data) {
+void TimeSeriesBuffer<Timestamp, Value>::initialize(const std::map<Timestamp, Value>& initial_data) {
     std::lock_guard<std::mutex> lock(data_mutex_);
     data_ = initial_data;
 }
@@ -80,23 +68,34 @@ void TimeSeriesBuffer<Timestamp, Value>::setRange(Timestamp start, Timestamp end
 template<typename Timestamp, typename Value>
 void TimeSeriesBuffer<Timestamp, Value>::addData(const std::vector<std::pair<Timestamp, Value>>& new_data) {
     std::lock_guard<std::mutex> lock(data_mutex_);
-    data_.insert(data_.end(), new_data.begin(), new_data.end());
+    for (const auto& entry : new_data) {
+        data_[entry.first] = entry.second;
+    }
     cleanup();
 }
 
 template<typename Timestamp, typename Value>
 std::vector<std::pair<Timestamp, Value>> TimeSeriesBuffer<Timestamp, Value>::getData() {
     std::lock_guard<std::mutex> lock(data_mutex_);
+    std::vector<std::pair<Timestamp, Value>> result;
+    for (const auto& entry : data_) {
+        result.emplace_back(entry.first, entry.second);
+    }
+    return result;
+}
+
+template<typename Timestamp, typename Value>
+std::map<Timestamp,Value> TimeSeriesBuffer<Timestamp, Value>::getDataMap() {
     return data_;
 }
 
 template<typename Timestamp, typename Value>
 void TimeSeriesBuffer<Timestamp, Value>::cleanup() {
     Timestamp retention_start = current_start_ - (current_end_ - current_start_) * preload_factor_;
-    data_.erase(
-        std::remove_if(data_.begin(), data_.end(),
-                       [retention_start](const auto& entry) { return entry.first < retention_start; }),
-        data_.end());
+    auto it = data_.lower_bound(retention_start);
+
+    // Remove all entries before retention_start
+    data_.erase(data_.begin(), it);
 }
 
 template class TimeSeriesBuffer<double, double>;
