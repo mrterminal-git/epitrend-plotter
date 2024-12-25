@@ -5,6 +5,7 @@
 #include <thread>
 #include <condition_variable>
 #include <functional>
+#include <map>
 
 template<typename Timestamp, typename Value>
 class TimeSeriesBuffer {
@@ -20,15 +21,16 @@ public:
     TimeSeriesBuffer(TimeSeriesBuffer&& other) noexcept;
     TimeSeriesBuffer& operator=(TimeSeriesBuffer&& other) noexcept;
 
-    void initialize(const std::vector<std::pair<Timestamp, Value>>& initial_data);
+    void initialize(const std::map<Timestamp, Value>& initial_data);
     void setRange(Timestamp start, Timestamp end, const std::function<void(Timestamp, Timestamp)>& preload_callback);
     void addData(const std::vector<std::pair<Timestamp, Value>>& new_data);
     std::vector<std::pair<Timestamp, Value>> getData();
+    std::map<Timestamp, Value> getDataMap();
 
 private:
     void cleanup();
 
-    std::vector<std::pair<Timestamp, Value>> data_;
+    std::map<Timestamp, Value> data_;
     Timestamp current_start_{}, current_end_{};
     double preload_factor_;
     std::mutex data_mutex_;
