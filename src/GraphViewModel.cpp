@@ -2,7 +2,7 @@
 
 GraphViewModel::GraphViewModel() {}
 
-void GraphViewModel::addRenderablePlots(const RenderablePlot& object) {
+void GraphViewModel::addRenderablePlot(const RenderablePlot& object) {
     renderable_plots_.push_back(object);
 }
 

@@ -5,12 +5,11 @@
 
 class GraphViewModel {
 public:
-    GraphViewModel();
+    GraphViewModel() = default;
 
-    void addRenderablePlots(const RenderablePlot& object);
+    void addRenderablePlot(const RenderablePlot& object);
     const std::vector<RenderablePlot>& getRenderablePlots() const;
     
-
     void clear(); // Clear all renderables
 private:
     std::vector<RenderablePlot> renderable_plots_;

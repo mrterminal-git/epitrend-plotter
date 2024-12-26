@@ -1,6 +1,7 @@
 #pragma once
 #include "DataManager.hpp"
 #include "GraphView.hpp"
+#include "GraphViewModel.hpp"
 
 class AppController {
 public:
@@ -15,6 +16,7 @@ public:
 private:
     DataManager dataManager;
     GraphView graphView;
+    GraphViewModel viewModel;
 
     void onViewRangeChanged(double start, double end);
 };
