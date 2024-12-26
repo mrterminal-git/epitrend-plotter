@@ -23,7 +23,12 @@ include(ConfigSafeGuards)
 
 # add_clang_format_target() # needs python
 
-set (VCPKG_DIR "C:/Users/Volter/Documents/LEARN IMGUI/vcpkg")
+if (EXISTS "${CMAKE_SOURCE_DIR}/config.cmake")
+    include("${CMAKE_SOURCE_DIR}/config.cmake")
+else()
+    message(FATAL_ERROR "config.cmake not found. Please create it and define VCPKG_DIR.")
+endif()
+# set (VCPKG_DIR "C:/Users/Volter/Documents/LEARN IMGUI/vcpkg")
 # you can set any other vcpkg installation on your system
 # set (VCPKG_DIR ${CMAKE_SOURCE_DIR}/../../../../../vcpkg)
 include(${VCPKG_DIR}/scripts/buildsystems/vcpkg.cmake)
