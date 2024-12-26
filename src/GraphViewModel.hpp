@@ -9,6 +9,7 @@ public:
 
     void addRenderablePlots(const RenderablePlot& object);
     const std::vector<RenderablePlot>& getRenderablePlots() const;
+    
 
     void clear(); // Clear all renderables
 private:
