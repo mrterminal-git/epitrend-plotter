@@ -13,6 +13,8 @@ public:
 
     void run(); // Main application loop.
 
+    void updatePlottableSensors();
+
 private:
     DataManager dataManager;
     GraphViewModel viewModel;

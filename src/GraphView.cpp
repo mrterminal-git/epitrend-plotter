@@ -11,6 +11,9 @@
 
 #include "GraphView.hpp"
 
+// Constructor
+GraphView::GraphView(GraphViewModel& viewModel) : viewModel_(viewModel) {}
+
 void GraphView::Draw(const std::string label)
 {
     constexpr static auto window_flags =
@@ -46,7 +49,7 @@ void renderDateTimeField(const char* label, char* year, char* month, char* day, 
 }
 
 // Render the "Add plot" popup
-void renderAddPlotPopup() {
+void GraphView::renderAddPlotPopup() {
     // Example of creating a popup window with textbox input fields
     if (ImGui::Button("Add new plot")) {
         ImGui::OpenPopup("Add new plot");
@@ -68,6 +71,26 @@ void renderAddPlotPopup() {
         ImGui::Text("Enter values:");
         ImGui::InputText("Window name", window_label_input, IM_ARRAYSIZE(window_label_input));
         ImGui::InputText("Plot title", plot_label_input, IM_ARRAYSIZE(plot_label_input));
+
+        // List plottable sensors
+        const auto& sensors = viewModel_.getPlottableSensors();
+        static int selected_sensor = -1;
+
+        ImGui::Text("Select a sensor:");
+        if (ImGui::BeginListBox("##Sensors")) {
+            for (size_t i = 0; i < sensors.size(); ++i) {
+                const bool is_selected = (selected_sensor == static_cast<int>(i));
+                if (ImGui::Selectable(sensors[i].c_str(), is_selected)) {
+                    selected_sensor = static_cast<int>(i);
+                }
+                if (is_selected) {
+                    ImGui::SetItemDefaultFocus();
+                }
+            }
+            ImGui::EndListBox();
+        }
+
+        // Real-time plotting checkbox
         ImGui::Checkbox("Real-time", &is_real_time);
         is_able_to_submit = is_real_time;
 
@@ -87,20 +110,20 @@ void renderAddPlotPopup() {
             static char plot_range_end_minute[3] = "";
             static char plot_range_end_second[3] = "";
 
-            static bool is_initialized = false; // Initialization flag
+            static bool is_range_initialized = false; // Initialization flag
 
             // Initialize textboxes with default values only once
-            if (!is_initialized) {
-                std::time_t current_time = std::time(nullptr);
-                std::tm local_time;
-                localtime_s(&local_time, &current_time);
+            if (!is_range_initialized) {
+                static std::time_t start_time = current_time - max_data_time_range;
+                static std::tm start_local_time;
+                localtime_s(&start_local_time, &start_time);
 
-                std::strftime(plot_range_start_year, sizeof(plot_range_start_year), "%Y", &local_time);
-                std::strftime(plot_range_start_month, sizeof(plot_range_start_month), "%m", &local_time);
-                std::strftime(plot_range_start_day, sizeof(plot_range_start_day), "%d", &local_time);
-                std::strftime(plot_range_start_hour, sizeof(plot_range_start_hour), "%H", &local_time);
-                std::strftime(plot_range_start_minute, sizeof(plot_range_start_minute), "%M", &local_time);
-                std::strftime(plot_range_start_second, sizeof(plot_range_start_second), "%S", &local_time);
+                std::strftime(plot_range_start_year, sizeof(plot_range_start_year), "%Y", &start_local_time);
+                std::strftime(plot_range_start_month, sizeof(plot_range_start_month), "%m", &start_local_time);
+                std::strftime(plot_range_start_day, sizeof(plot_range_start_day), "%d", &start_local_time);
+                std::strftime(plot_range_start_hour, sizeof(plot_range_start_hour), "%H", &start_local_time);
+                std::strftime(plot_range_start_minute, sizeof(plot_range_start_minute), "%M", &start_local_time);
+                std::strftime(plot_range_start_second, sizeof(plot_range_start_second), "%S", &start_local_time);
 
                 std::strftime(plot_range_end_year, sizeof(plot_range_end_year), "%Y", &local_time);
                 std::strftime(plot_range_end_month, sizeof(plot_range_end_month), "%m", &local_time);
@@ -109,7 +132,7 @@ void renderAddPlotPopup() {
                 std::strftime(plot_range_end_minute, sizeof(plot_range_end_minute), "%M", &local_time);
                 std::strftime(plot_range_end_second, sizeof(plot_range_end_second), "%S", &local_time);
 
-                is_initialized = true;
+                is_range_initialized = true;
             }
 
             ImGui::SeparatorText("");

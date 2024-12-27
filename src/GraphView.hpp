@@ -14,13 +14,14 @@ class GraphView
 {
 public:
     // Constructor
-    GraphView(const GraphViewModel& viewModel) : viewModel_(viewModel) {}
+    explicit GraphView(GraphViewModel& viewModel);
 
     // Draw method
     void Draw(const std::string label);
 
 private:
-    GraphViewModel viewModel_;
+    GraphViewModel& viewModel_;
 
     void renderAll();
+    void renderAddPlotPopup();
 };

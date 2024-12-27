@@ -12,6 +12,8 @@ public:
     DataManager();
     ~DataManager();
 
+    const std::unordered_map<std::string, TimeSeriesBuffer<Timestamp, Value>>& getBuffers() const;
+
     void addSensor (const std::string& sensor_id);
     void updateSensorRange(const std::string& sensor_id, Timestamp start, Timestamp end);
     void addSensorData(const std::string& sensor_id, const std::vector<std::pair<Timestamp, Value>>& data);

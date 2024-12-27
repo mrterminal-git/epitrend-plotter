@@ -39,9 +39,14 @@ void DataManager::backgroundUpdateTask() {
     }
 }
 
+// Get all buffers
+const std::unordered_map<std::string, TimeSeriesBuffer<DataManager::Timestamp, DataManager::Value>>& DataManager::getBuffers() const {
+    return buffers_;
+}
+
 // Initialize a buffer for a specific machine
-void DataManager::addSensor (const std::string& sensor_id) {
-    buffers_[sensor_id] = TimeSeriesBuffer<Timestamp, Value>();
+void DataManager::addSensor(const std::string& sensor_id) {
+    buffers_.emplace(sensor_id, TimeSeriesBuffer<Timestamp, Value>());
 }
 
 // Update range for a specific machine. Callback is used to preload data and clean up old data according to the new range
