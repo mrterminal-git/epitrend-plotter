@@ -14,13 +14,13 @@ class GraphView
 {
 public:
     // Constructor
-    GraphView() = default;
+    GraphView(const GraphViewModel& viewModel) : viewModel_(viewModel) {}
 
     // Draw method
     void Draw(const std::string label);
 
 private:
-    GraphViewModel viewModel;
+    GraphViewModel viewModel_;
 
     void renderAll();
 };

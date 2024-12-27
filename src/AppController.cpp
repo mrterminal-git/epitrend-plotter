@@ -17,5 +17,11 @@ void AppController::onViewRangeChanged(double start, double end) {
 }
 
 void AppController::run() {
+    // Update the viewModel with data from the dataManager
+    viewModel.updateFromDataManager(dataManager); // IMPLEMENT THIS
+
+    // Create the view and render it
+    GraphView graphView(viewModel);
+
     graphView.Draw("Main window");
 }

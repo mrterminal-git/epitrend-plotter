@@ -1,7 +1,5 @@
 #include "GraphViewModel.hpp"
 
-GraphViewModel::GraphViewModel() {}
-
 void GraphViewModel::addRenderablePlot(const RenderablePlot& object) {
     renderable_plots_.push_back(object);
 }

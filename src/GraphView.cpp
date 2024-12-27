@@ -31,7 +31,7 @@ void GraphView::Draw(const std::string label)
 
 void GraphView::renderAll() {
     // Plot all RenderablePlots in individual windows
-    for (const auto& renderable_plot : viewModel.getRenderablePlots()){
+    for (const auto& renderable_plot : viewModel_.getRenderablePlots()){
         // Create a sub-window with each plot
         ImGui::Begin(renderable_plot.getLabel().c_str());
 
@@ -43,11 +43,11 @@ void GraphView::renderAll() {
 
             plot_start = current_time - max_data_time_range;
             plot_end = current_time;
-    
+
         } else {
             plot_start = renderable_plot.getPlotRange().first;
             plot_end = renderable_plot.getPlotRange().second;
-    
+
         }
 
 
