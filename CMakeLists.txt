@@ -42,9 +42,11 @@ find_package(OpenGL REQUIRED)
 add_executable(${PROJECT_NAME}
     src/main.cpp
     src/GraphView.cpp
+    src/GraphViewModel.cpp
     src/AppController.cpp
     src/DataManager.cpp
     src/TimeSeriesBuffer.cpp
+    src/RenderablePlot.cpp
 )
 
 add_compile_definitions(NOMINMAX)
