@@ -29,7 +29,24 @@ void GraphView::Draw(const std::string label)
     ImGui::End();
 }
 
-void GraphView::renderAll() {
+// Helper function to render a date/time field
+void renderDateTimeField(const char* label, char* year, char* month, char* day, char* hour, char* minute, char* second) {
+    ImGui::Text(label);
+    ImGui::SetNextItemWidth(50.0f); ImGui::InputText((std::string("###Year") + label).c_str(), year, 5);
+    ImGui::SameLine(); ImGui::Text("-"); ImGui::SameLine();
+    ImGui::SetNextItemWidth(30.0f); ImGui::InputText((std::string("###Month") + label).c_str(), month, 3);
+    ImGui::SameLine(); ImGui::Text("-"); ImGui::SameLine();
+    ImGui::SetNextItemWidth(30.0f); ImGui::InputText((std::string("###Day") + label).c_str(), day, 3);
+    ImGui::SameLine(); ImGui::Text(" "); ImGui::SameLine();
+    ImGui::SetNextItemWidth(30.0f); ImGui::InputText((std::string("###Hour") + label).c_str(), hour, 3);
+    ImGui::SameLine(); ImGui::Text(":"); ImGui::SameLine();
+    ImGui::SetNextItemWidth(30.0f); ImGui::InputText((std::string("###Minute") + label).c_str(), minute, 3);
+    ImGui::SameLine(); ImGui::Text(":"); ImGui::SameLine();
+    ImGui::SetNextItemWidth(30.0f); ImGui::InputText((std::string("###Second") + label).c_str(), second, 3);
+}
+
+// Render the "Add plot" popup
+void renderAddPlotPopup() {
     // Example of creating a popup window with textbox input fields
     if (ImGui::Button("Add new plot")) {
         ImGui::OpenPopup("Add new plot");
@@ -44,7 +61,8 @@ void GraphView::renderAll() {
         // Get current time for default plot range
         static std::time_t current_time = std::time(nullptr);
         static std::time_t max_data_time_range = 3600; // 1 hour
-        static std::tm* local_time = std::localtime(&current_time);
+        static std::tm local_time;
+        localtime_s(&local_time, &current_time);
 
         // Get current year
         ImGui::Text("Enter values:");
@@ -52,6 +70,8 @@ void GraphView::renderAll() {
         ImGui::InputText("Plot title", plot_label_input, IM_ARRAYSIZE(plot_label_input));
         ImGui::Checkbox("Real-time", &is_real_time);
         is_able_to_submit = is_real_time;
+
+        // User defined plot range
         if(!is_real_time){
             static char plot_range_start_year[5] = "";
             static char plot_range_start_month[3] = "";
@@ -67,129 +87,87 @@ void GraphView::renderAll() {
             static char plot_range_end_minute[3] = "";
             static char plot_range_end_second[3] = "";
 
-            // Fill the end time textboxes with the current time
-            std::strftime(plot_range_end_year, sizeof(plot_range_end_year), "%Y", local_time);
-            std::strftime(plot_range_end_month, sizeof(plot_range_end_month), "%m", local_time);
-            std::strftime(plot_range_end_day, sizeof(plot_range_end_day), "%d", local_time);
-            std::strftime(plot_range_end_hour, sizeof(plot_range_end_hour), "%H", local_time);
-            std::strftime(plot_range_end_minute, sizeof(plot_range_end_minute), "%M", local_time);
-            std::strftime(plot_range_end_second, sizeof(plot_range_end_second), "%S", local_time);
+            static bool is_initialized = false; // Initialization flag
 
-            // Fill the start time textboxes with the current time minus the default range
-            // Calculate start time (current time minus default range)
-            static std::time_t start_time = current_time - max_data_time_range; // 1 hour default range
-            static std::tm* start_local_time = std::localtime(&start_time);
-            std::strftime(plot_range_start_year, sizeof(plot_range_start_year), "%Y", start_local_time);
-            std::strftime(plot_range_start_month, sizeof(plot_range_start_month), "%m", start_local_time);
-            std::strftime(plot_range_start_day, sizeof(plot_range_start_day), "%d", start_local_time);
-            std::strftime(plot_range_start_hour, sizeof(plot_range_start_hour), "%H", start_local_time);
-            std::strftime(plot_range_start_minute, sizeof(plot_range_start_minute), "%M", start_local_time);
-            std::strftime(plot_range_start_second, sizeof(plot_range_start_second), "%S", start_local_time);
+            // Initialize textboxes with default values only once
+            if (!is_initialized) {
+                std::time_t current_time = std::time(nullptr);
+                std::tm local_time;
+                localtime_s(&local_time, &current_time);
+
+                std::strftime(plot_range_start_year, sizeof(plot_range_start_year), "%Y", &local_time);
+                std::strftime(plot_range_start_month, sizeof(plot_range_start_month), "%m", &local_time);
+                std::strftime(plot_range_start_day, sizeof(plot_range_start_day), "%d", &local_time);
+                std::strftime(plot_range_start_hour, sizeof(plot_range_start_hour), "%H", &local_time);
+                std::strftime(plot_range_start_minute, sizeof(plot_range_start_minute), "%M", &local_time);
+                std::strftime(plot_range_start_second, sizeof(plot_range_start_second), "%S", &local_time);
+
+                std::strftime(plot_range_end_year, sizeof(plot_range_end_year), "%Y", &local_time);
+                std::strftime(plot_range_end_month, sizeof(plot_range_end_month), "%m", &local_time);
+                std::strftime(plot_range_end_day, sizeof(plot_range_end_day), "%d", &local_time);
+                std::strftime(plot_range_end_hour, sizeof(plot_range_end_hour), "%H", &local_time);
+                std::strftime(plot_range_end_minute, sizeof(plot_range_end_minute), "%M", &local_time);
+                std::strftime(plot_range_end_second, sizeof(plot_range_end_second), "%S", &local_time);
+
+                is_initialized = true;
+            }
 
             ImGui::SeparatorText("");
 
             ImGui::Text("Enter plot range (YYYY-MM-DD HH:MM:SS)");
-            ImGui::Text("Start range");
 
-            ImGui::SetNextItemWidth(50.0f); // Set width for the next item
-            ImGui::InputText("###Start year", plot_range_start_year, IM_ARRAYSIZE(plot_range_start_year));
-            ImGui::SameLine();
-            ImGui::Text("-");
-            ImGui::SameLine();
-            ImGui::SetNextItemWidth(30.0f); // Set width for the next item
-            ImGui::InputText("###Start month", plot_range_start_month, IM_ARRAYSIZE(plot_range_start_month));
-            ImGui::SameLine();
-            ImGui::Text("-");
-            ImGui::SameLine();
-            ImGui::SetNextItemWidth(30.0f); // Set width for the next item
-            ImGui::InputText("###Start day", plot_range_start_day, IM_ARRAYSIZE(plot_range_start_day));
-            ImGui::SameLine();
-            ImGui::Text(" ");
-            ImGui::SameLine();
-            ImGui::SetNextItemWidth(30.0f); // Set width for the next item
-            ImGui::InputText("###Start hour", plot_range_start_hour, IM_ARRAYSIZE(plot_range_start_hour));
-            ImGui::SameLine();
-            ImGui::Text(":");
-            ImGui::SameLine();
-            ImGui::SetNextItemWidth(30.0f); // Set width for the next item
-            ImGui::InputText("###Start minute", plot_range_start_minute, IM_ARRAYSIZE(plot_range_start_minute));
-            ImGui::SameLine();
-            ImGui::Text(":");
-            ImGui::SameLine();
-            ImGui::SetNextItemWidth(30.0f); // Set width for the next item
-            ImGui::InputText("###Start second", plot_range_start_second, IM_ARRAYSIZE(plot_range_start_second));
+            renderDateTimeField("Plot start date", plot_range_start_year, plot_range_start_month, plot_range_start_day, plot_range_start_hour, plot_range_start_minute, plot_range_start_second);
+            renderDateTimeField("Plot end date", plot_range_end_year, plot_range_end_month, plot_range_end_day, plot_range_end_hour, plot_range_end_minute, plot_range_end_second);
 
-            ImGui::Text("End range");
-           ImGui::SetNextItemWidth(50.0f); // Set width for the next item
-            ImGui::InputText("###End year", plot_range_end_year, IM_ARRAYSIZE(plot_range_end_year));
-            ImGui::SameLine();
-            ImGui::Text("-");
-            ImGui::SameLine();
-            ImGui::SetNextItemWidth(30.0f); // Set width for the next item
-            ImGui::InputText("###End month", plot_range_end_month, IM_ARRAYSIZE(plot_range_end_month));
-            ImGui::SameLine();
-            ImGui::Text("-");
-            ImGui::SameLine();
-            ImGui::SetNextItemWidth(30.0f); // Set width for the next item
-            ImGui::InputText("###End day", plot_range_end_day, IM_ARRAYSIZE(plot_range_end_day));
-            ImGui::SameLine();
-            ImGui::Text(" ");
-            ImGui::SameLine();
-            ImGui::SetNextItemWidth(30.0f); // Set width for the next item
-            ImGui::InputText("###End hour", plot_range_end_hour, IM_ARRAYSIZE(plot_range_end_hour));
-            ImGui::SameLine();
-            ImGui::Text(":");
-            ImGui::SameLine();
-            ImGui::SetNextItemWidth(30.0f); // Set width for the next item
-            ImGui::InputText("###End minute", plot_range_end_minute, IM_ARRAYSIZE(plot_range_end_minute));
-            ImGui::SameLine();
-            ImGui::Text(":");
-            ImGui::SameLine();
-            ImGui::SetNextItemWidth(30.0f); // Set width for the next item
-            ImGui::InputText("###End second", plot_range_end_second, IM_ARRAYSIZE(plot_range_end_second));
-
-            // Ensure all fields are filled
-            if(plot_range_start_year[0] == '\0' || plot_range_start_month[0] == '\0' || plot_range_start_day[0] == '\0' || plot_range_start_hour[0] == '\0' || plot_range_start_minute[0] == '\0' || plot_range_start_second[0] == '\0' || plot_range_end_year[0] == '\0' || plot_range_end_month[0] == '\0' || plot_range_end_day[0] == '\0' || plot_range_end_hour[0] == '\0' || plot_range_end_minute[0] == '\0' || plot_range_end_second[0] == '\0'){
+            if (std::strlen(plot_range_start_year) == 0 ||
+                std::strlen(plot_range_start_month) == 0 ||
+                std::strlen(plot_range_start_day) == 0 ||
+                std::strlen(plot_range_start_hour) == 0 ||
+                std::strlen(plot_range_start_minute) == 0 ||
+                std::strlen(plot_range_start_second) == 0 ||
+                std::strlen(plot_range_end_year) == 0 ||
+                std::strlen(plot_range_end_month) == 0 ||
+                std::strlen(plot_range_end_day) == 0 ||
+                std::strlen(plot_range_end_hour) == 0 ||
+                std::strlen(plot_range_end_minute) == 0 ||
+                std::strlen(plot_range_end_second) == 0) {
                 ImGui::Text("Please enter all fields");
                 is_able_to_submit = false;
+            } else {
+                is_able_to_submit = true;
             }
 
             // Ensure end time is after start time
-            // // Convert input into unix time
-            // static std::tm start_time = {};
-            // start_time.tm_year = std::stoi(plot_range_start_year) - 1900;
-            // start_time.tm_mon = std::stoi(plot_range_start_month) - 1;
-            // start_time.tm_mday = std::stoi(plot_range_start_day);
-            // start_time.tm_hour = std::stoi(plot_range_start_hour);
-            // start_time.tm_min = std::stoi(plot_range_start_minute);
-            // start_time.tm_sec = std::stoi(plot_range_start_second);
-            // std::time_t start_unix_time = std::mktime(&start_time);
+            // Convert input into unix time
+            try {
+                static std::tm input_start_time = {};
+                input_start_time.tm_year = std::stoi(plot_range_start_year) - 1900;
+                input_start_time.tm_mon = std::stoi(plot_range_start_month) - 1;
+                input_start_time.tm_mday = std::stoi(plot_range_start_day);
+                input_start_time.tm_hour = std::stoi(plot_range_start_hour);
+                input_start_time.tm_min = std::stoi(plot_range_start_minute);
+                input_start_time.tm_sec = std::stoi(plot_range_start_second);
+                std::time_t start_unix_time = std::mktime(&input_start_time);
 
-            // std::tm end_time = {};
-            // end_time.tm_year = std::stoi(plot_range_end_year) - 1900;
-            // end_time.tm_mon = std::stoi(plot_range_end_month) - 1;
-            // end_time.tm_mday = std::stoi(plot_range_end_day);
-            // end_time.tm_hour = std::stoi(plot_range_end_hour);
-            // end_time.tm_min = std::stoi(plot_range_end_minute);
-            // end_time.tm_sec = std::stoi(plot_range_end_second);
-            // std::time_t end_unix_time = std::mktime(&end_time);
+                std::tm input_end_time = {};
+                input_end_time.tm_year = std::stoi(plot_range_end_year) - 1900;
+                input_end_time.tm_mon = std::stoi(plot_range_end_month) - 1;
+                input_end_time.tm_mday = std::stoi(plot_range_end_day);
+                input_end_time.tm_hour = std::stoi(plot_range_end_hour);
+                input_end_time.tm_min = std::stoi(plot_range_end_minute);
+                input_end_time.tm_sec = std::stoi(plot_range_end_second);
+                std::time_t end_unix_time = std::mktime(&input_end_time);
 
-            // if (end_unix_time < start_unix_time) {
-            //     ImGui::Text("End time must be after start time");
-            // } else {
-            //     // Create the plot
-            //     if (ImGui::Button("Submit")) {
-            //         // Handle submit action
-            //         ImGui::CloseCurrentPopup();
-            //     }
-
-            //     ImGui::SameLine();
-
-            //     if (ImGui::Button("Cancel")) {
-            //         ImGui::CloseCurrentPopup();
-            //     }
-            // }
-
+                if (end_unix_time < start_unix_time) {
+                    ImGui::Text("End time must be after start time");
+                    is_able_to_submit = false;
+                } else {
+                    is_able_to_submit = true;
+                }
+            } catch (const std::exception& e) {
+                ImGui::Text("Invalid date/time format");
+                is_able_to_submit = false;
+            }
 
         }
 
@@ -208,6 +186,16 @@ void GraphView::renderAll() {
 
         ImGui::EndPopup();
     }
+}
+
+// Handle submit action for "Add plot" popup
+void actionSubmitAddPlotPopup() {
+    // Handle submit action
+}
+
+void GraphView::renderAll() {
+    // Render "Add plot" button and popup
+    renderAddPlotPopup();
 
     // Plot all RenderablePlots in individual windows
     for (const auto& renderable_plot : viewModel_.getRenderablePlots()){
