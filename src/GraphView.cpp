@@ -36,11 +36,6 @@ void GraphView::Draw(const std::string label)
 // renderAddPlotPopup
 // ==============================
 
-// Handle submit action for "Add plot" popup
-void actionSubmitAddPlotPopup() {
-    // Handle submit action
-}
-
 // Helper function to render a date/time field
 void renderDateTimeField(const char* label, char* year, char* month, char* day, char* hour, char* minute, char* second) {
     ImGui::Text(label);
@@ -57,6 +52,14 @@ void renderDateTimeField(const char* label, char* year, char* month, char* day, 
     ImGui::SetNextItemWidth(30.0f); ImGui::InputText((std::string("###Second") + label).c_str(), second, 3);
 }
 
+// Handle submit action for "Add plot" popup
+void GraphView::actionSubmitAddPlotPopup(AddPlotPopupState& state) {
+    // Handle submit action
+    RenderablePlot plot(state.plot_label, state.is_real_time);
+    plot.setWindowLabel(state.window_label);
+
+}
+
 // Render the "Add plot" popup
 void GraphView::renderAddPlotPopup() {
     // Example of creating a popup window with textbox input fields
@@ -69,12 +72,6 @@ void GraphView::renderAddPlotPopup() {
     if (ImGui::BeginPopup("Add new plot")) {
         auto& add_plot_pop_up_state = viewModel_.getAddPlotPopupState();
         static bool is_able_to_submit = false;
-
-        // Get current time for default plot range
-        static std::time_t current_time = std::time(nullptr);
-        static std::time_t max_data_time_range = 3600; // 1 hour
-        static std::tm local_time;
-        localtime_s(&local_time, &current_time);
 
         // Get current year
         ImGui::Text("Enter values:");
@@ -154,14 +151,49 @@ void GraphView::renderAddPlotPopup() {
         ImGui::Checkbox("Real-time", &add_plot_pop_up_state.is_real_time);
         is_able_to_submit = add_plot_pop_up_state.is_real_time;
 
+        // Real-time plot range
+        static bool is_range_initialized = false; // Initialization flag
+        if(add_plot_pop_up_state.is_real_time && !is_range_initialized) {
+            // Get current time for default plot range
+            std::time_t current_time = std::time(nullptr);
+            std::tm local_time;
+            localtime_s(&local_time, &current_time);
+            std::time_t max_data_time_range = 3600; // 1 hour
+
+            std::time_t start_time = std::time(nullptr) - max_data_time_range;
+            std::tm start_local_time;
+            localtime_s(&start_local_time, &start_time);
+
+            // Set the end plot year, month, day, hour, minute, second to current time
+            std::strftime(add_plot_pop_up_state.plot_range_end_year, sizeof(add_plot_pop_up_state.plot_range_end_year), "%Y", &local_time);
+            std::strftime(add_plot_pop_up_state.plot_range_end_month, sizeof(add_plot_pop_up_state.plot_range_end_month), "%m", &local_time);
+            std::strftime(add_plot_pop_up_state.plot_range_end_day, sizeof(add_plot_pop_up_state.plot_range_end_day), "%d", &local_time);
+            std::strftime(add_plot_pop_up_state.plot_range_end_hour, sizeof(add_plot_pop_up_state.plot_range_end_hour), "%H", &local_time);
+            std::strftime(add_plot_pop_up_state.plot_range_end_minute, sizeof(add_plot_pop_up_state.plot_range_end_minute), "%M", &local_time);
+            std::strftime(add_plot_pop_up_state.plot_range_end_second, sizeof(add_plot_pop_up_state.plot_range_end_second), "%S", &local_time);
+
+            // Set the start plot year, month, day, hour, minute, second to current time - max_data_time_range
+            std::strftime(add_plot_pop_up_state.plot_range_start_year, sizeof(add_plot_pop_up_state.plot_range_start_year), "%Y", &start_local_time);
+            std::strftime(add_plot_pop_up_state.plot_range_start_month, sizeof(add_plot_pop_up_state.plot_range_start_month), "%m", &start_local_time);
+            std::strftime(add_plot_pop_up_state.plot_range_start_day, sizeof(add_plot_pop_up_state.plot_range_start_day), "%d", &start_local_time);
+            std::strftime(add_plot_pop_up_state.plot_range_start_hour, sizeof(add_plot_pop_up_state.plot_range_start_hour), "%H", &start_local_time);
+            std::strftime(add_plot_pop_up_state.plot_range_start_minute, sizeof(add_plot_pop_up_state.plot_range_start_minute), "%M", &start_local_time);
+            std::strftime(add_plot_pop_up_state.plot_range_start_second, sizeof(add_plot_pop_up_state.plot_range_start_second), "%S", &start_local_time);
+
+        }
+
         // User defined plot range
         if(!add_plot_pop_up_state.is_real_time) {
-            static bool is_range_initialized = false; // Initialization flag
-
             // Initialize textboxes with default values only once
-            if (!is_range_initialized) {
-                static std::time_t start_time = current_time - max_data_time_range;
-                static std::tm start_local_time;
+                if (!is_range_initialized) {
+                // Get current time for default plot range
+                std::time_t current_time = std::time(nullptr);
+                std::tm local_time;
+                localtime_s(&local_time, &current_time);
+                std::time_t max_data_time_range = 3600; // 1 hour
+
+                std::time_t start_time = std::time(nullptr) - max_data_time_range;
+                std::tm start_local_time;
                 localtime_s(&start_local_time, &start_time);
 
                 std::strftime(add_plot_pop_up_state.plot_range_start_year, sizeof(add_plot_pop_up_state.plot_range_start_year), "%Y", &start_local_time);
@@ -252,9 +284,11 @@ void GraphView::renderAddPlotPopup() {
         if(is_able_to_submit) {
             if (ImGui::Button("Submit")) {
                 // Handle submit action
+                actionSubmitAddPlotPopup(add_plot_pop_up_state);
 
                 add_plot_pop_up_state.reset();
                 sensors = add_plot_pop_up_state.available_sensors;
+                is_range_initialized = false;
                 ImGui::CloseCurrentPopup();
             }
 
@@ -264,6 +298,7 @@ void GraphView::renderAddPlotPopup() {
         if (ImGui::Button("Cancel")) {
             add_plot_pop_up_state.reset();
             sensors = add_plot_pop_up_state.available_sensors;
+            is_range_initialized = false;
             ImGui::CloseCurrentPopup();
         }
 

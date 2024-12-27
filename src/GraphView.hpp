@@ -22,6 +22,15 @@ public:
 private:
     GraphViewModel& viewModel_;
 
+    // ==============================
+    // renderAll
+    // ==============================
     void renderAll();
+
+    // ==============================
+    // renderAddPlotPopup
+    // ==============================
+    void actionSubmitAddPlotPopup(AddPlotPopupState& state);
     void renderAddPlotPopup();
+
 };
