@@ -32,6 +32,15 @@ void GraphView::Draw(const std::string label)
     ImGui::End();
 }
 
+// ==============================
+// renderAddPlotPopup
+// ==============================
+
+// Handle submit action for "Add plot" popup
+void actionSubmitAddPlotPopup() {
+    // Handle submit action
+}
+
 // Helper function to render a date/time field
 void renderDateTimeField(const char* label, char* year, char* month, char* day, char* hour, char* minute, char* second) {
     ImGui::Text(label);
@@ -53,12 +62,12 @@ void GraphView::renderAddPlotPopup() {
     // Example of creating a popup window with textbox input fields
     if (ImGui::Button("Add new plot")) {
         ImGui::OpenPopup("Add new plot");
+        auto& add_plot_pop_up_state = viewModel_.getAddPlotPopupState();
+        add_plot_pop_up_state.available_sensors = viewModel_.getPlottableSensors();
     }
 
     if (ImGui::BeginPopup("Add new plot")) {
-        static char window_label_input[128] = "";
-        static char plot_label_input[128] = "";
-        static bool is_real_time = false;
+        auto& add_plot_pop_up_state = viewModel_.getAddPlotPopupState();
         static bool is_able_to_submit = false;
 
         // Get current time for default plot range
@@ -69,11 +78,11 @@ void GraphView::renderAddPlotPopup() {
 
         // Get current year
         ImGui::Text("Enter values:");
-        ImGui::InputText("Window name", window_label_input, IM_ARRAYSIZE(window_label_input));
-        ImGui::InputText("Plot title", plot_label_input, IM_ARRAYSIZE(plot_label_input));
+        ImGui::InputText("Window name", &add_plot_pop_up_state.window_label[0], 128);
+        ImGui::InputText("Plot title", &add_plot_pop_up_state.plot_label[0], 128);
 
         // List plottable sensors
-        const auto& sensors = viewModel_.getPlottableSensors();
+        static std::vector<std::string> sensors = add_plot_pop_up_state.available_sensors;
         static int selected_sensor = -1;
 
         ImGui::Text("Select a sensor:");
@@ -81,35 +90,34 @@ void GraphView::renderAddPlotPopup() {
             for (size_t i = 0; i < sensors.size(); ++i) {
                 const bool is_selected = (selected_sensor == static_cast<int>(i));
                 if (ImGui::Selectable(sensors[i].c_str(), is_selected)) {
+                    // Remove the selected sensor from the list and move them into the selected sensors list
                     selected_sensor = static_cast<int>(i);
-                }
-                if (is_selected) {
-                    ImGui::SetItemDefaultFocus();
+                    add_plot_pop_up_state.selected_sensors.push_back(sensors.at(selected_sensor));
+                    sensors.erase(sensors.begin() + selected_sensor);
                 }
             }
             ImGui::EndListBox();
         }
 
+        ImGui::SeparatorText("");
+
+        // List of selected sensors
+        ImGui::Text("Selected sensors:");
+        if (ImGui::BeginListBox("##SelectedSensors")) {
+            for (size_t i = 0; i < add_plot_pop_up_state.selected_sensors.size(); ++i) {
+                ImGui::Text(add_plot_pop_up_state.selected_sensors[i].c_str());
+            }
+            ImGui::EndListBox();
+        }
+
+        ImGui::SeparatorText("");
+
         // Real-time plotting checkbox
-        ImGui::Checkbox("Real-time", &is_real_time);
-        is_able_to_submit = is_real_time;
+        ImGui::Checkbox("Real-time", &add_plot_pop_up_state.is_real_time);
+        is_able_to_submit = add_plot_pop_up_state.is_real_time;
 
         // User defined plot range
-        if(!is_real_time){
-            static char plot_range_start_year[5] = "";
-            static char plot_range_start_month[3] = "";
-            static char plot_range_start_day[3] = "";
-            static char plot_range_start_hour[3] = "";
-            static char plot_range_start_minute[3] = "";
-            static char plot_range_start_second[3] = "";
-
-            static char plot_range_end_year[5] = "";
-            static char plot_range_end_month[3] = "";
-            static char plot_range_end_day[3] = "";
-            static char plot_range_end_hour[3] = "";
-            static char plot_range_end_minute[3] = "";
-            static char plot_range_end_second[3] = "";
-
+        if(!add_plot_pop_up_state.is_real_time) {
             static bool is_range_initialized = false; // Initialization flag
 
             // Initialize textboxes with default values only once
@@ -118,42 +126,51 @@ void GraphView::renderAddPlotPopup() {
                 static std::tm start_local_time;
                 localtime_s(&start_local_time, &start_time);
 
-                std::strftime(plot_range_start_year, sizeof(plot_range_start_year), "%Y", &start_local_time);
-                std::strftime(plot_range_start_month, sizeof(plot_range_start_month), "%m", &start_local_time);
-                std::strftime(plot_range_start_day, sizeof(plot_range_start_day), "%d", &start_local_time);
-                std::strftime(plot_range_start_hour, sizeof(plot_range_start_hour), "%H", &start_local_time);
-                std::strftime(plot_range_start_minute, sizeof(plot_range_start_minute), "%M", &start_local_time);
-                std::strftime(plot_range_start_second, sizeof(plot_range_start_second), "%S", &start_local_time);
+                std::strftime(add_plot_pop_up_state.plot_range_start_year, sizeof(add_plot_pop_up_state.plot_range_start_year), "%Y", &start_local_time);
+                std::strftime(add_plot_pop_up_state.plot_range_start_month, sizeof(add_plot_pop_up_state.plot_range_start_month), "%m", &start_local_time);
+                std::strftime(add_plot_pop_up_state.plot_range_start_day, sizeof(add_plot_pop_up_state.plot_range_start_day), "%d", &start_local_time);
+                std::strftime(add_plot_pop_up_state.plot_range_start_hour, sizeof(add_plot_pop_up_state.plot_range_start_hour), "%H", &start_local_time);
+                std::strftime(add_plot_pop_up_state.plot_range_start_minute, sizeof(add_plot_pop_up_state.plot_range_start_minute), "%M", &start_local_time);
+                std::strftime(add_plot_pop_up_state.plot_range_start_second, sizeof(add_plot_pop_up_state.plot_range_start_second), "%S", &start_local_time);
 
-                std::strftime(plot_range_end_year, sizeof(plot_range_end_year), "%Y", &local_time);
-                std::strftime(plot_range_end_month, sizeof(plot_range_end_month), "%m", &local_time);
-                std::strftime(plot_range_end_day, sizeof(plot_range_end_day), "%d", &local_time);
-                std::strftime(plot_range_end_hour, sizeof(plot_range_end_hour), "%H", &local_time);
-                std::strftime(plot_range_end_minute, sizeof(plot_range_end_minute), "%M", &local_time);
-                std::strftime(plot_range_end_second, sizeof(plot_range_end_second), "%S", &local_time);
+                std::strftime(add_plot_pop_up_state.plot_range_end_year, sizeof(add_plot_pop_up_state.plot_range_end_year), "%Y", &local_time);
+                std::strftime(add_plot_pop_up_state.plot_range_end_month, sizeof(add_plot_pop_up_state.plot_range_end_month), "%m", &local_time);
+                std::strftime(add_plot_pop_up_state.plot_range_end_day, sizeof(add_plot_pop_up_state.plot_range_end_day), "%d", &local_time);
+                std::strftime(add_plot_pop_up_state.plot_range_end_hour, sizeof(add_plot_pop_up_state.plot_range_end_hour), "%H", &local_time);
+                std::strftime(add_plot_pop_up_state.plot_range_end_minute, sizeof(add_plot_pop_up_state.plot_range_end_minute), "%M", &local_time);
+                std::strftime(add_plot_pop_up_state.plot_range_end_second, sizeof(add_plot_pop_up_state.plot_range_end_second), "%S", &local_time);
 
                 is_range_initialized = true;
             }
 
-            ImGui::SeparatorText("");
-
             ImGui::Text("Enter plot range (YYYY-MM-DD HH:MM:SS)");
 
-            renderDateTimeField("Plot start date", plot_range_start_year, plot_range_start_month, plot_range_start_day, plot_range_start_hour, plot_range_start_minute, plot_range_start_second);
-            renderDateTimeField("Plot end date", plot_range_end_year, plot_range_end_month, plot_range_end_day, plot_range_end_hour, plot_range_end_minute, plot_range_end_second);
+            renderDateTimeField("Plot start date", add_plot_pop_up_state.plot_range_start_year,
+                add_plot_pop_up_state.plot_range_start_month,
+                add_plot_pop_up_state.plot_range_start_day,
+                add_plot_pop_up_state.plot_range_start_hour,
+                add_plot_pop_up_state.plot_range_start_minute,
+                add_plot_pop_up_state.plot_range_start_second);
+            renderDateTimeField("Plot end date", add_plot_pop_up_state.plot_range_end_year,
+                add_plot_pop_up_state.plot_range_end_month,
+                add_plot_pop_up_state.plot_range_end_day,
+                add_plot_pop_up_state.plot_range_end_hour,
+                add_plot_pop_up_state.plot_range_end_minute,
+                add_plot_pop_up_state.plot_range_end_second
+                );
 
-            if (std::strlen(plot_range_start_year) == 0 ||
-                std::strlen(plot_range_start_month) == 0 ||
-                std::strlen(plot_range_start_day) == 0 ||
-                std::strlen(plot_range_start_hour) == 0 ||
-                std::strlen(plot_range_start_minute) == 0 ||
-                std::strlen(plot_range_start_second) == 0 ||
-                std::strlen(plot_range_end_year) == 0 ||
-                std::strlen(plot_range_end_month) == 0 ||
-                std::strlen(plot_range_end_day) == 0 ||
-                std::strlen(plot_range_end_hour) == 0 ||
-                std::strlen(plot_range_end_minute) == 0 ||
-                std::strlen(plot_range_end_second) == 0) {
+            if (std::strlen(add_plot_pop_up_state.plot_range_start_year) == 0 ||
+                std::strlen(add_plot_pop_up_state.plot_range_start_month) == 0 ||
+                std::strlen(add_plot_pop_up_state.plot_range_start_day) == 0 ||
+                std::strlen(add_plot_pop_up_state.plot_range_start_hour) == 0 ||
+                std::strlen(add_plot_pop_up_state.plot_range_start_minute) == 0 ||
+                std::strlen(add_plot_pop_up_state.plot_range_start_second) == 0 ||
+                std::strlen(add_plot_pop_up_state.plot_range_end_year) == 0 ||
+                std::strlen(add_plot_pop_up_state.plot_range_end_month) == 0 ||
+                std::strlen(add_plot_pop_up_state.plot_range_end_day) == 0 ||
+                std::strlen(add_plot_pop_up_state.plot_range_end_hour) == 0 ||
+                std::strlen(add_plot_pop_up_state.plot_range_end_minute) == 0 ||
+                std::strlen(add_plot_pop_up_state.plot_range_end_second) == 0) {
                 ImGui::Text("Please enter all fields");
                 is_able_to_submit = false;
             } else {
@@ -164,21 +181,21 @@ void GraphView::renderAddPlotPopup() {
             // Convert input into unix time
             try {
                 static std::tm input_start_time = {};
-                input_start_time.tm_year = std::stoi(plot_range_start_year) - 1900;
-                input_start_time.tm_mon = std::stoi(plot_range_start_month) - 1;
-                input_start_time.tm_mday = std::stoi(plot_range_start_day);
-                input_start_time.tm_hour = std::stoi(plot_range_start_hour);
-                input_start_time.tm_min = std::stoi(plot_range_start_minute);
-                input_start_time.tm_sec = std::stoi(plot_range_start_second);
+                input_start_time.tm_year = std::stoi(add_plot_pop_up_state.plot_range_start_year) - 1900;
+                input_start_time.tm_mon = std::stoi(add_plot_pop_up_state.plot_range_start_month) - 1;
+                input_start_time.tm_mday = std::stoi(add_plot_pop_up_state.plot_range_start_day);
+                input_start_time.tm_hour = std::stoi(add_plot_pop_up_state.plot_range_start_hour);
+                input_start_time.tm_min = std::stoi(add_plot_pop_up_state.plot_range_start_minute);
+                input_start_time.tm_sec = std::stoi(add_plot_pop_up_state.plot_range_start_second);
                 std::time_t start_unix_time = std::mktime(&input_start_time);
 
                 std::tm input_end_time = {};
-                input_end_time.tm_year = std::stoi(plot_range_end_year) - 1900;
-                input_end_time.tm_mon = std::stoi(plot_range_end_month) - 1;
-                input_end_time.tm_mday = std::stoi(plot_range_end_day);
-                input_end_time.tm_hour = std::stoi(plot_range_end_hour);
-                input_end_time.tm_min = std::stoi(plot_range_end_minute);
-                input_end_time.tm_sec = std::stoi(plot_range_end_second);
+                input_end_time.tm_year = std::stoi(add_plot_pop_up_state.plot_range_end_year) - 1900;
+                input_end_time.tm_mon = std::stoi(add_plot_pop_up_state.plot_range_end_month) - 1;
+                input_end_time.tm_mday = std::stoi(add_plot_pop_up_state.plot_range_end_day);
+                input_end_time.tm_hour = std::stoi(add_plot_pop_up_state.plot_range_end_hour);
+                input_end_time.tm_min = std::stoi(add_plot_pop_up_state.plot_range_end_minute);
+                input_end_time.tm_sec = std::stoi(add_plot_pop_up_state.plot_range_end_second);
                 std::time_t end_unix_time = std::mktime(&input_end_time);
 
                 if (end_unix_time < start_unix_time) {
@@ -211,10 +228,9 @@ void GraphView::renderAddPlotPopup() {
     }
 }
 
-// Handle submit action for "Add plot" popup
-void actionSubmitAddPlotPopup() {
-    // Handle submit action
-}
+// ==============================
+// ==============================
+
 
 void GraphView::renderAll() {
     // Render "Add plot" button and popup

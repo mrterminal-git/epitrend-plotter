@@ -19,3 +19,7 @@ void GraphViewModel::setPlottableSensors(const std::vector<std::string>& sensors
 const std::vector<std::string>& GraphViewModel::getPlottableSensors() const {
     return plottable_sensors_;
 }
+
+AddPlotPopupState& GraphViewModel::getAddPlotPopupState() {
+    return add_plot_popup_state_;
+}

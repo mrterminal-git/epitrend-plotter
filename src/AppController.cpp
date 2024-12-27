@@ -28,7 +28,6 @@ void AppController::updatePlottableSensors() {
     std::vector<std::string> sensor_names;
     for (const auto& [sensor_id, _] : dataManager.getBuffers()) {
         sensor_names.push_back(sensor_id);
-        std::cout << "Detected sensor: " << sensor_id << "\n";
     }
     viewModel.setPlottableSensors(sensor_names);
 
