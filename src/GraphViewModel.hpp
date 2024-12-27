@@ -27,7 +27,7 @@ struct AddPlotPopupState {
     void reset() {
         window_label.clear();
         plot_label.clear();
-        is_real_time = false;
+        is_real_time = true;
         selected_sensors.clear();
 
         std::fill(std::begin(plot_range_start_year), std::end(plot_range_start_year), '\0');

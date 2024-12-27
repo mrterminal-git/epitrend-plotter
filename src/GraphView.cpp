@@ -252,6 +252,9 @@ void GraphView::renderAddPlotPopup() {
         if(is_able_to_submit) {
             if (ImGui::Button("Submit")) {
                 // Handle submit action
+
+                add_plot_pop_up_state.reset();
+                sensors = add_plot_pop_up_state.available_sensors;
                 ImGui::CloseCurrentPopup();
             }
 
@@ -259,6 +262,8 @@ void GraphView::renderAddPlotPopup() {
         }
 
         if (ImGui::Button("Cancel")) {
+            add_plot_pop_up_state.reset();
+            sensors = add_plot_pop_up_state.available_sensors;
             ImGui::CloseCurrentPopup();
         }
 
