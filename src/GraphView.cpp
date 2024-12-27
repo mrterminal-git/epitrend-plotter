@@ -101,14 +101,52 @@ void GraphView::renderAddPlotPopup() {
 
         ImGui::SeparatorText("");
 
-        // List of selected sensors
-        ImGui::Text("Selected sensors:");
-        if (ImGui::BeginListBox("##SelectedSensors")) {
-            for (size_t i = 0; i < add_plot_pop_up_state.selected_sensors.size(); ++i) {
-                ImGui::Text(add_plot_pop_up_state.selected_sensors[i].c_str());
+    if (ImGui::BeginListBox("##SelectedSensors")) {
+        static int selected_sensor_in_selected = -1;
+        for (size_t i = 0; i < add_plot_pop_up_state.selected_sensors.size(); ++i) {
+            const bool is_selected = (selected_sensor_in_selected == static_cast<int>(i));
+            if (ImGui::Selectable(add_plot_pop_up_state.selected_sensors[i].c_str(), is_selected)) {
+                selected_sensor_in_selected = static_cast<int>(i);
             }
-            ImGui::EndListBox();
         }
+        ImGui::EndListBox();
+
+        // Move selected sensor back to "Sensors" list
+        if (selected_sensor_in_selected != -1 && ImGui::Button("Deselect Sensor")) {
+            const std::string& sensor_to_return = add_plot_pop_up_state.selected_sensors[selected_sensor_in_selected];
+
+            // Find position in available_sensors only if it is non-empty
+            if (!add_plot_pop_up_state.available_sensors.empty()) {
+                auto it = std::find(
+                    add_plot_pop_up_state.available_sensors.begin(),
+                    add_plot_pop_up_state.available_sensors.end(),
+                    sensor_to_return
+                );
+
+                // Check if found within bounds
+                if (it != add_plot_pop_up_state.available_sensors.end()) {
+                    auto index = std::distance(add_plot_pop_up_state.available_sensors.begin(), it);
+
+                    // Ensure the calculated index is valid for sensors
+                    if (index <= static_cast<int>(sensors.size())) {
+                        sensors.insert(sensors.begin() + index, sensor_to_return);
+                    } else {
+                        sensors.push_back(sensor_to_return);
+                    }
+                } else {
+                    sensors.push_back(sensor_to_return); // Append if not found
+                }
+            } else {
+                sensors.push_back(sensor_to_return); // Append if available_sensors is empty
+            }
+
+            // Remove the sensor from selected_sensors
+            if (selected_sensor_in_selected >= 0 && selected_sensor_in_selected < static_cast<int>(add_plot_pop_up_state.selected_sensors.size())) {
+                add_plot_pop_up_state.selected_sensors.erase(add_plot_pop_up_state.selected_sensors.begin() + selected_sensor_in_selected);
+                selected_sensor_in_selected = -1; // Reset selection
+            }
+        }
+    }
 
         ImGui::SeparatorText("");
 
