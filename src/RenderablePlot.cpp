@@ -1,3 +1,4 @@
+#include <iostream>
 #include "RenderablePlot.hpp"
 
 RenderablePlot::RenderablePlot(const std::string& label, bool real_time)
@@ -59,5 +60,19 @@ bool RenderablePlot::isRealTime() const {
 void RenderablePlot::notifyRangeChange(Timestamp start, Timestamp end) const {
     if (range_callback_) {
         range_callback_(start, end);
+    }
+}
+
+void RenderablePlot::print() const {
+    std::cout << "RenderablePlot: " << label_ << "\n";
+    std::cout << "Window label: " << window_label_ << "\n";
+    std::cout << "Real-time: " << real_time_ << "\n";
+    std::cout << "Plot range: " << plot_range_.first << " - " << plot_range_.second << "\n";
+    std::cout << "Data: " << "\n";
+    for (const auto& [series_label, data] : data_) {
+        std::cout << "Series: " << series_label << "\n";
+        for (const auto& [timestamp, value] : data) {
+            std::cout << timestamp << ": " << value << "\n";
+        }
     }
 }

@@ -58,6 +58,35 @@ void GraphView::actionSubmitAddPlotPopup(AddPlotPopupState& state) {
     RenderablePlot plot(state.plot_label, state.is_real_time);
     plot.setWindowLabel(state.window_label);
 
+    // Convert date/time fields to timestamps
+    std::tm start_time = {};
+    start_time.tm_year = std::stoi(state.plot_range_start_year) - 1900;
+    start_time.tm_mon = std::stoi(state.plot_range_start_month) - 1;
+    start_time.tm_mday = std::stoi(state.plot_range_start_day);
+    start_time.tm_hour = std::stoi(state.plot_range_start_hour);
+    start_time.tm_min = std::stoi(state.plot_range_start_minute);
+    start_time.tm_sec = std::stoi(state.plot_range_start_second);
+    std::time_t start = std::mktime(&start_time);
+
+    std::tm end_time = {};
+    end_time.tm_year = std::stoi(state.plot_range_end_year) - 1900;
+    end_time.tm_mon = std::stoi(state.plot_range_end_month) - 1;
+    end_time.tm_mday = std::stoi(state.plot_range_end_day);
+    end_time.tm_hour = std::stoi(state.plot_range_end_hour);
+    end_time.tm_min = std::stoi(state.plot_range_end_minute);
+    end_time.tm_sec = std::stoi(state.plot_range_end_second);
+    std::time_t end = std::mktime(&end_time);
+
+    plot.setPlotRange(start, end);
+
+    // Add selected sensors to the plot
+    for (const auto& sensor : state.selected_sensors) {
+        plot.setData(sensor, {});
+    }
+
+    // Add the plot to the view model
+    // viewModel_.addRenderablePlot(plot);
+
 }
 
 // Render the "Add plot" popup
@@ -75,8 +104,23 @@ void GraphView::renderAddPlotPopup() {
 
         // Get current year
         ImGui::Text("Enter values:");
-        ImGui::InputText("Window name", &add_plot_pop_up_state.window_label[0], 128);
-        ImGui::InputText("Plot title", &add_plot_pop_up_state.plot_label[0], 128);
+
+        // Temporary buffers to hold input text
+        static char window_label_buffer[128] = "";
+        static char plot_label_buffer[128] = "";
+
+        // Copy current values into buffers
+        std::strncpy(window_label_buffer, add_plot_pop_up_state.window_label.c_str(), sizeof(window_label_buffer));
+        std::strncpy(plot_label_buffer, add_plot_pop_up_state.plot_label.c_str(), sizeof(plot_label_buffer));
+
+        // Render the input text fields
+        if (ImGui::InputText("Window name", window_label_buffer, sizeof(window_label_buffer))) {
+            add_plot_pop_up_state.window_label = std::string(window_label_buffer); // Sync changes back to std::string
+        }
+
+        if (ImGui::InputText("Plot title", plot_label_buffer, sizeof(plot_label_buffer))) {
+            add_plot_pop_up_state.plot_label = std::string(plot_label_buffer); // Sync changes back to std::string
+        }
 
         // List plottable sensors
         static std::vector<std::string> sensors = add_plot_pop_up_state.available_sensors;

@@ -30,6 +30,9 @@ public:
     const std::pair<Timestamp, Timestamp>& getPlotRange() const;
     bool isRealTime() const;
 
+    // Print object
+    void print() const;
+
     // Callback invocation
     void notifyRangeChange(Timestamp start, Timestamp end) const;
 
