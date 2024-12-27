@@ -13,5 +13,7 @@ public:
     void clear(); // Clear all renderables
 
 private:
+    // Each renderable plot is a separate window
     std::vector<RenderablePlot> renderable_plots_;
+
 };
