@@ -1,7 +1,8 @@
 #include "AppController.hpp"
 
 // Constructor
-AppController::AppController() {
+AppController::AppController()
+: dataManager(), viewModel(), graphView(viewModel) {
     dataManager.addSensor("sensor_1"); // for testing
     dataManager.addSensor("sensor_2"); // for testing
 
@@ -18,10 +19,7 @@ void AppController::onViewRangeChanged(double start, double end) {
 
 void AppController::run() {
     // Update the viewModel with data from the dataManager
-    viewModel.updateFromDataManager(dataManager); // IMPLEMENT THIS
-
-    // Create the view and render it
-    GraphView graphView(viewModel);
+    // viewModel.updateFromDataManager(dataManager); // IMPLEMENT THIS
 
     graphView.Draw("Main window");
 }

@@ -15,8 +15,8 @@ public:
 
 private:
     DataManager dataManager;
-    GraphView graphView;
     GraphViewModel viewModel;
+    GraphView graphView;
 
     void onViewRangeChanged(double start, double end);
 };
