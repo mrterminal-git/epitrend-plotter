@@ -33,7 +33,7 @@ void GraphView::renderAll() {
     // Plot all RenderablePlots in individual windows
     for (const auto& renderable_plot : viewModel_.getRenderablePlots()){
         // Create a sub-window with each plot
-        ImGui::Begin(renderable_plot.getLabel().c_str());
+        ImGui::Begin(renderable_plot.getWindowLabel().c_str());
 
         // Create the plot
         std::time_t plot_start, plot_end;
@@ -49,7 +49,6 @@ void GraphView::renderAll() {
             plot_end = renderable_plot.getPlotRange().second;
 
         }
-
 
         if (ImPlot::BeginPlot("")) {
             ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);

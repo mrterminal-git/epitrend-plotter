@@ -7,6 +7,10 @@ void RenderablePlot::setLabel(const std::string& label) {
     label_ = label;
 }
 
+void RenderablePlot::setWindowLabel(const std::string& window_label) {
+    window_label_ = window_label;
+}
+
 void RenderablePlot::setData(const std::string& series_label, const std::map<Timestamp, Value>& data) {
     data_[series_label] = data;
 }
@@ -25,6 +29,10 @@ void RenderablePlot::setRangeCallback(const RangeCallback& callback) {
 
 const std::string& RenderablePlot::getLabel() const {
     return label_;
+}
+
+const std::string& RenderablePlot::getWindowLabel() const {
+    return window_label_;
 }
 
 const std::map<RenderablePlot::Timestamp, RenderablePlot::Value>& RenderablePlot::getData(const std::string& series_label) const {
