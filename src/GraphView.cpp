@@ -18,14 +18,15 @@ GraphView::GraphView(GraphViewModel& viewModel) : viewModel_(viewModel) {}
 
 void GraphView::Draw(const std::string label)
 {
+    //        ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
     constexpr static auto window_flags =
-        ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
-        ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar;
+        ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar |
+        ImGuiWindowFlags_NoBringToFrontOnFocus;
     constexpr static auto window_size = ImVec2(1280.0F, 720.0F);
     constexpr static auto window_pos = ImVec2(0.0F, 0.0F);
 
-    ImGui::SetNextWindowSize(window_size);
-    ImGui::SetNextWindowPos(window_pos);
+    ImGui::SetNextWindowSize(window_size, ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowPos(window_pos, ImGuiCond_FirstUseEver);
 
     ImGui::Begin(label.data(), nullptr, window_flags);
 
@@ -143,7 +144,7 @@ void GraphView::actionSubmitAddPlotPopup(AddPlotPopupState& state) {
 // Render the "Add plot" popup
 void GraphView::renderAddPlotPopup() {
     // Example of creating a popup window with textbox input fields
-    if (ImGui::Button("Add new plot")) {
+    if (ImGui::Button("Add new plot", ImVec2(100, 30))) {
         ImGui::OpenPopup("Add new plot");
         auto& add_plot_pop_up_state = viewModel_.getAddPlotPopupState();
         add_plot_pop_up_state.available_sensors = viewModel_.getPlottableSensors();
@@ -355,7 +356,6 @@ void GraphView::renderAddPlotPopup() {
 }
 
 
-
 // ==============================
 // renderAllPlots
 // ==============================
@@ -364,7 +364,10 @@ void GraphView::renderAllPlots(){
     // Plot all RenderablePlots in individual windows
     for (auto& renderable_plot : viewModel_.getRenderablePlots()){
         // Create a sub-window with each plot
-        ImGui::Begin(renderable_plot.getWindowLabel().c_str());
+        ImGui::SetNextWindowSize(ImVec2(300, 200), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowPos(ImVec2(100, 100), ImGuiCond_FirstUseEver);
+
+        ImGui::Begin(renderable_plot.getWindowLabel().c_str(), nullptr, ImGuiWindowFlags_None);
 
         // Create the plot
         std::time_t plot_start, plot_end;
@@ -381,7 +384,6 @@ void GraphView::renderAllPlots(){
 
         }
 
-        ImGui::Text("isRealTime: %d", renderable_plot.isRealTime());
         // Store the real-time flag in a local variable
         bool is_real_time = renderable_plot.isRealTime();
         if (ImGui::Checkbox("Real-time (AEST)", &is_real_time)) {
@@ -391,7 +393,12 @@ void GraphView::renderAllPlots(){
 
         if (ImPlot::BeginPlot(("###" + renderable_plot.getLabel()).c_str())) {
             ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
-            ImPlot::SetupAxisLimits(ImAxis_X1, plot_start, plot_end, ImGuiCond_Always);
+            if(renderable_plot.isRealTime()){
+                ImPlot::SetupAxisLimits(ImAxis_X1, plot_start, plot_end, ImGuiCond_Always);
+            } else {
+                ImPlot::SetupAxisLimits(ImAxis_X1, plot_start, plot_end, ImGuiCond_Once);
+            }
+
             for (const auto& [series_label, data] : renderable_plot.getAllData()) {
                 std::vector<double> xs, ys;
                 for (const auto& [timestamp, value] : data) {
@@ -400,6 +407,11 @@ void GraphView::renderAllPlots(){
                 }
                 ImPlot::PlotLine(series_label.c_str(), xs.data(), ys.data(), xs.size());
             }
+
+            // Update the plot range if it is real-time
+            ImPlotRect limits = ImPlot::GetPlotLimits();
+            renderable_plot.setPlotRange(limits.X.Min, limits.X.Max);
+
             ImPlot::EndPlot();
         }
 
