@@ -117,7 +117,7 @@ void GraphView::actionSubmitAddPlotPopup(AddPlotPopupState& state) {
     start_time.tm_hour = std::stoi(state.plot_range_start_hour);
     start_time.tm_min = std::stoi(state.plot_range_start_minute);
     start_time.tm_sec = std::stoi(state.plot_range_start_second);
-    std::time_t start = std::mktime(&start_time);
+    std::time_t start = std::mktime(&start_time) + 10 * 3600; // Convert to Brisbane time + 10hrs
 
     std::tm end_time = {};
     end_time.tm_year = std::stoi(state.plot_range_end_year) - 1900;
@@ -126,21 +126,7 @@ void GraphView::actionSubmitAddPlotPopup(AddPlotPopupState& state) {
     end_time.tm_hour = std::stoi(state.plot_range_end_hour);
     end_time.tm_min = std::stoi(state.plot_range_end_minute);
     end_time.tm_sec = std::stoi(state.plot_range_end_second);
-    std::time_t end = std::mktime(&end_time);
-
-    std::cout << "Start: " << start << " End: " << end << "\n";
-
-    // Convert the start and end timestamps to local time using localtime_s
-    std::tm local_start_time;
-    localtime_s(&local_start_time, &start);
-    std::tm local_end_time;
-    localtime_s(&local_end_time, &end);
-
-    // Convert local tm back to time_t
-    start = std::mktime(&local_start_time);
-    end = std::mktime(&local_end_time);
-
-    std::cout << "Start: " << start << " End: " << end << "\n";
+    std::time_t end = std::mktime(&end_time) + 10 * 3600; // Convert to Brisbane time + 10hrs;
 
     plot.setPlotRange(start, end);
 
