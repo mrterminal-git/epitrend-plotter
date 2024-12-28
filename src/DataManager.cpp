@@ -50,14 +50,17 @@ void DataManager::addSensor(const std::string& sensor_id) {
 }
 
 // Update range for a specific machine. Callback is used to preload data and clean up old data according to the new range
-void DataManager::updateSensorRange(const std::string& sensor_id, Timestamp start, Timestamp end) {
-    if (buffers_.find(sensor_id) != buffers_.end()) {
-        buffers_[sensor_id].setRange(
-            start, end,
-            [this, sensor_id](Timestamp preload_start, Timestamp preload_end) {
-                preloadData(sensor_id, preload_start, preload_end);
-            });
-    }
+void DataManager::updateSensorRange(const std::string& sensor_id, int plot_id, DataManager::Timestamp start, DataManager::Timestamp end) {
+    auto& ranges = sensor_ranges_[sensor_id];
+    ranges[plot_id] = {start, end}; // Update the specific plot's range
+
+    auto [merged_start, merged_end] = mergeRanges(ranges); // Merge ranges across plots
+
+    buffers_[sensor_id].setRange(
+        merged_start, merged_end,
+        [this, sensor_id](Timestamp preload_start, Timestamp preload_end) {
+            preloadData(sensor_id, preload_start, preload_end);
+        });
 }
 
 // Add new data to a machine's buffer
@@ -88,4 +91,16 @@ void DataManager::preloadData(const std::string& sensor_id, Timestamp start, Tim
 
     }
     addSensorData(sensor_id, new_data);
+}
+
+std::pair<DataManager::Timestamp, DataManager::Timestamp> DataManager::mergeRanges(
+    const std::unordered_map<int, std::pair<DataManager::Timestamp, DataManager::Timestamp>>& ranges) {
+    if (ranges.empty()) return {0, 0};
+    Timestamp min_start = ranges.begin()->second.first;
+    Timestamp max_end = ranges.begin()->second.second;
+    for (const auto& [_, range] : ranges) {
+        min_start = std::min(min_start, range.first);
+        max_end = std::max(max_end, range.second);
+    }
+    return {min_start, max_end};
 }
