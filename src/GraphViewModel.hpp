@@ -51,7 +51,7 @@ public:
     GraphViewModel() = default;
 
     void addRenderablePlot(const RenderablePlot& object);
-    const std::vector<RenderablePlot>& getRenderablePlots() const;
+    std::vector<RenderablePlot>& getRenderablePlots();
 
     void clear(); // Clear all renderables
 

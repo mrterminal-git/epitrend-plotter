@@ -4,7 +4,7 @@ void GraphViewModel::addRenderablePlot(const RenderablePlot& object) {
     renderable_plots_.push_back(object);
 }
 
-const std::vector<RenderablePlot>& GraphViewModel::getRenderablePlots() const {
+std::vector<RenderablePlot>& GraphViewModel::getRenderablePlots() {
     return renderable_plots_;
 }
 
