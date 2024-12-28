@@ -21,6 +21,7 @@ public:
     void setPlotRange(Timestamp start, Timestamp end);
     void setRealTime(bool real_time);
     void setRangeCallback(const RangeCallback& callback);
+    void setPlotId(long long id);
 
     // Getters
     const std::string& getLabel() const;
@@ -29,6 +30,7 @@ public:
     const std::map<std::string, std::map<Timestamp, Value>> getAllData() const;
     const std::pair<Timestamp, Timestamp>& getPlotRange() const;
     bool isRealTime() const;
+    long long getPlotId() const;
 
     // Print object
     void print() const;
@@ -43,4 +45,6 @@ private:
     std::pair<Timestamp, Timestamp> plot_range_; // Plot range
     std::map<std::string, std::map<Timestamp, Value>> data_; // Data for each sensor and corresponding time-series
     RangeCallback range_callback_; // Callback for range changes
+
+    long long plot_id_;
 };

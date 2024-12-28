@@ -28,6 +28,8 @@ void RenderablePlot::setRangeCallback(const RangeCallback& callback) {
     range_callback_ = callback;
 }
 
+void RenderablePlot::setPlotId(long long id) { plot_id_ = id; }
+
 const std::string& RenderablePlot::getLabel() const {
     return label_;
 }
@@ -52,6 +54,8 @@ const std::map<std::string, std::map<RenderablePlot::Timestamp, RenderablePlot::
 const std::pair<RenderablePlot::Timestamp, RenderablePlot::Timestamp>& RenderablePlot::getPlotRange() const {
     return plot_range_;
 }
+
+long long RenderablePlot::getPlotId() const { return plot_id_; }
 
 bool RenderablePlot::isRealTime() const {
     return real_time_;
