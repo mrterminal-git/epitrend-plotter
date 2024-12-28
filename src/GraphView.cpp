@@ -369,7 +369,7 @@ void GraphView::renderAllPlots(){
         // Create the plot
         std::time_t plot_start, plot_end;
         if(renderable_plot.isRealTime()){
-            std::time_t current_time = std::time(nullptr);
+            std::time_t current_time = std::time(nullptr) + 10 * 3600; // Brisbane time
             std::time_t max_data_time_range = 1000;
 
             plot_start = current_time - max_data_time_range;
