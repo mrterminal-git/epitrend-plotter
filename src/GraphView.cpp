@@ -362,7 +362,7 @@ void GraphView::renderAddPlotPopup() {
 
 void GraphView::renderAllPlots(){
     // Plot all RenderablePlots in individual windows
-    for (const auto& renderable_plot : viewModel_.getRenderablePlots()){
+    for (auto& renderable_plot : viewModel_.getRenderablePlots()){
         // Create a sub-window with each plot
         ImGui::Begin(renderable_plot.getWindowLabel().c_str());
 
@@ -381,9 +381,17 @@ void GraphView::renderAllPlots(){
 
         }
 
+        ImGui::Text("isRealTime: %d", renderable_plot.isRealTime());
+        // Store the real-time flag in a local variable
+        bool is_real_time = renderable_plot.isRealTime();
+        if (ImGui::Checkbox("Real-time (AEST)", &is_real_time)) {
+            // Update the real-time flag if it changes
+            renderable_plot.setRealTime(is_real_time);
+        }
+
         if (ImPlot::BeginPlot(("###" + renderable_plot.getLabel()).c_str())) {
             ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
-            ImPlot::SetupAxisLimits(ImAxis_X1, plot_start, plot_end);
+            ImPlot::SetupAxisLimits(ImAxis_X1, plot_start, plot_end, ImGuiCond_Always);
             for (const auto& [series_label, data] : renderable_plot.getAllData()) {
                 std::vector<double> xs, ys;
                 for (const auto& [timestamp, value] : data) {
