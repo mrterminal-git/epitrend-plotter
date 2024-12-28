@@ -14,6 +14,23 @@ TimeSeriesBuffer<Timestamp, Value>::~TimeSeriesBuffer() {
     }
 }
 
+// Move constructor
+template<typename Timestamp, typename Value>
+TimeSeriesBuffer<Timestamp, Value>::TimeSeriesBuffer(TimeSeriesBuffer&& other) noexcept
+    : data_(std::move(other.data_)),
+      current_start_(std::move(other.current_start_)),
+      current_end_(std::move(other.current_end_)),
+      preload_factor_(other.preload_factor_),
+      preload_callback_(std::move(other.preload_callback_)),
+      stop_background_thread_(other.stop_background_thread_) {
+    // Move the background thread if it is joinable
+    if (other.background_thread_.joinable()) {
+        background_thread_ = std::move(other.background_thread_);
+    }
+    other.stop_background_thread_ = true;
+}
+
+// Move assignment operator
 template<typename Timestamp, typename Value>
 TimeSeriesBuffer<Timestamp, Value>& TimeSeriesBuffer<Timestamp, Value>::operator=(TimeSeriesBuffer&& other) noexcept {
     if (this != &other) {

@@ -1,6 +1,7 @@
 #pragma once
 #include "DataManager.hpp"
 #include "GraphView.hpp"
+#include "GraphViewModel.hpp"
 
 class AppController {
 public:
@@ -12,8 +13,11 @@ public:
 
     void run(); // Main application loop.
 
+    void updatePlottableSensors();
+
 private:
     DataManager dataManager;
+    GraphViewModel viewModel;
     GraphView graphView;
 
     void onViewRangeChanged(double start, double end);
