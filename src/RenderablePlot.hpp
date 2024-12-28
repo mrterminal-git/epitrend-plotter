@@ -41,6 +41,6 @@ private:
     std::string label_; // Plot label
     bool real_time_;    // Real-time plotting flag
     std::pair<Timestamp, Timestamp> plot_range_; // Plot range
-    std::map<std::string, std::map<Timestamp, Value>> data_; // Data for each series
+    std::map<std::string, std::map<Timestamp, Value>> data_; // Data for each sensor and corresponding time-series
     RangeCallback range_callback_; // Callback for range changes
 };
