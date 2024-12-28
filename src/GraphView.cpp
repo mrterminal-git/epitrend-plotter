@@ -408,13 +408,20 @@ void GraphView::renderAllPlots(){
                 ImPlot::PlotLine(series_label.c_str(), xs.data(), ys.data(), xs.size());
             }
 
-            // Update the plot range if it is real-time
+            // Callback plot range if plot range changes
             ImPlotRect limits = ImPlot::GetPlotLimits();
-            renderable_plot.setPlotRange(limits.X.Min, limits.X.Max);
+            if (limits.X.Min != renderable_plot.getPlotRange().first || limits.X.Max != renderable_plot.getPlotRange().second) {
+                renderable_plot.notifyRangeChange(limits.X.Min, limits.X.Max);
+
+                // Update the plot range
+                renderable_plot.setPlotRange(limits.X.Min, limits.X.Max);
+            }
+
+
 
             ImPlot::EndPlot();
         }
-
+        ImGui::Text("Plot range: %s - %s", std::ctime(&plot_start), std::ctime(&plot_end));
         ImGui::End();
     }
 }
