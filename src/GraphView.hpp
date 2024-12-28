@@ -33,4 +33,10 @@ private:
     void actionSubmitAddPlotPopup(AddPlotPopupState& state);
     void renderAddPlotPopup();
 
+    // ==============================
+    // renderAllPlots
+    // ==============================
+    void renderAllPlots();
+
+
 };

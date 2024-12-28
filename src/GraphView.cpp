@@ -354,14 +354,13 @@ void GraphView::renderAddPlotPopup() {
     }
 }
 
+
+
 // ==============================
+// renderAllPlots
 // ==============================
 
-
-void GraphView::renderAll() {
-    // Render "Add plot" button and popup
-    renderAddPlotPopup();
-
+void GraphView::renderAllPlots(){
     // Plot all RenderablePlots in individual windows
     for (const auto& renderable_plot : viewModel_.getRenderablePlots()){
         // Create a sub-window with each plot
@@ -398,4 +397,12 @@ void GraphView::renderAll() {
 
         ImGui::End();
     }
+}
+
+void GraphView::renderAll() {
+    // Render "Add plot" button and popup
+    renderAddPlotPopup();
+
+    // Render all plots
+    renderAllPlots();
 }
