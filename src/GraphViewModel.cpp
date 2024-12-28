@@ -1,6 +1,9 @@
 #include "GraphViewModel.hpp"
 
-void GraphViewModel::addRenderablePlot(const RenderablePlot& object) {
+void GraphViewModel::addRenderablePlot(RenderablePlot& object) {
+    // Set the plot ID
+    object.setPlotId(next_plot_id_++);
+
     renderable_plots_.push_back(object);
 }
 

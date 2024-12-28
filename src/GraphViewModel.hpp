@@ -50,7 +50,7 @@ class GraphViewModel {
 public:
     GraphViewModel() = default;
 
-    void addRenderablePlot(const RenderablePlot& object);
+    void addRenderablePlot(RenderablePlot& object);
     std::vector<RenderablePlot>& getRenderablePlots();
 
     void clear(); // Clear all renderables
@@ -71,4 +71,7 @@ private:
 
     // Add plot popup state
     AddPlotPopupState add_plot_popup_state_;
+
+    // Track the plot id
+    long long next_plot_id_ = 0;
 };
