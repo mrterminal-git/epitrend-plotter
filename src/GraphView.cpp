@@ -4,6 +4,8 @@
 #include <iostream>
 #include <set>
 #include <string_view>
+#include <sstream>
+#include <iomanip>
 
 #include <fmt/format.h>
 #include <imgui.h>
@@ -35,6 +37,55 @@ void GraphView::Draw(const std::string label)
 // ==============================
 // renderAddPlotPopup
 // ==============================
+
+// Helper function to initialize plot range for Brisbane time
+void SetPlotRangeState(AddPlotPopupState& add_plot_pop_up_state) {
+    // Get current time as a chrono time_point
+    std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+    std::chrono::hours max_data_time_range(1); // 1 hour
+
+    // Calculate start time
+    std::chrono::system_clock::time_point start_time = now - max_data_time_range;
+
+    // Convert times to time_t for UTC
+    std::time_t end_time_t = std::chrono::system_clock::to_time_t(now);
+    std::time_t start_time_t = std::chrono::system_clock::to_time_t(start_time);
+
+    // Adjust for Brisbane time (UTC+10)
+    const int brisbane_offset_seconds = 10 * 3600; // +10 hours
+    end_time_t += brisbane_offset_seconds;
+    start_time_t += brisbane_offset_seconds;
+
+    // Convert to tm structure (UTC+10 manually applied)
+    std::tm end_local_time;
+    std::tm start_local_time;
+    gmtime_s(&end_local_time, &end_time_t); // Use gmtime for consistency
+    gmtime_s(&start_local_time, &start_time_t);
+
+    // Format the times using std::ostringstream
+    auto formatTime = [](const std::tm& time_struct, char* buffer, size_t size, const char* format) {
+        std::ostringstream oss;
+        oss << std::put_time(&time_struct, format);
+        std::strncpy(buffer, oss.str().c_str(), size - 1);
+        buffer[size - 1] = '\0'; // Ensure null termination
+    };
+
+    // Set the end plot range
+    formatTime(end_local_time, add_plot_pop_up_state.plot_range_end_year, sizeof(add_plot_pop_up_state.plot_range_end_year), "%Y");
+    formatTime(end_local_time, add_plot_pop_up_state.plot_range_end_month, sizeof(add_plot_pop_up_state.plot_range_end_month), "%m");
+    formatTime(end_local_time, add_plot_pop_up_state.plot_range_end_day, sizeof(add_plot_pop_up_state.plot_range_end_day), "%d");
+    formatTime(end_local_time, add_plot_pop_up_state.plot_range_end_hour, sizeof(add_plot_pop_up_state.plot_range_end_hour), "%H");
+    formatTime(end_local_time, add_plot_pop_up_state.plot_range_end_minute, sizeof(add_plot_pop_up_state.plot_range_end_minute), "%M");
+    formatTime(end_local_time, add_plot_pop_up_state.plot_range_end_second, sizeof(add_plot_pop_up_state.plot_range_end_second), "%S");
+
+    // Set the start plot range
+    formatTime(start_local_time, add_plot_pop_up_state.plot_range_start_year, sizeof(add_plot_pop_up_state.plot_range_start_year), "%Y");
+    formatTime(start_local_time, add_plot_pop_up_state.plot_range_start_month, sizeof(add_plot_pop_up_state.plot_range_start_month), "%m");
+    formatTime(start_local_time, add_plot_pop_up_state.plot_range_start_day, sizeof(add_plot_pop_up_state.plot_range_start_day), "%d");
+    formatTime(start_local_time, add_plot_pop_up_state.plot_range_start_hour, sizeof(add_plot_pop_up_state.plot_range_start_hour), "%H");
+    formatTime(start_local_time, add_plot_pop_up_state.plot_range_start_minute, sizeof(add_plot_pop_up_state.plot_range_start_minute), "%M");
+    formatTime(start_local_time, add_plot_pop_up_state.plot_range_start_second, sizeof(add_plot_pop_up_state.plot_range_start_second), "%S");
+}
 
 // Helper function to render a date/time field
 void renderDateTimeField(const char* label, char* year, char* month, char* day, char* hour, char* minute, char* second) {
@@ -77,6 +128,20 @@ void GraphView::actionSubmitAddPlotPopup(AddPlotPopupState& state) {
     end_time.tm_sec = std::stoi(state.plot_range_end_second);
     std::time_t end = std::mktime(&end_time);
 
+    std::cout << "Start: " << start << " End: " << end << "\n";
+
+    // Convert the start and end timestamps to local time using localtime_s
+    std::tm local_start_time;
+    localtime_s(&local_start_time, &start);
+    std::tm local_end_time;
+    localtime_s(&local_end_time, &end);
+
+    // Convert local tm back to time_t
+    start = std::mktime(&local_start_time);
+    end = std::mktime(&local_end_time);
+
+    std::cout << "Start: " << start << " End: " << end << "\n";
+
     plot.setPlotRange(start, end);
 
     // Add selected sensors to the plot
@@ -85,7 +150,7 @@ void GraphView::actionSubmitAddPlotPopup(AddPlotPopupState& state) {
     }
 
     // Add the plot to the view model
-    // viewModel_.addRenderablePlot(plot);
+    viewModel_.addRenderablePlot(plot);
 
 }
 
@@ -198,62 +263,15 @@ void GraphView::renderAddPlotPopup() {
         // Real-time plot range
         static bool is_range_initialized = false; // Initialization flag
         if(add_plot_pop_up_state.is_real_time && !is_range_initialized) {
-            // Get current time for default plot range
-            std::time_t current_time = std::time(nullptr);
-            std::tm local_time;
-            localtime_s(&local_time, &current_time);
-            std::time_t max_data_time_range = 3600; // 1 hour
-
-            std::time_t start_time = std::time(nullptr) - max_data_time_range;
-            std::tm start_local_time;
-            localtime_s(&start_local_time, &start_time);
-
-            // Set the end plot year, month, day, hour, minute, second to current time
-            std::strftime(add_plot_pop_up_state.plot_range_end_year, sizeof(add_plot_pop_up_state.plot_range_end_year), "%Y", &local_time);
-            std::strftime(add_plot_pop_up_state.plot_range_end_month, sizeof(add_plot_pop_up_state.plot_range_end_month), "%m", &local_time);
-            std::strftime(add_plot_pop_up_state.plot_range_end_day, sizeof(add_plot_pop_up_state.plot_range_end_day), "%d", &local_time);
-            std::strftime(add_plot_pop_up_state.plot_range_end_hour, sizeof(add_plot_pop_up_state.plot_range_end_hour), "%H", &local_time);
-            std::strftime(add_plot_pop_up_state.plot_range_end_minute, sizeof(add_plot_pop_up_state.plot_range_end_minute), "%M", &local_time);
-            std::strftime(add_plot_pop_up_state.plot_range_end_second, sizeof(add_plot_pop_up_state.plot_range_end_second), "%S", &local_time);
-
-            // Set the start plot year, month, day, hour, minute, second to current time - max_data_time_range
-            std::strftime(add_plot_pop_up_state.plot_range_start_year, sizeof(add_plot_pop_up_state.plot_range_start_year), "%Y", &start_local_time);
-            std::strftime(add_plot_pop_up_state.plot_range_start_month, sizeof(add_plot_pop_up_state.plot_range_start_month), "%m", &start_local_time);
-            std::strftime(add_plot_pop_up_state.plot_range_start_day, sizeof(add_plot_pop_up_state.plot_range_start_day), "%d", &start_local_time);
-            std::strftime(add_plot_pop_up_state.plot_range_start_hour, sizeof(add_plot_pop_up_state.plot_range_start_hour), "%H", &start_local_time);
-            std::strftime(add_plot_pop_up_state.plot_range_start_minute, sizeof(add_plot_pop_up_state.plot_range_start_minute), "%M", &start_local_time);
-            std::strftime(add_plot_pop_up_state.plot_range_start_second, sizeof(add_plot_pop_up_state.plot_range_start_second), "%S", &start_local_time);
-
+            // Initialize plot range for Brisbane time
+            SetPlotRangeState(add_plot_pop_up_state);
         }
 
         // User defined plot range
         if(!add_plot_pop_up_state.is_real_time) {
-            // Initialize textboxes with default values only once
-                if (!is_range_initialized) {
-                // Get current time for default plot range
-                std::time_t current_time = std::time(nullptr);
-                std::tm local_time;
-                localtime_s(&local_time, &current_time);
-                std::time_t max_data_time_range = 3600; // 1 hour
-
-                std::time_t start_time = std::time(nullptr) - max_data_time_range;
-                std::tm start_local_time;
-                localtime_s(&start_local_time, &start_time);
-
-                std::strftime(add_plot_pop_up_state.plot_range_start_year, sizeof(add_plot_pop_up_state.plot_range_start_year), "%Y", &start_local_time);
-                std::strftime(add_plot_pop_up_state.plot_range_start_month, sizeof(add_plot_pop_up_state.plot_range_start_month), "%m", &start_local_time);
-                std::strftime(add_plot_pop_up_state.plot_range_start_day, sizeof(add_plot_pop_up_state.plot_range_start_day), "%d", &start_local_time);
-                std::strftime(add_plot_pop_up_state.plot_range_start_hour, sizeof(add_plot_pop_up_state.plot_range_start_hour), "%H", &start_local_time);
-                std::strftime(add_plot_pop_up_state.plot_range_start_minute, sizeof(add_plot_pop_up_state.plot_range_start_minute), "%M", &start_local_time);
-                std::strftime(add_plot_pop_up_state.plot_range_start_second, sizeof(add_plot_pop_up_state.plot_range_start_second), "%S", &start_local_time);
-
-                std::strftime(add_plot_pop_up_state.plot_range_end_year, sizeof(add_plot_pop_up_state.plot_range_end_year), "%Y", &local_time);
-                std::strftime(add_plot_pop_up_state.plot_range_end_month, sizeof(add_plot_pop_up_state.plot_range_end_month), "%m", &local_time);
-                std::strftime(add_plot_pop_up_state.plot_range_end_day, sizeof(add_plot_pop_up_state.plot_range_end_day), "%d", &local_time);
-                std::strftime(add_plot_pop_up_state.plot_range_end_hour, sizeof(add_plot_pop_up_state.plot_range_end_hour), "%H", &local_time);
-                std::strftime(add_plot_pop_up_state.plot_range_end_minute, sizeof(add_plot_pop_up_state.plot_range_end_minute), "%M", &local_time);
-                std::strftime(add_plot_pop_up_state.plot_range_end_second, sizeof(add_plot_pop_up_state.plot_range_end_second), "%S", &local_time);
-
+            if (!is_range_initialized) {
+                // Initialize textboxes with default values only once
+                SetPlotRangeState(add_plot_pop_up_state);
                 is_range_initialized = true;
             }
 
@@ -378,8 +396,9 @@ void GraphView::renderAll() {
 
         }
 
-        if (ImPlot::BeginPlot("")) {
+        if (ImPlot::BeginPlot(("###" + renderable_plot.getLabel()).c_str())) {
             ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
+            ImPlot::SetupAxisLimits(ImAxis_X1, plot_start, plot_end);
             for (const auto& [series_label, data] : renderable_plot.getAllData()) {
                 std::vector<double> xs, ys;
                 for (const auto& [timestamp, value] : data) {
