@@ -19,7 +19,11 @@ public:
     // Draw method
     void Draw(const std::string label);
 
+    using UpdateRangeCallback = std::function<void(const std::string& sensor_id, int plot_id, double start, double end)>;
+
+    void setUpdateRangeCallback(UpdateRangeCallback callback);
 private:
+    UpdateRangeCallback update_range_callback_;
     GraphViewModel& viewModel_;
 
     // ==============================

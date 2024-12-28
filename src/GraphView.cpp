@@ -16,6 +16,7 @@
 // Constructor
 GraphView::GraphView(GraphViewModel& viewModel) : viewModel_(viewModel) {}
 
+// Draw
 void GraphView::Draw(const std::string label)
 {
     //        ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
@@ -34,6 +35,17 @@ void GraphView::Draw(const std::string label)
 
     ImGui::End();
 }
+
+
+
+// ==============================
+// Misc && Helper Functions
+// ==============================
+void GraphView::setUpdateRangeCallback(UpdateRangeCallback callback) {
+    update_range_callback_ = callback;
+}
+
+
 
 // ==============================
 // renderAddPlotPopup
@@ -356,6 +368,7 @@ void GraphView::renderAddPlotPopup() {
 }
 
 
+
 // ==============================
 // renderAllPlots
 // ==============================
@@ -415,6 +428,16 @@ void GraphView::renderAllPlots(){
 
                 // Update the plot range
                 renderable_plot.setPlotRange(limits.X.Min, limits.X.Max);
+
+                // Callback to update the range in the data manager
+                if (update_range_callback_) {
+                    // Update the range for all sensors in the plot
+                    for (const auto& [sensor, _] : renderable_plot.getAllData()) {
+                        update_range_callback_(sensor, renderable_plot.getPlotId(), limits.X.Min, limits.X.Max);
+
+                        std::cout << "Updating range for sensor: " << sensor << " to " << limits.X.Min << " - " << limits.X.Max << std::endl;
+                    }
+                }
             }
 
 
@@ -425,6 +448,11 @@ void GraphView::renderAllPlots(){
         ImGui::End();
     }
 }
+
+
+// ==============================
+// renderAll
+// ==============================
 
 void GraphView::renderAll() {
     // Render "Add plot" button and popup
