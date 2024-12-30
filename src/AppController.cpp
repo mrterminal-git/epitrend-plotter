@@ -19,6 +19,19 @@ AppController::AppController()
     [this](const std::string& sensor_id, int plot_id, double start, double end) {
         dataManager.updateSensorRange(sensor_id, plot_id, static_cast<DataManager::Timestamp>(start), static_cast<DataManager::Timestamp>(end));
     });
+
+    // Start the update viewModel thread
+    update_viewModel_thread_ = std::thread(&AppController::updateViewModel, this);
+    stop_update_viewModel_thread_ = false;
+
+}
+
+// Destructor
+AppController::~AppController() {
+    stop_update_viewModel_thread_ = true;
+    if (update_viewModel_thread_.joinable()) {
+        update_viewModel_thread_.join();
+    }
 }
 
 // Update the plottable sensors in the viewModel from the dataManager buffers
@@ -31,9 +44,22 @@ void AppController::updatePlottableSensors() {
 
 }
 
-void AppController::run() {
-    // Update the viewModel with data from the dataManager
-    // viewModel.updateFromDataManager(dataManager); // IMPLEMENT THIS
+// Update the viewModel with data from the dataManager in a separate thread
+void AppController::updateViewModel() {
+    while (!stop_update_viewModel_thread_) {
+        {
+            std::lock_guard<std::mutex> lock(update_viewModel_mutex_);
+            viewModel.updatePlotsWithData(dataManager);
+            std::cout << "Updating viewModel" << "\n";
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(200)); // Update every second
+    }
+}
 
-    graphView.Draw("Main window");
+void AppController::run() {
+    // Render the graph view
+    {
+        std::lock_guard<std::mutex> lock(update_viewModel_mutex_);
+        graphView.Draw("Main window");
+    }
 }
