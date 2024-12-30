@@ -52,7 +52,7 @@ void AppController::updateViewModel() {
             viewModel.updatePlotsWithData(dataManager);
             std::cout << "Updating viewModel" << "\n";
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(200)); // Update every second
+        std::this_thread::sleep_for(std::chrono::seconds(1)); // Update every second
     }
 }
 
