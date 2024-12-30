@@ -37,7 +37,7 @@ void DataManager::backgroundUpdateTask() {
 
             preloadData(sensor_id, start, end);
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(200)); // Update every 200 milliseconds
+        std::this_thread::sleep_for(std::chrono::seconds(1)); // Update every 200 milliseconds
     }
 }
 
