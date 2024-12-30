@@ -1,7 +1,9 @@
 #pragma once
-#include "RenderablePlot.hpp"
 #include <vector>
 #include <string>
+
+#include "RenderablePlot.hpp"
+#include "DataManager.hpp"
 
 struct AddPlotPopupState {
     std::string window_label;
@@ -61,6 +63,9 @@ public:
 
     // Add plot popup state
     AddPlotPopupState& getAddPlotPopupState();
+
+    // Update plots with data from DataManager
+    void updatePlotsWithData(const DataManager& dataManager);
 
 private:
     // Each renderable plot is a separate window
