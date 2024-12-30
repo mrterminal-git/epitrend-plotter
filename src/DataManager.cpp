@@ -23,19 +23,21 @@ void DataManager::stopBackgroundUpdates() {
     }
 }
 
-// Background update task. CURRENTLY IN TESTING
+// Background update task
 void DataManager::backgroundUpdateTask() {
     while (background_thread_running_) {
-        const time_t current_time = std::time(nullptr);
-        const time_t max_data_time_range = 1000;
-
+        // Loop through all sensors and update the data
         for (auto& [sensor_id, buffer] : buffers_) {
-            // Adjust range as needed
-            Timestamp start = current_time - max_data_time_range / 2;
-            Timestamp end = current_time + max_data_time_range / 2; // Adjust range size
+            // Grab the current range for the sensor
+            auto& ranges = sensor_ranges_[sensor_id];
+
+            // Skip if no ranges are set
+            if (ranges.empty()) continue;
+            auto [start, end] = mergeRanges(ranges);
+
             preloadData(sensor_id, start, end);
         }
-        std::this_thread::sleep_for(std::chrono::seconds(1)); // Update every second
+        std::this_thread::sleep_for(std::chrono::milliseconds(200)); // Update every 200 milliseconds
     }
 }
 
