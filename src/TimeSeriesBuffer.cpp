@@ -102,7 +102,7 @@ std::vector<std::pair<Timestamp, Value>> TimeSeriesBuffer<Timestamp, Value>::get
 }
 
 template<typename Timestamp, typename Value>
-std::map<Timestamp,Value> TimeSeriesBuffer<Timestamp, Value>::getDataMap() {
+std::map<Timestamp,Value> TimeSeriesBuffer<Timestamp, Value>::getDataMap() const {
     return data_;
 }
 
