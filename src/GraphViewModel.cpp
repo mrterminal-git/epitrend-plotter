@@ -98,8 +98,9 @@ void GraphViewModel::updatePlotsWithData(const DataManager& dataManager) {
                 }
 
                 // Find the end iterator using the spacing and the plot range
-                int search_end_loop_counter = 0;
-                while (end->first < plot_range.second && search_end_loop_counter < 10) {
+                for (int search_end_loop_counter = 0;
+                end->first < plot_range.second && search_end_loop_counter < 10;
+                ++search_end_loop_counter) {
                     int num_elements = (plot_range.second - end->first) / spacing;
 
                     // Check the distance between the current end iterator and the end of data object
