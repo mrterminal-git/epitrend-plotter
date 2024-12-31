@@ -1,5 +1,4 @@
 #include "GraphViewModel.hpp"
-#include <iostream>
 
 void GraphViewModel::addRenderablePlot(RenderablePlot& object) {
     // Set the plot ID
@@ -29,14 +28,6 @@ AddPlotPopupState& GraphViewModel::getAddPlotPopupState() {
 }
 
 void GraphViewModel::updatePlotsWithData(const DataManager& dataManager) {
-    // for (auto& renderable_plot : renderable_plots_) {
-    //     for (const auto& sensor_id : plot.getSelectedSensors()) {
-    //         if (dataManager.getBuffers().find(sensor_id) != dataManager.getBuffers().end()) {
-    //             plot.setData(sensor_id, dataManager.getBuffers().at(sensor_id).getDataMap());
-    //         }
-    //     }
-    // }
-
     // Get the all time-series data for each sensor from dataManager
     const auto& buffers = dataManager.getBuffers();
 
@@ -70,8 +61,6 @@ void GraphViewModel::updatePlotsWithData(const DataManager& dataManager) {
                 ++search_start_loop_counter) {
                     int num_elements = (start->first - plot_range.first) / spacing;
 
-                    std::cout << "num_elements: " << num_elements << "\n";
-
                     // Check if the start iterator is already pointing the correct plot range start
                     if (num_elements <= 0) {
                         break;
@@ -81,10 +70,6 @@ void GraphViewModel::updatePlotsWithData(const DataManager& dataManager) {
                     if (distance(start, data.end()) > num_elements) {
                         start = next(start, num_elements);
                     } else {
-                        std::cout << "distance: too large \n";
-                        std::cout << "distance: " << distance(start, data.end()) << "\n";
-                        std::cout << "performing bi-section search \n";
-
                         // Perform a bi-section search from the beginning of data object to the current start iterator
                         auto it = data.begin();
                         auto it2 = start;
@@ -98,7 +83,6 @@ void GraphViewModel::updatePlotsWithData(const DataManager& dataManager) {
                         }
                         start = it;
 
-                        std::cout << "updated start iterator. search_end_loop -> " << search_start_loop_counter << "\n";
                         break;
                     }
                 }
@@ -118,17 +102,10 @@ void GraphViewModel::updatePlotsWithData(const DataManager& dataManager) {
                 while (end->first < plot_range.second && search_end_loop_counter < 10) {
                     int num_elements = (plot_range.second - end->first) / spacing;
 
-                    // std::cout << "num_elements: " << num_elements << "\n";
-
                     // Check the distance between the current end iterator and the end of data object
                     if (distance(end, data.end()) > num_elements) {
                         end = next(end, num_elements);
-                        // std::cout << "updated end iterator. search_end_loop -> " << search_end_loop_counter << "\n";
                     } else {
-                        // std::cout << "distance: too large \n";
-                        // std::cout << "distance: " << distance(end, data.end()) << "\n";
-                        // std::cout << "performing bi-section search \n";
-
                         // Perform a bi-section search from the current end iterator to the end of data object
                         auto it = end;
                         auto it2 = data.end();
@@ -142,7 +119,6 @@ void GraphViewModel::updatePlotsWithData(const DataManager& dataManager) {
                         }
                         end = it;
 
-                        // std::cout << "updated end iterator. search_end_loop -> " << search_end_loop_counter << "\n";
                         break;
                     }
                     search_end_loop_counter++;

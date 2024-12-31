@@ -63,3 +63,4 @@ void AppController::run() {
         graphView.Draw("Main window");
     }
 }
+
