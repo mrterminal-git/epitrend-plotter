@@ -412,17 +412,20 @@ void GraphView::renderAllPlots(){
                 ImPlot::SetupAxisLimits(ImAxis_X1, plot_start, plot_end, ImGuiCond_Once);
             }
 
+            // Get the current plot limits
+            ImPlotRect limits = ImPlot::GetPlotLimits();
+            double range = limits.X.Max - limits.X.Min;
+            int num_pixels = ImPlot::GetPlotPos().x + ImPlot::GetPlotSize().x;
+
             for (const auto& [series_label, data] : renderable_plot.getAllData()) {
-                std::vector<double> xs, ys;
-                for (const auto& [timestamp, value] : data) {
-                    xs.push_back(timestamp);
-                    ys.push_back(value);
-                }
+                // Get downsampled data
+                auto [xs, ys] = viewModel_.getDownsampledData(renderable_plot, series_label, range, num_pixels);
+
                 ImPlot::PlotLine(series_label.c_str(), xs.data(), ys.data(), xs.size());
             }
 
             // Callback plot range if plot range changes
-            ImPlotRect limits = ImPlot::GetPlotLimits();
+            // ImPlotRect limits = ImPlot::GetPlotLimits();
             if (limits.X.Min != renderable_plot.getPlotRange().first || limits.X.Max != renderable_plot.getPlotRange().second) {
                 renderable_plot.notifyRangeChange(limits.X.Min, limits.X.Max);
 
@@ -439,8 +442,6 @@ void GraphView::renderAllPlots(){
                     }
                 }
             }
-
-
 
             ImPlot::EndPlot();
         }

@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include "GraphViewModel.hpp"
 
 void GraphViewModel::addRenderablePlot(RenderablePlot& object) {
@@ -144,4 +146,41 @@ void GraphViewModel::updatePlotsWithData(const DataManager& dataManager) {
             }
         }
     }
+}
+
+std::pair<std::vector<DataManager::Timestamp>, std::vector<DataManager::Value>> GraphViewModel::getDownsampledData(
+    const RenderablePlot& plot, const std::string& sensor, double range, int num_pixels) {
+    std::vector<DataManager::Timestamp> timestamps;
+    std::vector<DataManager::Value> values;
+    const auto& data = plot.getData(sensor);
+
+    if (data.empty()) {
+        return {timestamps, values};
+    }
+
+    int step_size = static_cast<int>(range / num_pixels);
+    if (step_size <= 0) {
+        step_size = 1;
+    }
+
+    int num_points_to_render = data.size() / step_size;
+    if (num_points_to_render <= 0) {
+        num_points_to_render = data.size();
+    }
+
+    auto it = data.begin();
+    for (int i = 0; i < num_points_to_render && it != data.end(); ++i, std::advance(it, step_size)) {
+        timestamps.push_back(it->first);
+        values.push_back(it->second);
+    }
+
+    std::cout << "====================================\n";
+    std::cout << "sensor: " << sensor << "\n";
+    std::cout << "range: " << range << "\n";
+    std::cout << "data.size(): " << data.size() << "\n";
+    std::cout << "num_pixels: " << num_pixels << "\n";
+    std::cout << "num_points_to_render: " << num_points_to_render << "\n";
+    std::cout << "step_size: " << step_size << "\n";
+
+    return {timestamps, values};
 }

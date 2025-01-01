@@ -67,6 +67,11 @@ public:
     // Update plots with data from DataManager
     void updatePlotsWithData(const DataManager& dataManager);
 
+    // Get downsampled data for a specific sensor
+    std::pair<std::vector<DataManager::Timestamp>, std::vector<DataManager::Value>> getDownsampledData(
+    const RenderablePlot& plot, const std::string& sensor, double range, int num_pixels);
+
+
 private:
     // Each renderable plot is a separate window
     std::vector<RenderablePlot> renderable_plots_;
@@ -79,4 +84,5 @@ private:
 
     // Track the plot id
     long long next_plot_id_ = 0;
+
 };
