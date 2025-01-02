@@ -1,7 +1,10 @@
 #include <iostream>
+#include <cmath>
 
 #include "GraphViewModel.hpp"
 
+GraphViewModel::GraphViewModel(std::mutex& mutex)
+    : update_viewModel_mutex_(mutex) {}
 void GraphViewModel::addRenderablePlot(RenderablePlot& object) {
     // Set the plot ID
     object.setPlotId(next_plot_id_++);
@@ -30,10 +33,15 @@ AddPlotPopupState& GraphViewModel::getAddPlotPopupState() {
 }
 
 void GraphViewModel::updatePlotsWithData(const DataManager& dataManager) {
+    std::vector<RenderablePlot> temp_plots;
+
     // Get the all time-series data for each sensor from dataManager
     const auto& buffers = dataManager.getBuffers();
 
     for (auto& renderable_plot : renderable_plots_) {
+        // Copy the plot to the temporary buffer
+        temp_plots.push_back(renderable_plot);
+
         // Loop through the sensors in each renderable plot
         for (const auto& [sensor, _] : renderable_plot.getAllData()) {
             // Grab the time-series data for that sensor from dataManager
@@ -141,10 +149,15 @@ void GraphViewModel::updatePlotsWithData(const DataManager& dataManager) {
                     data_in_range[start->first] = start->second;
                 }
 
-                renderable_plot.setData(sensor, data_in_range);
-
+                temp_plots.back().setData(sensor, data_in_range);
             }
         }
+    }
+
+    // Lock the mutex only when updating the view model
+    {
+        std::lock_guard<std::mutex> lock(update_viewModel_mutex_);
+        renderable_plots_ = std::move(temp_plots);
     }
 }
 
@@ -158,7 +171,7 @@ std::pair<std::vector<DataManager::Timestamp>, std::vector<DataManager::Value>> 
         return {timestamps, values};
     }
 
-    int step_size = static_cast<int>(range / num_pixels);
+    int step_size = static_cast<int>(std::pow(range / num_pixels, 2));
     if (step_size <= 0) {
         step_size = 1;
     }
@@ -168,10 +181,16 @@ std::pair<std::vector<DataManager::Timestamp>, std::vector<DataManager::Value>> 
         num_points_to_render = data.size();
     }
 
+    timestamps.reserve(num_points_to_render);
+    values.reserve(num_points_to_render);
+
     auto it = data.begin();
-    for (int i = 0; i < num_points_to_render && it != data.end(); ++i, std::advance(it, step_size)) {
+    int counter = 0;
+    for (int i = 0; i < num_points_to_render && it != data.end(); ++i) {
         timestamps.push_back(it->first);
         values.push_back(it->second);
+        std::advance(it, step_size); // Advance the iterator by step_size
+        counter++;
     }
 
     std::cout << "====================================\n";
@@ -181,6 +200,7 @@ std::pair<std::vector<DataManager::Timestamp>, std::vector<DataManager::Value>> 
     std::cout << "num_pixels: " << num_pixels << "\n";
     std::cout << "num_points_to_render: " << num_points_to_render << "\n";
     std::cout << "step_size: " << step_size << "\n";
+    std::cout << "counter: " << counter << "\n";
 
     return {timestamps, values};
 }

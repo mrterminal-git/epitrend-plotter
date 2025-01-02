@@ -50,7 +50,7 @@ struct AddPlotPopupState {
 
 class GraphViewModel {
 public:
-    GraphViewModel() = default;
+    GraphViewModel(std::mutex& mutex);
 
     void addRenderablePlot(RenderablePlot& object);
     std::vector<RenderablePlot>& getRenderablePlots();
@@ -84,5 +84,8 @@ private:
 
     // Track the plot id
     long long next_plot_id_ = 0;
+
+    // Mutex for updating the view model
+    std::mutex& update_viewModel_mutex_;
 
 };

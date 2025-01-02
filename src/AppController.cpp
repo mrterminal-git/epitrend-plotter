@@ -4,7 +4,7 @@
 
 // Constructor
 AppController::AppController()
-: dataManager(), viewModel(), graphView(viewModel) {
+    : dataManager(), viewModel(update_viewModel_mutex_), graphView(viewModel) {
     dataManager.addSensor("sensor_1"); // for testing
     dataManager.addSensor("sensor_2"); // for testing
 
@@ -47,18 +47,15 @@ void AppController::updatePlottableSensors() {
 // Update the viewModel with data from the dataManager in a separate thread
 void AppController::updateViewModel() {
     while (!stop_update_viewModel_thread_) {
-        {
-            std::lock_guard<std::mutex> lock(update_viewModel_mutex_);
-            viewModel.updatePlotsWithData(dataManager);
-            std::cout << "Updating viewModel" << "\n";
-        }
-        std::this_thread::sleep_for(std::chrono::seconds(1)); // Update every second
+        viewModel.updatePlotsWithData(dataManager);
+        std::this_thread::sleep_for(std::chrono::seconds(10)); // Update every second
     }
 }
 
 void AppController::run() {
     // Render the graph view
     {
+        // Lock the mutex when updating the view model in updateViewModel()
         std::lock_guard<std::mutex> lock(update_viewModel_mutex_);
         graphView.Draw("Main window");
     }
