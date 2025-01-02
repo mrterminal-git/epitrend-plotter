@@ -48,7 +48,7 @@ void AppController::updatePlottableSensors() {
 void AppController::updateViewModel() {
     while (!stop_update_viewModel_thread_) {
         viewModel.updatePlotsWithData(dataManager);
-        std::this_thread::sleep_for(std::chrono::seconds(10)); // Update every second
+        std::this_thread::sleep_for(std::chrono::seconds(1)); // Update every second
     }
 }
 

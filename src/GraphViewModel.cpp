@@ -50,7 +50,7 @@ void GraphViewModel::updatePlotsWithData(const DataManager& dataManager) {
                 // Only update the data within the plot range
                 auto plot_range = renderable_plot.getPlotRange();
                 auto data = buffers.at(sensor).getDataMap();
-                std::map<DataManager::Timestamp, DataManager::Value> data_in_range;
+                RenderablePlot::DataSeries data_in_range;
 
                 // Find the lowest timestamps in the plot range
                 auto start = data.begin();
@@ -145,8 +145,9 @@ void GraphViewModel::updatePlotsWithData(const DataManager& dataManager) {
                 }
 
                 // Copy the data in the plot range
-                for (; start != end; ++start) {
-                    data_in_range[start->first] = start->second;
+                for (auto it = start; it != end; ++it) {
+                    data_in_range.first.push_back(it->first);
+                    data_in_range.second.push_back(it->second);
                 }
 
                 temp_plots.back().setData(sensor, data_in_range);
@@ -167,36 +168,37 @@ std::pair<std::vector<DataManager::Timestamp>, std::vector<DataManager::Value>> 
     std::vector<DataManager::Value> values;
     const auto& data = plot.getData(sensor);
 
-    if (data.empty()) {
+    if (data.first.empty() || data.second.empty()) {
         return {timestamps, values};
     }
 
-    int step_size = static_cast<int>(std::pow(range / num_pixels, 2));
+    int step_size = static_cast<int>(range / num_pixels) * 4;
     if (step_size <= 0) {
         step_size = 1;
     }
 
-    int num_points_to_render = data.size() / step_size;
+    int num_points_to_render = data.first.size() / step_size;
     if (num_points_to_render <= 0) {
-        num_points_to_render = data.size();
+        num_points_to_render = data.first.size();
     }
 
     timestamps.reserve(num_points_to_render);
     values.reserve(num_points_to_render);
 
-    auto it = data.begin();
     int counter = 0;
-    for (int i = 0; i < num_points_to_render && it != data.end(); ++i) {
-        timestamps.push_back(it->first);
-        values.push_back(it->second);
-        std::advance(it, step_size); // Advance the iterator by step_size
+    int data_pos = 0;
+    for (int i = 0;
+        i < num_points_to_render && data_pos < data.first.size();
+        ++i, data_pos += step_size) {
+        timestamps.push_back(data.first.at(data_pos));
+        values.push_back(data.second.at(data_pos));
         counter++;
     }
 
     std::cout << "====================================\n";
     std::cout << "sensor: " << sensor << "\n";
     std::cout << "range: " << range << "\n";
-    std::cout << "data.size(): " << data.size() << "\n";
+    std::cout << "data.size(): " << data.first.size() << "\n";
     std::cout << "num_pixels: " << num_pixels << "\n";
     std::cout << "num_points_to_render: " << num_points_to_render << "\n";
     std::cout << "step_size: " << step_size << "\n";

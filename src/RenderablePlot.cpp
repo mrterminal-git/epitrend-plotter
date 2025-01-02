@@ -12,7 +12,7 @@ void RenderablePlot::setWindowLabel(const std::string& window_label) {
     window_label_ = window_label;
 }
 
-void RenderablePlot::setData(const std::string& series_label, const std::map<Timestamp, Value>& data) {
+void RenderablePlot::setData(const std::string& series_label, const RenderablePlot::DataSeries& data) {
     data_[series_label] = data;
 }
 
@@ -38,16 +38,11 @@ const std::string& RenderablePlot::getWindowLabel() const {
     return window_label_;
 }
 
-const std::map<RenderablePlot::Timestamp, RenderablePlot::Value>& RenderablePlot::getData(const std::string& series_label) const {
-    static const std::map<Timestamp, Value> empty_data;
-    auto it = data_.find(series_label);
-    if (it != data_.end()) {
-        return it->second;
-    }
-    return empty_data;
+const RenderablePlot::DataSeries& RenderablePlot::getData(const std::string& sensor) const {
+    return data_.at(sensor);
 }
 
-const std::map<std::string, std::map<RenderablePlot::Timestamp, RenderablePlot::Value>> RenderablePlot::getAllData() const {
+const std::map<std::string, RenderablePlot::DataSeries> RenderablePlot::getAllData() const {
     return data_;
 }
 
@@ -75,8 +70,17 @@ void RenderablePlot::print() const {
     std::cout << "Data: " << "\n";
     for (const auto& [series_label, data] : data_) {
         std::cout << "Series: " << series_label << "\n";
-        for (const auto& [timestamp, value] : data) {
-            std::cout << timestamp << ": " << value << "\n";
+
+        // Print all data points
+        const auto& [timestamps, values] = data;
+
+        if (timestamps.size() != values.size()) {
+            std::cout << "Error: timestamps and values are not the same size\n";
+            return;
+        }
+
+        for (size_t i = 0; i < timestamps.size(); ++i) {
+            std::cout << timestamps[i] << ": " << values[i] << "\n";
         }
     }
 }
