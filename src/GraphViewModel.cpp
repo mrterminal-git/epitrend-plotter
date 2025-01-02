@@ -146,8 +146,7 @@ void GraphViewModel::updatePlotsWithData(const DataManager& dataManager) {
 
                 // Copy the data in the plot range
                 for (auto it = start; it != end; ++it) {
-                    data_in_range.first.push_back(it->first);
-                    data_in_range.second.push_back(it->second);
+                    data_in_range.push_back({it->first, it->second});
                 }
 
                 temp_plots.back().setData(sensor, data_in_range);
@@ -168,7 +167,7 @@ std::pair<std::vector<DataManager::Timestamp>, std::vector<DataManager::Value>> 
     std::vector<DataManager::Value> values;
     const auto& data = plot.getData(sensor);
 
-    if (data.first.empty() || data.second.empty()) {
+    if (data.empty()) {
         return {timestamps, values};
     }
 
@@ -177,9 +176,9 @@ std::pair<std::vector<DataManager::Timestamp>, std::vector<DataManager::Value>> 
         step_size = 1;
     }
 
-    int num_points_to_render = data.first.size() / step_size;
+    int num_points_to_render = data.size() / step_size;
     if (num_points_to_render <= 0) {
-        num_points_to_render = data.first.size();
+        num_points_to_render = data.size();
     }
 
     timestamps.reserve(num_points_to_render);
@@ -188,17 +187,17 @@ std::pair<std::vector<DataManager::Timestamp>, std::vector<DataManager::Value>> 
     int counter = 0;
     int data_pos = 0;
     for (int i = 0;
-        i < num_points_to_render && data_pos < data.first.size();
+        i < num_points_to_render && data_pos < data.size();
         ++i, data_pos += step_size) {
-        timestamps.push_back(data.first.at(data_pos));
-        values.push_back(data.second.at(data_pos));
+        timestamps.push_back(data.at(data_pos).first);
+        values.push_back(data.at(data_pos).second);
         counter++;
     }
 
     std::cout << "====================================\n";
     std::cout << "sensor: " << sensor << "\n";
     std::cout << "range: " << range << "\n";
-    std::cout << "data.size(): " << data.first.size() << "\n";
+    std::cout << "data.size(): " << data.size() << "\n";
     std::cout << "num_pixels: " << num_pixels << "\n";
     std::cout << "num_points_to_render: " << num_points_to_render << "\n";
     std::cout << "step_size: " << step_size << "\n";

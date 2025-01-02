@@ -72,15 +72,8 @@ void RenderablePlot::print() const {
         std::cout << "Series: " << series_label << "\n";
 
         // Print all data points
-        const auto& [timestamps, values] = data;
-
-        if (timestamps.size() != values.size()) {
-            std::cout << "Error: timestamps and values are not the same size\n";
-            return;
-        }
-
-        for (size_t i = 0; i < timestamps.size(); ++i) {
-            std::cout << timestamps[i] << ": " << values[i] << "\n";
+        for (const auto& [timestamp, value] : data) {
+            std::cout << timestamp << ": " << value << "\n";
         }
     }
 }

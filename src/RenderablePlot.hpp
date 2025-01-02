@@ -10,7 +10,7 @@ public:
     using Timestamp = double;
     using Value = double;
     using RangeCallback = std::function<void(Timestamp start, Timestamp end)>;
-    using DataSeries = std::pair<std::vector<Timestamp>, std::vector<Value>>;
+    using DataSeries = std::vector<std::pair<Timestamp, Value>>;
 
     // Constructor
     RenderablePlot(const std::string& label, bool real_time = true);
