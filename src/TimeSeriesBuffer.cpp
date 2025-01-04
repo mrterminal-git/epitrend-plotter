@@ -84,9 +84,11 @@ void TimeSeriesBuffer<Timestamp, Value>::setRange(Timestamp start, Timestamp end
 
 template<typename Timestamp, typename Value>
 void TimeSeriesBuffer<Timestamp, Value>::addData(const std::vector<std::pair<Timestamp, Value>>& new_data) {
-    std::lock_guard<std::mutex> lock(data_mutex_);
-    for (const auto& entry : new_data) {
-        data_[entry.first] = entry.second;
+    {
+        std::lock_guard<std::mutex> lock(data_mutex_);
+        for (const auto& entry : new_data) {
+            data_[entry.first] = entry.second;
+        }
     }
     cleanup();
 }
@@ -108,11 +110,22 @@ std::map<Timestamp,Value> TimeSeriesBuffer<Timestamp, Value>::getDataMap() const
 
 template<typename Timestamp, typename Value>
 void TimeSeriesBuffer<Timestamp, Value>::cleanup() {
+    std::lock_guard<std::mutex> lock(data_mutex_);
     Timestamp retention_start = current_start_ - (current_end_ - current_start_) * preload_factor_;
     auto it = data_.lower_bound(retention_start);
 
+    Timestamp retention_end = current_end_ + (current_end_ - current_start_) * preload_factor_;
+
     // Remove all entries before retention_start
     data_.erase(data_.begin(), it);
+
+    // Remove all entries after retention_end
+    it = data_.upper_bound(retention_end);
+
+    // Check if the iterator is valid
+    if (it != data_.end()) {
+        data_.erase(it, data_.end());
+    }
 }
 
 template class TimeSeriesBuffer<double, double>;
