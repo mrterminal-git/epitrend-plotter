@@ -65,7 +65,7 @@ public:
     AddPlotPopupState& getAddPlotPopupState();
 
     // Update plots with data from DataManager
-    void updatePlotsWithData(const DataManager& dataManager);
+    void updatePlotsWithData(DataManager& dataManager);
 
     // Get downsampled data for a specific sensor
     std::pair<std::vector<DataManager::Timestamp>, std::vector<DataManager::Value>> getDownsampledData(
