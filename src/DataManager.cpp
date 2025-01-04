@@ -26,24 +26,60 @@ void DataManager::stopBackgroundUpdates() {
 // Background update task
 void DataManager::backgroundUpdateTask() {
     while (background_thread_running_) {
-        // Loop through all sensors and update the data
-        for (auto& [sensor_id, buffer] : buffers_) {
-            // Grab the current range for the sensor
-            auto& ranges = sensor_ranges_[sensor_id];
+        {
+            std::lock_guard<std::mutex> lock(buffer_mutex_);
 
-            // Skip if no ranges are set
-            if (ranges.empty()) continue;
-            auto [start, end] = mergeRanges(ranges);
+            // Iterate through all sensors and update the data
+            for (auto& [sensor_id, buffer] : buffers_) {
+                // Grab the current range for the sensor
+                auto& ranges = sensor_ranges_[sensor_id];
 
-            preloadData(sensor_id, start, end);
+                // Skip if no ranges are set
+                if (ranges.empty()) continue;
+                auto [start, end] = mergeRanges(ranges);
+
+                preloadData(sensor_id, start, end);
+            }
         }
-        std::this_thread::sleep_for(std::chrono::seconds(1)); // Update every 200 milliseconds
+        std::this_thread::sleep_for(std::chrono::seconds(1)); // Update every second
     }
 }
 
-// Get all buffers
+// Get all buffers. UNSAFE ACCESS
 const std::unordered_map<std::string, TimeSeriesBuffer<DataManager::Timestamp, DataManager::Value>>& DataManager::getBuffers() const {
     return buffers_;
+}
+
+// Get a snapshot of the buffer for a specific sensor. SAFE ACCESS
+std::vector<std::pair<DataManager::Timestamp, DataManager::Value>> DataManager::getBuffersSnapshot(
+    const std::string& sensor_label, Timestamp start, Timestamp end) {
+    std::lock_guard<std::mutex> lock(buffer_mutex_);
+
+    // Find the buffer
+    auto it = buffers_.find(sensor_label);
+    if (it == buffers_.end()) {
+        return {}; // Return empty if sensor not found
+    }
+
+    // Get the buffer and ensure it's sorted
+    const auto& buffer = it->second.getData();
+    if (buffer.empty()) {
+        return {};
+    }
+
+    // Use binary search to find the start and end iterators
+    auto lower = std::lower_bound(buffer.begin(), buffer.end(), start,
+        [](const auto& entry, const Timestamp& value) {
+            return entry.first < value;
+        });
+
+    auto upper = std::upper_bound(buffer.begin(), buffer.end(), end,
+        [](const Timestamp& value, const auto& entry) {
+            return value < entry.first;
+        });
+
+    // Create a snapshot using the range
+    return std::vector<std::pair<Timestamp, Value>>(lower, upper);
 }
 
 // Initialize a buffer for a specific machine
@@ -95,6 +131,7 @@ void DataManager::preloadData(const std::string& sensor_id, Timestamp start, Tim
     addSensorData(sensor_id, new_data);
 }
 
+// Merge ranges across all plots for a specific sensor
 std::pair<DataManager::Timestamp, DataManager::Timestamp> DataManager::mergeRanges(
     const std::unordered_map<int, std::pair<DataManager::Timestamp, DataManager::Timestamp>>& ranges) {
     if (ranges.empty()) return {0, 0};
