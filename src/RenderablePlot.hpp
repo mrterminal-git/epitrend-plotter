@@ -10,6 +10,7 @@ public:
     using Timestamp = double;
     using Value = double;
     using RangeCallback = std::function<void(Timestamp start, Timestamp end)>;
+    using DataSeries = std::vector<std::pair<Timestamp, Value>>;
 
     // Constructor
     RenderablePlot(const std::string& label, bool real_time = true);
@@ -17,7 +18,7 @@ public:
     // Setters
     void setLabel(const std::string& label);
     void setWindowLabel(const std::string& window_label);
-    void setData(const std::string& series_label, const std::map<Timestamp, Value>& data);
+    void setData(const std::string& series_label, const DataSeries& data);
     void setPlotRange(Timestamp start, Timestamp end);
     void setRealTime(bool real_time);
     void setRangeCallback(const RangeCallback& callback);
@@ -26,8 +27,8 @@ public:
     // Getters
     const std::string& getLabel() const;
     const std::string& getWindowLabel() const;
-    const std::map<Timestamp, Value>& getData(const std::string& series_label) const;
-    const std::map<std::string, std::map<Timestamp, Value>> getAllData() const;
+    const DataSeries& getData(const std::string& series_label) const;
+    const std::map<std::string, DataSeries> getAllData() const;
     const std::pair<Timestamp, Timestamp>& getPlotRange() const;
     bool isRealTime() const;
     long long getPlotId() const;
@@ -43,7 +44,7 @@ private:
     std::string label_; // Plot label
     bool real_time_;    // Real-time plotting flag
     std::pair<Timestamp, Timestamp> plot_range_; // Plot range
-    std::map<std::string, std::map<Timestamp, Value>> data_; // Data for each sensor and corresponding time-series
+    std::map<std::string, DataSeries> data_; // Data for each sensor and corresponding time-series
     RangeCallback range_callback_; // Callback for range changes
 
     long long plot_id_;

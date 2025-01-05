@@ -1,7 +1,9 @@
 #pragma once
-#include "RenderablePlot.hpp"
 #include <vector>
 #include <string>
+
+#include "RenderablePlot.hpp"
+#include "DataManager.hpp"
 
 struct AddPlotPopupState {
     std::string window_label;
@@ -48,7 +50,7 @@ struct AddPlotPopupState {
 
 class GraphViewModel {
 public:
-    GraphViewModel() = default;
+    GraphViewModel(std::mutex& mutex);
 
     void addRenderablePlot(RenderablePlot& object);
     std::vector<RenderablePlot>& getRenderablePlots();
@@ -62,6 +64,14 @@ public:
     // Add plot popup state
     AddPlotPopupState& getAddPlotPopupState();
 
+    // Update plots with data from DataManager
+    void updatePlotsWithData(DataManager& dataManager);
+
+    // Get downsampled data for a specific sensor
+    std::pair<std::vector<DataManager::Timestamp>, std::vector<DataManager::Value>> getDownsampledData(
+    const RenderablePlot& plot, const std::string& sensor, double range, int num_pixels);
+
+
 private:
     // Each renderable plot is a separate window
     std::vector<RenderablePlot> renderable_plots_;
@@ -74,4 +84,8 @@ private:
 
     // Track the plot id
     long long next_plot_id_ = 0;
+
+    // Mutex for updating the view model
+    std::mutex& update_viewModel_mutex_;
+
 };

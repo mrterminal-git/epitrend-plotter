@@ -12,7 +12,9 @@ public:
     DataManager();
     ~DataManager();
 
-    const std::unordered_map<std::string, TimeSeriesBuffer<Timestamp, Value>>& getBuffers() const;
+    const std::unordered_map<std::string, TimeSeriesBuffer<Timestamp, Value>>& getBuffers() const; // Unsafe access
+    std::vector<std::pair<Timestamp, Value>> getBuffersSnapshot(
+        const std::string& sensor_label, Timestamp start, Timestamp end); // Safe access
 
     void addSensor (const std::string& sensor_id);
     void updateSensorRange(const std::string& sensor_id, int plot_id, Timestamp start, Timestamp end);
@@ -27,6 +29,8 @@ private:
 
     std::thread background_thread_;
     std::atomic<bool> background_thread_running_;
+
+    std::mutex buffer_mutex_;
 
     void preloadData(const std::string& sensor_id, Timestamp start, Timestamp end);
     void backgroundUpdateTask();

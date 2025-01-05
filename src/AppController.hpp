@@ -9,16 +9,19 @@ public:
     using Value = double;
 
     AppController();
-    // ~AppController();
+    ~AppController();
 
     void run(); // Main application loop.
 
     void updatePlottableSensors();
+    void updateViewModel();
 
 private:
     DataManager dataManager;
     GraphViewModel viewModel;
     GraphView graphView;
 
-    void onViewRangeChanged(double start, double end);
+    std::thread update_viewModel_thread_;
+    std::mutex update_viewModel_mutex_;
+    bool stop_update_viewModel_thread_;
 };
