@@ -35,9 +35,6 @@ AddPlotPopupState& GraphViewModel::getAddPlotPopupState() {
 void GraphViewModel::updatePlotsWithData(DataManager& dataManager) {
     std::vector<RenderablePlot> temp_plots;
 
-    // Get the all time-series data for each sensor from dataManager
-    const auto& buffers = dataManager.getBuffers();
-
     // Get all the time-series data for each from dataManager via getBuffersSnapshot
     for (auto& renderable_plot : renderable_plots_) {
         // Copy the plot to the temporary buffer
@@ -49,7 +46,7 @@ void GraphViewModel::updatePlotsWithData(DataManager& dataManager) {
              = dataManager.getBuffersSnapshot(
                 sensor, renderable_plot.getPlotRange().first, renderable_plot.getPlotRange().second);
 
-                temp_plots.back().setData(sensor, data_in_range);
+            temp_plots.back().setData(sensor, data_in_range);
         }
 
     }
