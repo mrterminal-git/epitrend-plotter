@@ -32,6 +32,7 @@ public:
     const std::pair<Timestamp, Timestamp>& getPlotRange() const;
     bool isRealTime() const;
     long long getPlotId() const;
+    const std::vector<std::string> getAllSensors() const;
 
     // Print object
     void print() const;

@@ -417,7 +417,10 @@ void GraphView::renderAllPlots(){
             double range = limits.X.Max - limits.X.Min;
             int num_pixels = ImPlot::GetPlotPos().x + ImPlot::GetPlotSize().x;
 
-            for (const auto& [series_label, data] : renderable_plot.getAllData()) {
+            // Get all sensors in the plot
+            const std::vector<std::string> sensors = renderable_plot.getAllSensors();
+
+            for (const auto& series_label : sensors) {
                 // Get downsampled data
                 auto [xs, ys] = viewModel_.getDownsampledData(renderable_plot, series_label, range, num_pixels);
 
@@ -435,7 +438,7 @@ void GraphView::renderAllPlots(){
                 // Callback to update the range in the data manager
                 if (update_range_callback_) {
                     // Update the range for all sensors in the plot
-                    for (const auto& [sensor, _] : renderable_plot.getAllData()) {
+                    for (const auto& sensor : sensors) {
                         update_range_callback_(sensor, renderable_plot.getPlotId(), limits.X.Min, limits.X.Max);
 
                         std::cout << "Updating range for sensor: " << sensor << " to " << limits.X.Min << " - " << limits.X.Max << std::endl;

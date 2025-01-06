@@ -77,3 +77,14 @@ void RenderablePlot::print() const {
         }
     }
 }
+
+const std::vector<std::string> RenderablePlot::getAllSensors() const {
+    std::vector<std::string> sensors;
+    // Pre-allocate space
+    sensors.reserve(data_.size());
+
+    for (const auto& [sensor, _] : data_) {
+        sensors.push_back(sensor);
+    }
+    return sensors;
+}
