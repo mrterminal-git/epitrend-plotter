@@ -84,11 +84,10 @@ void TimeSeriesBuffer<Timestamp, Value>::setRange(Timestamp start, Timestamp end
 
 template<typename Timestamp, typename Value>
 void TimeSeriesBuffer<Timestamp, Value>::addData(const std::vector<std::pair<Timestamp, Value>>& new_data) {
+    // Lock the data mutex and copy the temporary buffer into the main buffer
     {
         std::lock_guard<std::mutex> lock(data_mutex_);
-        for (const auto& entry : new_data) {
-            data_[entry.first] = entry.second;
-        }
+        data_.insert(new_data.begin(), new_data.end());
     }
     cleanup();
 }
