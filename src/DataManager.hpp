@@ -23,6 +23,9 @@ public:
     void startBackgroundUpdates();
     void stopBackgroundUpdates();
 
+    void setSensorRange(const std::string& sensor_id, int plot_id, Timestamp start, Timestamp end);
+
+
 private:
     std::unordered_map<std::string, TimeSeriesBuffer<Timestamp, Value>> buffers_;
     std::unordered_map<std::string, std::unordered_map<int, std::pair<Timestamp, Timestamp>>> sensor_ranges_; // sensor -> plot_id -> range
@@ -31,6 +34,7 @@ private:
     std::atomic<bool> background_thread_running_;
 
     std::mutex buffer_mutex_;
+    std::mutex sensor_ranges_mutex_;
 
     void preloadData(const std::string& sensor_id, Timestamp start, Timestamp end);
     void backgroundUpdateTask();

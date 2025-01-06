@@ -440,8 +440,6 @@ void GraphView::renderAllPlots(){
                     // Update the range for all sensors in the plot
                     for (const auto& sensor : sensors) {
                         update_range_callback_(sensor, renderable_plot.getPlotId(), limits.X.Min, limits.X.Max);
-
-                        std::cout << "Updating range for sensor: " << sensor << " to " << limits.X.Min << " - " << limits.X.Max << std::endl;
                     }
                 }
             }

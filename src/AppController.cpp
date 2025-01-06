@@ -16,9 +16,9 @@ AppController::AppController()
 
     // Set the callback for when the view range changes in the graphView
     graphView.setUpdateRangeCallback(
-    [this](const std::string& sensor_id, int plot_id, double start, double end) {
-        dataManager.updateSensorRange(sensor_id, plot_id, static_cast<DataManager::Timestamp>(start), static_cast<DataManager::Timestamp>(end));
-    });
+        [this](const std::string& sensor_id, int plot_id, double start, double end) {
+            dataManager.setSensorRange(sensor_id, plot_id, start, end);
+        });
 
     // Start the update viewModel thread
     update_viewModel_thread_ = std::thread(&AppController::updateViewModel, this);

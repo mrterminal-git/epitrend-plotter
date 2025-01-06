@@ -91,14 +91,14 @@ std::pair<std::vector<DataManager::Timestamp>, std::vector<DataManager::Value>> 
         counter++;
     }
 
-    std::cout << "====================================\n";
-    std::cout << "sensor: " << sensor << "\n";
-    std::cout << "range: " << range << "\n";
-    std::cout << "data.size(): " << data.size() << "\n";
-    std::cout << "num_pixels: " << num_pixels << "\n";
-    std::cout << "num_points_to_render: " << num_points_to_render << "\n";
-    std::cout << "step_size: " << step_size << "\n";
-    std::cout << "counter: " << counter << "\n";
+    // std::cout << "====================================\n";
+    // std::cout << "sensor: " << sensor << "\n";
+    // std::cout << "range: " << range << "\n";
+    // std::cout << "data.size(): " << data.size() << "\n";
+    // std::cout << "num_pixels: " << num_pixels << "\n";
+    // std::cout << "num_points_to_render: " << num_points_to_render << "\n";
+    // std::cout << "step_size: " << step_size << "\n";
+    // std::cout << "counter: " << counter << "\n";
 
     return {timestamps, values};
 }

@@ -1,5 +1,6 @@
 #include "DataManager.hpp"
 #include <iostream> // FOR TESTING
+#include <iomanip> // FOR TESTING
 
 // Constructor
 DataManager::DataManager() : background_thread_running_(false) {}
@@ -27,18 +28,48 @@ void DataManager::stopBackgroundUpdates() {
 void DataManager::backgroundUpdateTask() {
     while (background_thread_running_) {
         {
-            std::lock_guard<std::mutex> lock(buffer_mutex_);
+            std::unordered_map<std::string, std::pair<Timestamp, Timestamp>> local_merged_ranges;
 
-            // Iterate through all sensors and update the data
-            for (auto& [sensor_id, buffer] : buffers_) {
-                // Grab the current range for the sensor
-                auto& ranges = sensor_ranges_[sensor_id];
+            // Copy sensor_ranges_ to a local map
+            {
+                std::lock_guard<std::mutex> lock(sensor_ranges_mutex_);
 
-                // Skip if no ranges are set
-                if (ranges.empty()) continue;
-                auto [start, end] = mergeRanges(ranges);
+                // Print the sensor ranges for testing
+                std::cout << "\n*****************SENSOR RANGES*****************\n";
+                for (const auto& [sensor_id, ranges] : sensor_ranges_) {
+                    std::cout << sensor_id << ":\n";
+                    for (const auto& [plot_id, range] : ranges) {
+                        std::cout << "  Plot " << plot_id << ": " << range.first << " - " << range.second << "\n";
+                    }
+                }
 
-                preloadData(sensor_id, start, end);
+                for (const auto& [sensor_id, ranges] : sensor_ranges_) {
+                    local_merged_ranges[sensor_id] = mergeRanges(ranges);
+                }
+
+                // Print the merged ranges for testing
+                std::cout << "\n-----------------MERGED RANGES-----------------\n";
+                for (const auto& [sensor_id, range] : local_merged_ranges) {
+                    std::cout << sensor_id << ": " << range.first << " - " << range.second << "\n";
+                }
+
+            }
+
+            // Update buffers_ based on the local copy of the merged ranges
+            {
+                std::lock_guard<std::mutex> lock(buffer_mutex_);
+
+                // Iterate through all sensors and update the data
+                for (const auto& [sensor_id, merged_range] : local_merged_ranges) {
+                    if (local_merged_ranges.empty())
+                        continue;
+
+                    buffers_[sensor_id].setRange(
+                        merged_range.first, merged_range.second,
+                        [this, sensor_id](Timestamp start, Timestamp end) {
+                            preloadData(sensor_id, start, end);
+                        });
+                }
             }
         }
         std::this_thread::sleep_for(std::chrono::seconds(1)); // Update every second
@@ -84,6 +115,8 @@ std::vector<std::pair<DataManager::Timestamp, DataManager::Value>> DataManager::
 
 // Initialize a buffer for a specific machine
 void DataManager::addSensor(const std::string& sensor_id) {
+    // Lock the buffer mutex
+    std::lock_guard<std::mutex> lock(buffer_mutex_);
     buffers_.emplace(sensor_id, TimeSeriesBuffer<Timestamp, Value>());
 }
 
@@ -103,6 +136,8 @@ void DataManager::updateSensorRange(const std::string& sensor_id, int plot_id, D
 
 // Add new data to a machine's buffer
 void DataManager::addSensorData(const std::string& sensor_id, const std::vector<std::pair<Timestamp, Value>>& data) {
+    // Lock the mutex
+    std::lock_guard<std::mutex> lock(buffer_mutex_);
     if (buffers_.find(sensor_id) != buffers_.end()) {
         buffers_[sensor_id].addData(data);
     }
@@ -110,6 +145,9 @@ void DataManager::addSensorData(const std::string& sensor_id, const std::vector<
 
 /// Preload data outside the existing range for a specific machine. CURRENTLY IN TESTING
 void DataManager::preloadData(const std::string& sensor_id, Timestamp start, Timestamp end) {
+    std::cout << "\n==========================================================\n"
+    "Preloading data for sensor: " << sensor_id << " from " << start << " to " << end << "\n";
+
     // Simulate data loading (replace with actual data loading logic)
     std::vector<std::pair<Timestamp, Value>> new_data;
     if (sensor_id == "sensor_1") {
@@ -142,4 +180,15 @@ std::pair<DataManager::Timestamp, DataManager::Timestamp> DataManager::mergeRang
         max_end = std::max(max_end, range.second);
     }
     return {min_start, max_end};
+}
+
+// Set the range for a specific sensor
+void DataManager::setSensorRange(const std::string& sensor_id, int plot_id, Timestamp start, Timestamp end) {
+    // Lock the mutex
+    std::lock_guard<std::mutex> lock(sensor_ranges_mutex_);
+    sensor_ranges_[sensor_id][plot_id] = {start, end};
+
+    std::cout << std::setprecision(15);
+    std::cout << "Updating range for sensor: " << sensor_id << " to " << start << " - " << end << "\n";
+
 }
