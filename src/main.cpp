@@ -109,12 +109,12 @@ int main(int, char **)
 
     AppController appController;
 
+    ImPlot::CreateContext();
     while (!glfwWindowShouldClose(window))
     {
         start_cycle();
 
         ImGui::NewFrame();
-        ImPlot::CreateContext();
         appController.run();
         ImGui::Render();
 
