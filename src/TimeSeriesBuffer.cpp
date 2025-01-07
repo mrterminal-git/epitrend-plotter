@@ -9,6 +9,8 @@ TimeSeriesBuffer<Timestamp, Value>::TimeSeriesBuffer(double preload_factor)
 template<typename Timestamp, typename Value>
 TimeSeriesBuffer<Timestamp, Value>::~TimeSeriesBuffer() {
     stop_background_thread_ = true;
+    preload_condition_.notify_one();
+
     if (background_thread_.joinable()) {
         background_thread_.join();
     }
@@ -63,18 +65,19 @@ void TimeSeriesBuffer<Timestamp, Value>::setRange(Timestamp start, Timestamp end
     current_start_ = start;
     current_end_ = end;
 
-    Timestamp preload_start = start - (end - start) * preload_factor_;
-    Timestamp preload_end = end + (end - start) * preload_factor_;
-
     preload_callback_ = preload_callback;
 
     if (!background_thread_.joinable()) {
-        background_thread_ = std::thread([this, preload_start, preload_end]() {
+        background_thread_ = std::thread([this]() {
             while (!stop_background_thread_) {
                 {
                     std::unique_lock<std::mutex> lock(preload_mutex_);
                     preload_condition_.wait(lock);
                 }
+
+                Timestamp preload_start = current_start_ - (current_end_ - current_start_) * preload_factor_;
+                Timestamp preload_end = current_end_ + (current_end_ - current_start_) * preload_factor_;
+
                 preload_callback_(preload_start, preload_end);
             }
         });
