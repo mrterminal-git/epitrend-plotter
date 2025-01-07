@@ -33,26 +33,9 @@ void DataManager::backgroundUpdateTask() {
             // Copy sensor_ranges_ to a local map
             {
                 std::lock_guard<std::mutex> lock(sensor_ranges_mutex_);
-
-                // Print the sensor ranges for testing
-                std::cout << "\n*****************SENSOR RANGES*****************\n";
-                for (const auto& [sensor_id, ranges] : sensor_ranges_) {
-                    std::cout << sensor_id << ":\n";
-                    for (const auto& [plot_id, range] : ranges) {
-                        std::cout << "  Plot " << plot_id << ": " << range.first << " - " << range.second << "\n";
-                    }
-                }
-
                 for (const auto& [sensor_id, ranges] : sensor_ranges_) {
                     local_merged_ranges[sensor_id] = mergeRanges(ranges);
                 }
-
-                // Print the merged ranges for testing
-                std::cout << "\n-----------------MERGED RANGES-----------------\n";
-                for (const auto& [sensor_id, range] : local_merged_ranges) {
-                    std::cout << sensor_id << ": " << range.first << " - " << range.second << "\n";
-                }
-
             }
 
             // Update buffers_ based on the local copy of the merged ranges
@@ -145,9 +128,6 @@ void DataManager::addSensorData(const std::string& sensor_id, const std::vector<
 
 /// Preload data outside the existing range for a specific machine. CURRENTLY IN TESTING
 void DataManager::preloadData(const std::string& sensor_id, Timestamp start, Timestamp end) {
-    std::cout << "\n==========================================================\n"
-    "Preloading data for sensor: " << sensor_id << " from " << start << " to " << end << "\n";
-
     // Simulate data loading (replace with actual data loading logic)
     std::vector<std::pair<Timestamp, Value>> new_data;
     if (sensor_id == "sensor_1") {
@@ -162,7 +142,6 @@ void DataManager::preloadData(const std::string& sensor_id, Timestamp start, Tim
 
     } else {
         // STOP PROGRAM
-        std::cout << "Unknown sensor ID: " << sensor_id << "\n";
         std::exit(1);
 
     }
@@ -187,8 +166,4 @@ void DataManager::setSensorRange(const std::string& sensor_id, int plot_id, Time
     // Lock the mutex
     std::lock_guard<std::mutex> lock(sensor_ranges_mutex_);
     sensor_ranges_[sensor_id][plot_id] = {start, end};
-
-    std::cout << std::setprecision(15);
-    std::cout << "Updating range for sensor: " << sensor_id << " to " << start << " - " << end << "\n";
-
 }
