@@ -8,34 +8,46 @@
 #include <imgui.h>
 
 #include "TimeSeriesBuffer.hpp"
+#include "GraphViewModel.hpp"
 
 class GraphView
 {
 public:
-    // Define types for TimeSeriesBuffer
-    using Timestamp = double;
-    using Value = double;
-
-    // Plot range callback
-    using RangeCallback = std::function<void(Timestamp start, Timestamp end)>;
-
     // Constructor
-    GraphView() = default;
+    explicit GraphView(GraphViewModel& viewModel);
 
     // Draw method
-    void Draw(std::string_view label, const std::vector<std::pair<Timestamp, Value>> &data);
-    void Draw3(std::string_view label, const std::unordered_map<std::string, std::pair<std::vector<double>, std::vector<double>>> &decoupled_data);
+    void Draw(const std::string label);
 
-    // Set range callback
-    void setRangeCallback(const RangeCallback& callback);
+    // ==============================
+    // renderAddPlotPopup
+    // ==============================
+    using UpdateRangeCallback = std::function<void(const std::string& sensor_id, int plot_id, double start, double end)>;
+    void setUpdateRangeCallback(UpdateRangeCallback callback);
 
 private:
-    RangeCallback range_callback_;
+    UpdateRangeCallback update_range_callback_;
+    GraphViewModel& viewModel_;
 
-private:
-    void TestingPlot();
-    void TestingPlot2(const std::vector<std::pair<Timestamp,Value>> &data); // bad implementation because data is not de-coupled in Controller
-    void TestingPlot3(const std::string sub_window_label,
-        const std::unordered_map<std::string, std::pair<std::vector<double>, std::vector<double>>> &decoupled_data
-    ); // good implementation because data is de-coupled in Controller
+    // ==============================
+    // renderAll
+    // ==============================
+    void renderAll();
+
+    // ==============================
+    // renderAddPlotPopup
+    // ==============================
+    void actionSubmitAddPlotPopup(AddPlotPopupState& state);
+    void renderAddPlotPopup();
+
+    // ==============================
+    // renderAllPlots
+    // ==============================
+    void renderPlotOptions(
+        const std::string& popup_label, RenderablePlot& renderable_plot
+    );
+    
+    void renderAllPlots();
+
+
 };

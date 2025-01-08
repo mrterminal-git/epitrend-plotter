@@ -9,11 +9,30 @@ TimeSeriesBuffer<Timestamp, Value>::TimeSeriesBuffer(double preload_factor)
 template<typename Timestamp, typename Value>
 TimeSeriesBuffer<Timestamp, Value>::~TimeSeriesBuffer() {
     stop_background_thread_ = true;
+    preload_condition_.notify_one();
+
     if (background_thread_.joinable()) {
         background_thread_.join();
     }
 }
 
+// Move constructor
+template<typename Timestamp, typename Value>
+TimeSeriesBuffer<Timestamp, Value>::TimeSeriesBuffer(TimeSeriesBuffer&& other) noexcept
+    : data_(std::move(other.data_)),
+      current_start_(std::move(other.current_start_)),
+      current_end_(std::move(other.current_end_)),
+      preload_factor_(other.preload_factor_),
+      preload_callback_(std::move(other.preload_callback_)),
+      stop_background_thread_(other.stop_background_thread_) {
+    // Move the background thread if it is joinable
+    if (other.background_thread_.joinable()) {
+        background_thread_ = std::move(other.background_thread_);
+    }
+    other.stop_background_thread_ = true;
+}
+
+// Move assignment operator
 template<typename Timestamp, typename Value>
 TimeSeriesBuffer<Timestamp, Value>& TimeSeriesBuffer<Timestamp, Value>::operator=(TimeSeriesBuffer&& other) noexcept {
     if (this != &other) {
@@ -46,18 +65,19 @@ void TimeSeriesBuffer<Timestamp, Value>::setRange(Timestamp start, Timestamp end
     current_start_ = start;
     current_end_ = end;
 
-    Timestamp preload_start = start - (end - start) * preload_factor_;
-    Timestamp preload_end = end + (end - start) * preload_factor_;
-
     preload_callback_ = preload_callback;
 
     if (!background_thread_.joinable()) {
-        background_thread_ = std::thread([this, preload_start, preload_end]() {
+        background_thread_ = std::thread([this]() {
             while (!stop_background_thread_) {
                 {
                     std::unique_lock<std::mutex> lock(preload_mutex_);
                     preload_condition_.wait(lock);
                 }
+
+                Timestamp preload_start = current_start_ - (current_end_ - current_start_) * preload_factor_;
+                Timestamp preload_end = current_end_ + (current_end_ - current_start_) * preload_factor_;
+
                 preload_callback_(preload_start, preload_end);
             }
         });
@@ -67,9 +87,10 @@ void TimeSeriesBuffer<Timestamp, Value>::setRange(Timestamp start, Timestamp end
 
 template<typename Timestamp, typename Value>
 void TimeSeriesBuffer<Timestamp, Value>::addData(const std::vector<std::pair<Timestamp, Value>>& new_data) {
-    std::lock_guard<std::mutex> lock(data_mutex_);
-    for (const auto& entry : new_data) {
-        data_[entry.first] = entry.second;
+    // Lock the data mutex and copy the temporary buffer into the main buffer
+    {
+        std::lock_guard<std::mutex> lock(data_mutex_);
+        data_.insert(new_data.begin(), new_data.end());
     }
     cleanup();
 }
@@ -85,17 +106,28 @@ std::vector<std::pair<Timestamp, Value>> TimeSeriesBuffer<Timestamp, Value>::get
 }
 
 template<typename Timestamp, typename Value>
-std::map<Timestamp,Value> TimeSeriesBuffer<Timestamp, Value>::getDataMap() {
+std::map<Timestamp,Value> TimeSeriesBuffer<Timestamp, Value>::getDataMap() const {
     return data_;
 }
 
 template<typename Timestamp, typename Value>
 void TimeSeriesBuffer<Timestamp, Value>::cleanup() {
+    std::lock_guard<std::mutex> lock(data_mutex_);
     Timestamp retention_start = current_start_ - (current_end_ - current_start_) * preload_factor_;
     auto it = data_.lower_bound(retention_start);
 
+    Timestamp retention_end = current_end_ + (current_end_ - current_start_) * preload_factor_;
+
     // Remove all entries before retention_start
     data_.erase(data_.begin(), it);
+
+    // Remove all entries after retention_end
+    it = data_.upper_bound(retention_end);
+
+    // Check if the iterator is valid
+    if (it != data_.end()) {
+        data_.erase(it, data_.end());
+    }
 }
 
 template class TimeSeriesBuffer<double, double>;

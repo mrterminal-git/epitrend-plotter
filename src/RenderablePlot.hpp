@@ -1,17 +1,52 @@
 #pragma once
+
 #include <string>
 #include <vector>
-#include <utility>
+#include <map>
+#include <functional>
 
-struct RenderablePlot {
+class RenderablePlot {
+public:
     using Timestamp = double;
     using Value = double;
+    using RangeCallback = std::function<void(Timestamp start, Timestamp end)>;
+    using DataSeries = std::vector<std::pair<Timestamp, Value>>;
 
-    std::string label; // Name or identifier of the object
-    std::vector<Timestamp> timestamps; // X-axis data
-    std::vector<Value> values;         // Y-axis data
+    // Constructor
+    RenderablePlot(const std::string& label, bool real_time = true);
 
-    // Additional properties (e.g., colors, line styles)
-    bool real_time = true;
-    std::pair<Timestamp, Timestamp> plot_range; // Optional plot range
+    // Setters
+    void setLabel(const std::string& label);
+    void setWindowLabel(const std::string& window_label);
+    void setData(const std::string& series_label, const DataSeries& data);
+    void setPlotRange(Timestamp start, Timestamp end);
+    void setRealTime(bool real_time);
+    void setRangeCallback(const RangeCallback& callback);
+    void setPlotId(long long id);
+
+    // Getters
+    const std::string& getLabel() const;
+    const std::string& getWindowLabel() const;
+    const DataSeries& getData(const std::string& series_label) const;
+    const std::map<std::string, DataSeries> getAllData() const;
+    const std::pair<Timestamp, Timestamp>& getPlotRange() const;
+    bool isRealTime() const;
+    long long getPlotId() const;
+    const std::vector<std::string> getAllSensors() const;
+
+    // Print object
+    void print() const;
+
+    // Callback invocation
+    void notifyRangeChange(Timestamp start, Timestamp end) const;
+
+private:
+    std::string window_label_; // Window label
+    std::string label_; // Plot label
+    bool real_time_;    // Real-time plotting flag
+    std::pair<Timestamp, Timestamp> plot_range_; // Plot range
+    std::map<std::string, DataSeries> data_; // Data for each sensor and corresponding time-series
+    RangeCallback range_callback_; // Callback for range changes
+
+    long long plot_id_;
 };

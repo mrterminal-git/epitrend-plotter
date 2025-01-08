@@ -25,7 +25,7 @@ public:
     void setRange(Timestamp start, Timestamp end, const std::function<void(Timestamp, Timestamp)>& preload_callback);
     void addData(const std::vector<std::pair<Timestamp, Value>>& new_data);
     std::vector<std::pair<Timestamp, Value>> getData();
-    std::map<Timestamp, Value> getDataMap();
+    std::map<Timestamp, Value> getDataMap() const;
 
 private:
     void cleanup();
