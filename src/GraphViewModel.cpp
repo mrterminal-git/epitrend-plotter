@@ -32,6 +32,11 @@ AddPlotPopupState& GraphViewModel::getAddPlotPopupState() {
     return add_plot_popup_state_;
 }
 
+PlotOptionsPopupState& GraphViewModel::getPlotOptionsState(){
+    return plot_options_popup_state_;
+}
+
+
 void GraphViewModel::updatePlotsWithData(DataManager& dataManager) {
     std::vector<RenderablePlot> temp_plots;
 

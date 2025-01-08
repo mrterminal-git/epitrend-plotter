@@ -43,6 +43,10 @@ private:
     // ==============================
     // renderAllPlots
     // ==============================
+    void renderPlotOptions(
+        const std::string& popup_label, RenderablePlot& renderable_plot
+    );
+    
     void renderAllPlots();
 
 
