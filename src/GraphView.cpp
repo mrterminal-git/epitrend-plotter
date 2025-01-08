@@ -429,8 +429,14 @@ void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot
 
         // Set the current state of the popup
         auto& plot_option_pop_up_state = viewModel_.getPlotOptionsState();
+        plot_option_pop_up_state.window_label = renderable_plot.getWindowLabel();
         plot_option_pop_up_state.plot_label = renderable_plot.getLabel();
+        plot_option_pop_up_state.available_sensors = viewModel_.getPlottableSensors();
         plot_option_pop_up_state.is_real_time = renderable_plot.isRealTime();
+        plot_option_pop_up_state.sensors_in_available_list_box 
+            = plot_option_pop_up_state.available_sensors;
+        plot_option_pop_up_state.selected_sensor_in_available_list_box = -1;
+
     }
 
     // Start a Popup Modal
@@ -438,12 +444,12 @@ void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot
         // Get the current state of the popup
         auto& plot_option_pop_up_state = viewModel_.getPlotOptionsState();        
 
-        // Real-time toggle
+        // ******* Real-time toggle ********
         ImGui::Checkbox("Real-time", &plot_option_pop_up_state.is_real_time);
         
-        // Enter options for plot range if not real-time
-        // User defined plot range
+        // ******* Input boxes for plot range *******
         if(!plot_option_pop_up_state.is_real_time) {
+            // Enter options for plot range if not real-time
             if (!plot_option_pop_up_state.is_range_initialized) {
                 // Initialize textboxes with default values only once
                 SetPlotRangeState(plot_option_pop_up_state);
@@ -516,6 +522,559 @@ void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot
                 plot_option_pop_up_state.is_able_to_submit = false;
             }
 
+        }
+
+        // ******* Text boxes with Drag-and-Drop for sensors *******       
+        if (ImGui::BeginListBox("Available Sensors")) {
+            // If no sensors are available, display a message to drop sensors here
+            if (plot_option_pop_up_state.sensors_in_available_list_box.empty()) {
+                ImGui::Selectable("Drop here to add sensors...", false, NULL);
+
+                // FROM Y1 SENSORS TO AVAILABLE SENSORS
+                if (ImGui::BeginDragDropTarget())
+                {
+                    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_FROM_Y1_SENSORS")) {
+                        int payload_n = *(const int*)payload->Data;
+                        std::cout << "Payload received from Y1 Sensors into Available Sensors: " << plot_option_pop_up_state.sensors_in_Y1_list_box.at(payload_n) << "\n";
+
+                        // Delete the sensor from the Y1 list and add it to the available list                  
+                        plot_option_pop_up_state.sensors_in_available_list_box.push_back(plot_option_pop_up_state.sensors_in_Y1_list_box.at(payload_n));
+                        plot_option_pop_up_state.sensors_in_Y1_list_box.erase(plot_option_pop_up_state.sensors_in_Y1_list_box.begin() + payload_n);
+                    }
+                    ImGui::EndDragDropTarget();
+                }
+
+                // FROM Y2 SENSORS TO AVAILABLE SENSORS
+                if (ImGui::BeginDragDropTarget())
+                {
+                    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_FROM_Y2_SENSORS")) {
+                        int payload_n = *(const int*)payload->Data;
+                        std::cout << "Payload received from Y2 Sensors into Available Sensors: " << plot_option_pop_up_state.sensors_in_Y2_list_box.at(payload_n) << "\n";
+
+                        // Delete the sensor from the Y2 list and add it to the available list                  
+                        plot_option_pop_up_state.sensors_in_available_list_box.push_back(plot_option_pop_up_state.sensors_in_Y2_list_box.at(payload_n));
+                        plot_option_pop_up_state.sensors_in_Y2_list_box.erase(plot_option_pop_up_state.sensors_in_Y2_list_box.begin() + payload_n);
+                    }
+                    ImGui::EndDragDropTarget();
+                }
+
+                // FROM Y3 SENSORS TO AVAILABLE SENSORS
+                if (ImGui::BeginDragDropTarget())
+                {
+                    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_FROM_Y3_SENSORS")) {
+                        int payload_n = *(const int*)payload->Data;
+                        std::cout << "Payload received from Y3 Sensors into Available Sensors: " << plot_option_pop_up_state.sensors_in_Y3_list_box.at(payload_n) << "\n";
+
+                        // Delete the sensor from the Y3 list and add it to the available list                  
+                        plot_option_pop_up_state.sensors_in_available_list_box.push_back(plot_option_pop_up_state.sensors_in_Y3_list_box.at(payload_n));
+                        plot_option_pop_up_state.sensors_in_Y3_list_box.erase(plot_option_pop_up_state.sensors_in_Y3_list_box.begin() + payload_n);
+                    }
+                    ImGui::EndDragDropTarget();
+                }
+            }
+            
+            // List all available sensors that have not been selected
+            for (size_t i = 0; 
+            i < plot_option_pop_up_state.sensors_in_available_list_box.size(); 
+            ++i) {
+                ImGui::Selectable(plot_option_pop_up_state.sensors_in_available_list_box.at(i).c_str());
+
+                ImGuiDragDropFlags src_flags = 0;
+                // src_flags |= ImGuiDragDropFlags_SourceNoDisableHover;     // Keep the source displayed as hovered
+                // src_flags |= ImGuiDragDropFlags_SourceNoHoldToOpenOthers; // Because our dragging is local, we disable the feature of opening foreign treenodes/tabs while dragging
+                
+                if (ImGui::BeginDragDropSource(src_flags)) {
+                    if (!(src_flags))
+                        ImGui::Text("Moving \"%s\"", plot_option_pop_up_state.sensors_in_available_list_box.at(i).c_str());
+                    ImGui::SetDragDropPayload("DND_FROM_AVAILABLE_SENSORS", &i, sizeof(int));
+                    ImGui::EndDragDropSource();
+                }
+
+                // FROM Y1 SENSORS TO AVAILABLE SENSORS
+                if (ImGui::BeginDragDropTarget())
+                {
+                    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_FROM_Y1_SENSORS")) {
+                        int payload_n = *(const int*)payload->Data;
+                        std::cout << "Payload received from Y1 Sensors into Available Sensors: " << plot_option_pop_up_state.sensors_in_Y1_list_box.at(payload_n) << "\n";
+
+                        // Delete the sensor from the Y1 list and add it to the available list                  
+                        plot_option_pop_up_state.sensors_in_available_list_box.push_back(plot_option_pop_up_state.sensors_in_Y1_list_box.at(payload_n));
+                        plot_option_pop_up_state.sensors_in_Y1_list_box.erase(plot_option_pop_up_state.sensors_in_Y1_list_box.begin() + payload_n);
+                        
+                        // Re-arrange the sensors in the available list
+                        std::map<int, std::string> sensor_pos_map;
+                        std::vector<std::string> ordered_by_sensor;
+                        for (const std::string sensor : plot_option_pop_up_state.sensors_in_available_list_box) {
+                            auto it = std::find(
+                                plot_option_pop_up_state.available_sensors.begin(),
+                                plot_option_pop_up_state.available_sensors.end(),
+                                sensor
+                            );
+
+                            if (it == plot_option_pop_up_state.available_sensors.end()) {
+                                // Exit program
+                                std::cerr << "Error: Sensor not found in available sensors\n";
+                                exit(1);
+                            }
+
+                            long int distance_to_sensor = std::distance(
+                                plot_option_pop_up_state.available_sensors.begin(),
+                                it
+                            );
+
+                            sensor_pos_map[distance_to_sensor] = sensor;
+                        }
+                        for (const auto& [pos, sensor] : sensor_pos_map) {
+                            ordered_by_sensor.push_back(sensor);
+                        }
+                        plot_option_pop_up_state.sensors_in_available_list_box = ordered_by_sensor;
+                    }
+
+                    ImGui::EndDragDropTarget();
+                }
+
+                // FROM Y2 SENSORS TO AVAILABLE SENSORS
+                if (ImGui::BeginDragDropTarget())
+                {
+                    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_FROM_Y2_SENSORS")) {
+                        int payload_n = *(const int*)payload->Data;
+                        std::cout << "Payload received from Y1 Sensors into Available Sensors: " << plot_option_pop_up_state.sensors_in_Y2_list_box.at(payload_n) << "\n";
+
+                        // Delete the sensor from the Y1 list and add it to the available list                  
+                        plot_option_pop_up_state.sensors_in_available_list_box.push_back(plot_option_pop_up_state.sensors_in_Y2_list_box.at(payload_n));
+                        plot_option_pop_up_state.sensors_in_Y2_list_box.erase(plot_option_pop_up_state.sensors_in_Y2_list_box.begin() + payload_n);
+                        
+                        // Re-arrange the sensors in the available list
+                        std::map<int, std::string> sensor_pos_map;
+                        std::vector<std::string> ordered_by_sensor;
+                        for (const std::string sensor : plot_option_pop_up_state.sensors_in_available_list_box) {
+                            auto it = std::find(
+                                plot_option_pop_up_state.available_sensors.begin(),
+                                plot_option_pop_up_state.available_sensors.end(),
+                                sensor
+                            );
+
+                            if (it == plot_option_pop_up_state.available_sensors.end()) {
+                                // Exit program
+                                std::cerr << "Error: Sensor not found in available sensors\n";
+                                exit(1);
+                            }
+
+                            long int distance_to_sensor = std::distance(
+                                plot_option_pop_up_state.available_sensors.begin(),
+                                it
+                            );
+
+                            sensor_pos_map[distance_to_sensor] = sensor;
+                        }
+                        for (const auto& [pos, sensor] : sensor_pos_map) {
+                            ordered_by_sensor.push_back(sensor);
+                        }
+                        plot_option_pop_up_state.sensors_in_available_list_box = ordered_by_sensor;
+                    }
+                    ImGui::EndDragDropTarget();
+                }
+
+                // FROM Y3 SENSORS TO AVAILABLE SENSORS
+                if (ImGui::BeginDragDropTarget())
+                {
+                    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_FROM_Y3_SENSORS")) {
+                        int payload_n = *(const int*)payload->Data;
+                        std::cout << "Payload received from Y3 Sensors into Available Sensors: " << plot_option_pop_up_state.sensors_in_Y3_list_box.at(payload_n) << "\n";
+
+                        // Delete the sensor from the Y3 list and add it to the available list                  
+                        plot_option_pop_up_state.sensors_in_available_list_box.push_back(plot_option_pop_up_state.sensors_in_Y3_list_box.at(payload_n));
+                        plot_option_pop_up_state.sensors_in_Y3_list_box.erase(plot_option_pop_up_state.sensors_in_Y3_list_box.begin() + payload_n);
+                    
+                        // Re-arrange the sensors in the available list
+                        std::map<int, std::string> sensor_pos_map;
+                        std::vector<std::string> ordered_by_sensor;
+                        for (const std::string sensor : plot_option_pop_up_state.sensors_in_available_list_box) {
+                            auto it = std::find(
+                                plot_option_pop_up_state.available_sensors.begin(),
+                                plot_option_pop_up_state.available_sensors.end(),
+                                sensor
+                            );
+
+                            if (it == plot_option_pop_up_state.available_sensors.end()) {
+                                // Exit program
+                                std::cerr << "Error: Sensor not found in available sensors\n";
+                                exit(1);
+                            }
+
+                            long int distance_to_sensor = std::distance(
+                                plot_option_pop_up_state.available_sensors.begin(),
+                                it
+                            );
+
+                            sensor_pos_map[distance_to_sensor] = sensor;
+                        }
+                        for (const auto& [pos, sensor] : sensor_pos_map) {
+                            ordered_by_sensor.push_back(sensor);
+                        }
+                        plot_option_pop_up_state.sensors_in_available_list_box = ordered_by_sensor;
+                    }
+                    ImGui::EndDragDropTarget();
+                }
+            }
+            ImGui::EndListBox();
+        }
+
+        if (ImGui::BeginListBox("Y1 Sensors")) {
+            // If no sensors are available, display a message to drop sensors here
+            if (plot_option_pop_up_state.sensors_in_Y1_list_box.empty()) {
+                ImGui::Selectable("Drop here to add sensors...", false, NULL);
+
+                // FROM AVAILABLE SENSORS TO Y1 SENSORS
+                if (ImGui::BeginDragDropTarget())
+                {
+                    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_FROM_AVAILABLE_SENSORS")) {
+                        int payload_n = *(const int*)payload->Data;
+                        std::cout << "Payload received from Available Sensors: " << plot_option_pop_up_state.sensors_in_available_list_box.at(payload_n) << "\n";
+                        
+                        // Delete the sensor from the available list and add it to the Y1 list
+                        plot_option_pop_up_state.sensors_in_Y1_list_box.push_back(plot_option_pop_up_state.sensors_in_available_list_box.at(payload_n));
+                        plot_option_pop_up_state.sensors_in_available_list_box.erase(plot_option_pop_up_state.sensors_in_available_list_box.begin() + payload_n);
+                    }
+                    ImGui::EndDragDropTarget();
+                }
+
+                // FROM Y2 SENSORS TO Y1 SENSORS
+                if (ImGui::BeginDragDropTarget())
+                {
+                    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_FROM_Y2_SENSORS")) {
+                        int payload_n = *(const int*)payload->Data;
+                        std::cout << "Payload received from Y2 Sensors into Y1 Sensors: " << plot_option_pop_up_state.sensors_in_Y2_list_box.at(payload_n) << "\n";
+                        
+                        // Delete the sensor from the Y2 list and add it to the Y1 list
+                        plot_option_pop_up_state.sensors_in_Y1_list_box.push_back(plot_option_pop_up_state.sensors_in_Y2_list_box.at(payload_n));
+                        plot_option_pop_up_state.sensors_in_Y2_list_box.erase(plot_option_pop_up_state.sensors_in_Y2_list_box.begin() + payload_n);
+                    }
+                    ImGui::EndDragDropTarget();
+                }
+            
+                // FROM Y3 SENSORS TO Y1 SENSORS
+                if (ImGui::BeginDragDropTarget())
+                {
+                    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_FROM_Y3_SENSORS")) {
+                        int payload_n = *(const int*)payload->Data;
+                        std::cout << "Payload received from Y3 Sensors into Y1 Sensors: " << plot_option_pop_up_state.sensors_in_Y3_list_box.at(payload_n) << "\n";
+
+                        // Delete the sensor from the Y3 list and add it to the Y1 list                  
+                        plot_option_pop_up_state.sensors_in_Y1_list_box.push_back(plot_option_pop_up_state.sensors_in_Y3_list_box.at(payload_n));
+                        plot_option_pop_up_state.sensors_in_Y3_list_box.erase(plot_option_pop_up_state.sensors_in_Y3_list_box.begin() + payload_n);
+                    }
+                    ImGui::EndDragDropTarget();
+                }
+            }    
+            
+            // Loop through existing sensors in Y1 and allow drag-and-drop
+            for (size_t i = 0; i < plot_option_pop_up_state.sensors_in_Y1_list_box.size(); ++i) {
+                ImGui::Selectable(plot_option_pop_up_state.sensors_in_Y1_list_box.at(i).c_str());
+                
+                ImGuiDragDropFlags src_flags = 0;
+                if (ImGui::BeginDragDropSource(src_flags)) {
+                    if (!(src_flags))
+                        ImGui::Text("Moving \"%s\"", plot_option_pop_up_state.sensors_in_Y1_list_box.at(i).c_str());
+                    ImGui::SetDragDropPayload("DND_FROM_Y1_SENSORS", &i, sizeof(int));
+                    ImGui::EndDragDropSource();
+                }
+
+                // FROM AVAILABLE SENSORS TO Y1 SENSORS
+                if (ImGui::BeginDragDropTarget())
+                {
+                    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_FROM_AVAILABLE_SENSORS")) {
+                        int payload_n = *(const int*)payload->Data;
+                        std::cout << "Payload received from Available Sensors into Y1 Sensors: " << plot_option_pop_up_state.sensors_in_available_list_box.at(payload_n) << "\n";
+                        
+                        // Delete the sensor from the available list and add it to the Y1 list
+                        plot_option_pop_up_state.sensors_in_Y1_list_box.push_back(plot_option_pop_up_state.sensors_in_available_list_box.at(payload_n));
+                        plot_option_pop_up_state.sensors_in_available_list_box.erase(plot_option_pop_up_state.sensors_in_available_list_box.begin() + payload_n);
+                    }
+                    ImGui::EndDragDropTarget();
+                }
+
+                // FROM Y1 SENSORS TO Y1 SENSORS
+                if (ImGui::BeginDragDropTarget())
+                {
+                    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_FROM_Y1_SENSORS")) {
+                        int payload_n = *(const int*)payload->Data;
+                        std::cout << "Payload received from Y1 Sensors: " << plot_option_pop_up_state.sensors_in_Y1_list_box.at(payload_n) << "\n";
+                        
+                        // Switch the positions of the sensors in the Y1 list into the current position
+                        std::swap(plot_option_pop_up_state.sensors_in_Y1_list_box.at(payload_n), plot_option_pop_up_state.sensors_in_Y1_list_box.at(i));                    
+                    }
+                    ImGui::EndDragDropTarget();
+                }
+    
+                // FROM Y2 SENSORS TO Y1 SENSORS
+                if (ImGui::BeginDragDropTarget())
+                {
+                    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_FROM_Y2_SENSORS")) {
+                        int payload_n = *(const int*)payload->Data;
+                        std::cout << "Payload received from Y2 Sensors into Y1 Sensors: " << plot_option_pop_up_state.sensors_in_Y2_list_box.at(payload_n) << "\n";
+                        
+                        // Delete the sensor from the Y2 list and add it to the Y1 list
+                        plot_option_pop_up_state.sensors_in_Y1_list_box.push_back(plot_option_pop_up_state.sensors_in_Y2_list_box.at(payload_n));
+                        plot_option_pop_up_state.sensors_in_Y2_list_box.erase(plot_option_pop_up_state.sensors_in_Y2_list_box.begin() + payload_n);
+                    }
+                    ImGui::EndDragDropTarget();
+                }
+
+                // FROM Y3 SENSORS TO Y1 SENSORS
+                if (ImGui::BeginDragDropTarget())
+                {
+                    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_FROM_Y3_SENSORS")) {
+                        int payload_n = *(const int*)payload->Data;
+                        std::cout << "Payload received from Y3 Sensors into Y1 Sensors: " << plot_option_pop_up_state.sensors_in_Y3_list_box.at(payload_n) << "\n";
+
+                        // Delete the sensor from the Y3 list and add it to the Y1 list                  
+                        plot_option_pop_up_state.sensors_in_Y1_list_box.push_back(plot_option_pop_up_state.sensors_in_Y3_list_box.at(payload_n));
+                        plot_option_pop_up_state.sensors_in_Y3_list_box.erase(plot_option_pop_up_state.sensors_in_Y3_list_box.begin() + payload_n);
+                    }
+                    ImGui::EndDragDropTarget();
+                }
+            }
+
+            ImGui::EndListBox();
+        }
+
+        if (ImGui::BeginListBox("Y2 Sensors")) {
+            // If no sensors are available, display a message to drop sensors here
+            if (plot_option_pop_up_state.sensors_in_Y2_list_box.empty()) {
+                ImGui::Selectable("Drop here to add sensors...", false, NULL);
+
+                // FROM AVAILABLE SENSORS TO Y2 SENSORS
+                if (ImGui::BeginDragDropTarget())
+                {
+                    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_FROM_AVAILABLE_SENSORS")) {
+                        int payload_n = *(const int*)payload->Data;
+                        std::cout << "Payload received from Available Sensors into Y2 Sensors: " << plot_option_pop_up_state.sensors_in_available_list_box.at(payload_n) << "\n";
+                        
+                        // Delete the sensor from the available list and add it to the Y2 list
+                        plot_option_pop_up_state.sensors_in_Y2_list_box.push_back(plot_option_pop_up_state.sensors_in_available_list_box.at(payload_n));
+                        plot_option_pop_up_state.sensors_in_available_list_box.erase(plot_option_pop_up_state.sensors_in_available_list_box.begin() + payload_n);
+                    }
+                    ImGui::EndDragDropTarget();
+                }
+
+                // FROM Y1 SENSORS TO Y2 SENSORS
+                if (ImGui::BeginDragDropTarget())
+                {
+                    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_FROM_Y1_SENSORS")) {
+                        int payload_n = *(const int*)payload->Data;
+                        std::cout << "Payload received from Y1 Sensors into Y2 Sensors: " << plot_option_pop_up_state.sensors_in_Y1_list_box.at(payload_n) << "\n";
+                        
+                        // Delete the sensor from the available list and add it to the Y2 list
+                        plot_option_pop_up_state.sensors_in_Y2_list_box.push_back(plot_option_pop_up_state.sensors_in_Y1_list_box.at(payload_n));
+                        plot_option_pop_up_state.sensors_in_Y1_list_box.erase(plot_option_pop_up_state.sensors_in_Y1_list_box.begin() + payload_n);
+                    }
+                    ImGui::EndDragDropTarget();
+                }
+
+                // FROM Y3 SENSORS TO Y2 SENSORS
+                if (ImGui::BeginDragDropTarget())
+                {
+                    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_FROM_Y3_SENSORS")) {
+                        int payload_n = *(const int*)payload->Data;
+                        std::cout << "Payload received from Y3 Sensors into Y2 Sensors: " << plot_option_pop_up_state.sensors_in_Y3_list_box.at(payload_n) << "\n";
+
+                        // Delete the sensor from the Y3 list and add it to the Y1 list                  
+                        plot_option_pop_up_state.sensors_in_Y2_list_box.push_back(plot_option_pop_up_state.sensors_in_Y3_list_box.at(payload_n));
+                        plot_option_pop_up_state.sensors_in_Y3_list_box.erase(plot_option_pop_up_state.sensors_in_Y3_list_box.begin() + payload_n);
+                    }
+                    ImGui::EndDragDropTarget();
+                }
+            }
+
+            // Loop through existing sensors in Y2 and allow drag-and-drop
+            for (size_t i = 0; i < plot_option_pop_up_state.sensors_in_Y2_list_box.size(); ++i) {
+                ImGui::Selectable(plot_option_pop_up_state.sensors_in_Y2_list_box.at(i).c_str());
+                
+                ImGuiDragDropFlags src_flags = 0;
+                if (ImGui::BeginDragDropSource(src_flags)) {
+                    if (!(src_flags))
+                        ImGui::Text("Moving \"%s\"", plot_option_pop_up_state.sensors_in_Y2_list_box.at(i).c_str());
+                    ImGui::SetDragDropPayload("DND_FROM_Y2_SENSORS", &i, sizeof(int));
+                    ImGui::EndDragDropSource();
+                }
+
+                // FROM Y2 SENSORS TO Y2 SENSORS
+                if (ImGui::BeginDragDropTarget())
+                {
+                    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_FROM_Y2_SENSORS")) {
+                        int payload_n = *(const int*)payload->Data;
+                        std::cout << "Payload received from Y2 Sensors to Y2 Sensors: " << plot_option_pop_up_state.sensors_in_Y2_list_box.at(payload_n) << "\n";
+                        
+                        // Switch the positions of the sensors in the Y1 list into the current position
+                        std::swap(plot_option_pop_up_state.sensors_in_Y2_list_box.at(payload_n), plot_option_pop_up_state.sensors_in_Y2_list_box.at(i));                    
+                    }
+                    ImGui::EndDragDropTarget();
+                }
+
+                // FROM AVAILABLE SENSORS TO Y2 SENSORS
+                if (ImGui::BeginDragDropTarget())
+                {
+                    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_FROM_AVAILABLE_SENSORS")) {
+                        int payload_n = *(const int*)payload->Data;
+                        std::cout << "Payload received from Available Sensors into Y2 Sensors: " << plot_option_pop_up_state.sensors_in_available_list_box.at(payload_n) << "\n";
+                        
+                        // Delete the sensor from the available list and add it to the Y2 list
+                        plot_option_pop_up_state.sensors_in_Y2_list_box.push_back(plot_option_pop_up_state.sensors_in_available_list_box.at(payload_n));
+                        plot_option_pop_up_state.sensors_in_available_list_box.erase(plot_option_pop_up_state.sensors_in_available_list_box.begin() + payload_n);
+                    }
+                    ImGui::EndDragDropTarget();
+                }
+                
+                // FROM Y1 SENSORS TO Y2 SENSORS
+                if (ImGui::BeginDragDropTarget())
+                {
+                    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_FROM_Y1_SENSORS")) {
+                        int payload_n = *(const int*)payload->Data;
+                        std::cout << "Payload received from Y1 Sensors into Y2 Sensors: " << plot_option_pop_up_state.sensors_in_Y1_list_box.at(payload_n) << "\n";
+                        
+                        // Delete the sensor from the available list and add it to the Y2 list
+                        plot_option_pop_up_state.sensors_in_Y2_list_box.push_back(plot_option_pop_up_state.sensors_in_Y1_list_box.at(payload_n));
+                        plot_option_pop_up_state.sensors_in_Y1_list_box.erase(plot_option_pop_up_state.sensors_in_Y1_list_box.begin() + payload_n);
+                    }
+                    ImGui::EndDragDropTarget();
+                }
+
+                // FROM Y3 SENSORS TO Y2 SENSORS
+                if (ImGui::BeginDragDropTarget())
+                {
+                    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_FROM_Y3_SENSORS")) {
+                        int payload_n = *(const int*)payload->Data;
+                        std::cout << "Payload received from Y3 Sensors into Y2 Sensors: " << plot_option_pop_up_state.sensors_in_Y3_list_box.at(payload_n) << "\n";
+
+                        // Delete the sensor from the Y3 list and add it to the Y1 list                  
+                        plot_option_pop_up_state.sensors_in_Y2_list_box.push_back(plot_option_pop_up_state.sensors_in_Y3_list_box.at(payload_n));
+                        plot_option_pop_up_state.sensors_in_Y3_list_box.erase(plot_option_pop_up_state.sensors_in_Y3_list_box.begin() + payload_n);
+                    }
+                    ImGui::EndDragDropTarget();
+                }
+            }
+
+            ImGui::EndListBox(); 
+        }
+
+        if (ImGui::BeginListBox("Y3 Sensors")) {
+            // If no sensors are available, display a message to drop sensors here
+            if (plot_option_pop_up_state.sensors_in_Y3_list_box.empty()) {
+                ImGui::Selectable("Drop here to add sensors...", false, NULL);
+
+                // FROM AVAILABLE SENSORS TO Y3 SENSORS
+                if (ImGui::BeginDragDropTarget())
+                {
+                    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_FROM_AVAILABLE_SENSORS")) {
+                        int payload_n = *(const int*)payload->Data;
+                        std::cout << "Payload received from Available Sensors into Y3 Sensors: " << plot_option_pop_up_state.sensors_in_available_list_box.at(payload_n) << "\n";
+                        
+                        // Delete the sensor from the available list and add it to the Y2 list
+                        plot_option_pop_up_state.sensors_in_Y3_list_box.push_back(plot_option_pop_up_state.sensors_in_available_list_box.at(payload_n));
+                        plot_option_pop_up_state.sensors_in_available_list_box.erase(plot_option_pop_up_state.sensors_in_available_list_box.begin() + payload_n);
+                    }
+                    ImGui::EndDragDropTarget();
+                }
+
+                // FROM Y1 SENSORS TO Y3 SENSORS
+                if (ImGui::BeginDragDropTarget())
+                {
+                    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_FROM_Y1_SENSORS")) {
+                        int payload_n = *(const int*)payload->Data;
+                        std::cout << "Payload received from Y1 Sensors into Y3 Sensors: " << plot_option_pop_up_state.sensors_in_Y1_list_box.at(payload_n) << "\n";
+                        
+                        // Delete the sensor from the Y2 list and add it to the Y2 list
+                        plot_option_pop_up_state.sensors_in_Y3_list_box.push_back(plot_option_pop_up_state.sensors_in_Y1_list_box.at(payload_n));
+                        plot_option_pop_up_state.sensors_in_Y1_list_box.erase(plot_option_pop_up_state.sensors_in_Y1_list_box.begin() + payload_n);
+                    }
+                    ImGui::EndDragDropTarget();
+                }
+
+                // FROM Y2 SENSORS TO Y3 SENSORS
+                if (ImGui::BeginDragDropTarget())
+                {
+                    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_FROM_Y2_SENSORS")) {
+                        int payload_n = *(const int*)payload->Data;
+                        std::cout << "Payload received from Y2 Sensors into Y3 Sensors: " << plot_option_pop_up_state.sensors_in_Y2_list_box.at(payload_n) << "\n";
+
+                        // Delete the sensor from the Y2 list and add it to the Y3 list                  
+                        plot_option_pop_up_state.sensors_in_Y3_list_box.push_back(plot_option_pop_up_state.sensors_in_Y2_list_box.at(payload_n));
+                        plot_option_pop_up_state.sensors_in_Y2_list_box.erase(plot_option_pop_up_state.sensors_in_Y2_list_box.begin() + payload_n);
+                    }
+                    ImGui::EndDragDropTarget();
+                }
+            }
+
+            // Loop through existing sensors in Y3 and allow drag-and-drop
+            for (size_t i = 0; i < plot_option_pop_up_state.sensors_in_Y3_list_box.size(); ++i) {
+                ImGui::Selectable(plot_option_pop_up_state.sensors_in_Y3_list_box.at(i).c_str());
+                
+                ImGuiDragDropFlags src_flags = 0;
+                if (ImGui::BeginDragDropSource(src_flags)) {
+                    if (!(src_flags))
+                        ImGui::Text("Moving \"%s\"", plot_option_pop_up_state.sensors_in_Y3_list_box.at(i).c_str());
+                    ImGui::SetDragDropPayload("DND_FROM_Y3_SENSORS", &i, sizeof(int));
+                    ImGui::EndDragDropSource();
+                }
+
+                // FROM Y3 SENSORS TO Y3 SENSORS
+                if (ImGui::BeginDragDropTarget())
+                {
+                    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_FROM_Y3_SENSORS")) {
+                        int payload_n = *(const int*)payload->Data;
+                        std::cout << "Payload received from Y3 Sensors to Y3 Sensors: " << plot_option_pop_up_state.sensors_in_Y3_list_box.at(payload_n) << "\n";
+                        
+                        // Switch the positions of the sensors in the Y3 list into the current position
+                        std::swap(plot_option_pop_up_state.sensors_in_Y3_list_box.at(payload_n), plot_option_pop_up_state.sensors_in_Y3_list_box.at(i));                    
+                    }
+                    ImGui::EndDragDropTarget();
+                }
+
+                // FROM AVAILABLE SENSORS TO Y3 SENSORS
+                if (ImGui::BeginDragDropTarget())
+                {
+                    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_FROM_AVAILABLE_SENSORS")) {
+                        int payload_n = *(const int*)payload->Data;
+                        std::cout << "Payload received from Available Sensors into Y3 Sensors: " << plot_option_pop_up_state.sensors_in_available_list_box.at(payload_n) << "\n";
+                        
+                        // Delete the sensor from the available list and add it to the Y2 list
+                        plot_option_pop_up_state.sensors_in_Y3_list_box.push_back(plot_option_pop_up_state.sensors_in_available_list_box.at(payload_n));
+                        plot_option_pop_up_state.sensors_in_available_list_box.erase(plot_option_pop_up_state.sensors_in_available_list_box.begin() + payload_n);
+                    }
+                    ImGui::EndDragDropTarget();
+                }
+
+                // FROM Y1 SENSORS TO Y3 SENSORS
+                if (ImGui::BeginDragDropTarget())
+                {
+                    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_FROM_Y1_SENSORS")) {
+                        int payload_n = *(const int*)payload->Data;
+                        std::cout << "Payload received from Y1 Sensors into Y3 Sensors: " << plot_option_pop_up_state.sensors_in_Y1_list_box.at(payload_n) << "\n";
+                        
+                        // Delete the sensor from the Y2 list and add it to the Y2 list
+                        plot_option_pop_up_state.sensors_in_Y3_list_box.push_back(plot_option_pop_up_state.sensors_in_Y1_list_box.at(payload_n));
+                        plot_option_pop_up_state.sensors_in_Y1_list_box.erase(plot_option_pop_up_state.sensors_in_Y1_list_box.begin() + payload_n);
+                    }
+                    ImGui::EndDragDropTarget();
+                }
+
+                // FROM Y2 SENSORS TO Y3 SENSORS
+                if (ImGui::BeginDragDropTarget())
+                {
+                    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_FROM_Y2_SENSORS")) {
+                        int payload_n = *(const int*)payload->Data;
+                        std::cout << "Payload received from Y2 Sensors into Y3 Sensors: " << plot_option_pop_up_state.sensors_in_Y2_list_box.at(payload_n) << "\n";
+
+                        // Delete the sensor from the Y2 list and add it to the Y3 list                  
+                        plot_option_pop_up_state.sensors_in_Y3_list_box.push_back(plot_option_pop_up_state.sensors_in_Y2_list_box.at(payload_n));
+                        plot_option_pop_up_state.sensors_in_Y2_list_box.erase(plot_option_pop_up_state.sensors_in_Y2_list_box.begin() + payload_n);
+                    }
+                    ImGui::EndDragDropTarget();
+                }
+            }
+
+            ImGui::EndListBox(); 
         }
 
         if (ImGui::Button("Close")) {

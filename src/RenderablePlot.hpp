@@ -4,6 +4,7 @@
 #include <vector>
 #include <map>
 #include <functional>
+#include <implot.h>
 
 class RenderablePlot {
 public:
@@ -47,6 +48,14 @@ private:
     std::pair<Timestamp, Timestamp> plot_range_; // Plot range
     std::map<std::string, DataSeries> data_; // Data for each sensor and corresponding time-series
     RangeCallback range_callback_; // Callback for range changes
-
     long long plot_id_;
+    
+    // ============================================
+    // Multiple axis support
+    // ============================================
+    ImAxis primary_x_axis_ = ImAxis_X1;
+    std::map<std::string, ImAxis> data_to_y_axis_;
+    std::map<ImAxis, std::string> y_axis_labels_;
+
+    
 };
