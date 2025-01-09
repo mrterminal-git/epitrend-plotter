@@ -36,7 +36,6 @@ PlotOptionsPopupState& GraphViewModel::getPlotOptionsState(){
     return plot_options_popup_state_;
 }
 
-
 void GraphViewModel::updatePlotsWithData(DataManager& dataManager) {
     for (auto& renderable_plot: renderable_plots_) {
         for (const auto& sensor: renderable_plot.getAllSensors()) {

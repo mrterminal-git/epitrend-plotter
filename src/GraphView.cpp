@@ -1196,6 +1196,17 @@ void GraphView::renderAllPlots(){
         renderPlotOptions(("###" + renderable_plot.getLabel()), renderable_plot);
 
         if (ImPlot::BeginPlot(("###" + renderable_plot.getLabel()).c_str())) {
+            // Get all sensors in the plot
+            const std::vector<std::string> sensors = renderable_plot.getAllSensors();
+            
+            // Set up the plot Y-axis before any setup locking functions
+            for (const auto& series_label : sensors) {
+                // Get the axis (Y1, Y2, Y3) for the sensor
+                ImAxis plot_axis = renderable_plot.getYAxisForSensor(series_label);
+                ImPlot::SetupAxis(plot_axis, nullptr, ImPlotAxisFlags_AuxDefault);
+            }
+
+            // Set the plot X_axis to time
             ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
             if(renderable_plot.isRealTime()){
                 ImPlot::SetupAxisLimits(ImAxis_X1, plot_start, plot_end, ImGuiCond_Always);
@@ -1207,13 +1218,13 @@ void GraphView::renderAllPlots(){
             double range = limits.X.Max - limits.X.Min;
             int num_pixels = ImPlot::GetPlotPos().x + ImPlot::GetPlotSize().x;
 
-            // Get all sensors in the plot
-            const std::vector<std::string> sensors = renderable_plot.getAllSensors();
-
             for (const auto& series_label : sensors) {
                 // Get downsampled data
                 auto [xs, ys] = viewModel_.getDownsampledData(renderable_plot, series_label, range, num_pixels);
 
+                // Get the axis (Y1, Y2, Y3) for the sensor
+                ImAxis plot_axis = renderable_plot.getYAxisForSensor(series_label);
+                ImPlot::SetAxes(ImAxis_X1, plot_axis);
                 ImPlot::PlotLine(series_label.c_str(), xs.data(), ys.data(), xs.size());
             }
 
