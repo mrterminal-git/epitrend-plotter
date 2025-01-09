@@ -143,7 +143,15 @@ RenderablePlot::DataSeries RenderablePlot::getDataSnapshot(const std::string& se
     return DataSeries(); 
 }
 
-
+std::vector<std::string> RenderablePlot::getSensorsForYAxis(ImAxis y_axis) const {
+    std::vector<std::string> sensors;
+    for (const auto& [sensor, axis] : data_to_y_axis_) {
+        if (axis == y_axis) {
+            sensors.push_back(sensor);
+        }
+    }
+    return sensors;
+}
 
 // ============================================
 // Multiple axis support

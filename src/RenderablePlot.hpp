@@ -64,6 +64,7 @@ public:
     // ============================================
     void addYAxisForSensor(const std::string& series_label, ImAxis y_axis);
     ImAxis getYAxisForSensor(const std::string& series_label) const;
+    std::vector<std::string> getSensorsForYAxis(ImAxis y_axis) const;
     void deleteYAxisForSensor(const std::string& series_label);
     void clearYAxes();
 

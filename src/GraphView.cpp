@@ -148,6 +148,11 @@ void GraphView::actionSubmitAddPlotPopup(AddPlotPopupState& state) {
         plot.setData(sensor, {});
     }
 
+    // Add selected sensors to Y1 axis by default
+    for(const auto& sensor : state.selected_sensors) {
+        plot.addYAxisForSensor(sensor, ImAxis_Y1);
+    }
+
     // Add the plot to the view model
     viewModel_.addRenderablePlot(plot);
 
@@ -457,6 +462,32 @@ void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot
         plot_option_pop_up_state.sensors_in_available_list_box 
             = plot_option_pop_up_state.available_sensors;
         plot_option_pop_up_state.selected_sensor_in_available_list_box = -1;
+        plot_option_pop_up_state.sensors_in_Y1_list_box = renderable_plot.getSensorsForYAxis(ImAxis_Y1);
+        plot_option_pop_up_state.sensors_in_Y2_list_box = renderable_plot.getSensorsForYAxis(ImAxis_Y2);
+        plot_option_pop_up_state.sensors_in_Y3_list_box = renderable_plot.getSensorsForYAxis(ImAxis_Y3);
+
+        // Remove all elements from the available sensors list that are already in the Y1, Y2, Y3 list
+        for (const auto& sensor : plot_option_pop_up_state.sensors_in_Y1_list_box) {
+            plot_option_pop_up_state.sensors_in_available_list_box.erase(
+                std::remove(plot_option_pop_up_state.sensors_in_available_list_box.begin(),
+                    plot_option_pop_up_state.sensors_in_available_list_box.end(),
+                    sensor),
+                plot_option_pop_up_state.sensors_in_available_list_box.end());
+        }
+        for (const auto& sensor : plot_option_pop_up_state.sensors_in_Y2_list_box) {
+            plot_option_pop_up_state.sensors_in_available_list_box.erase(
+                std::remove(plot_option_pop_up_state.sensors_in_available_list_box.begin(),
+                    plot_option_pop_up_state.sensors_in_available_list_box.end(),
+                    sensor),
+                plot_option_pop_up_state.sensors_in_available_list_box.end());
+        }
+        for (const auto& sensor : plot_option_pop_up_state.sensors_in_Y3_list_box) {
+            plot_option_pop_up_state.sensors_in_available_list_box.erase(
+                std::remove(plot_option_pop_up_state.sensors_in_available_list_box.begin(),
+                    plot_option_pop_up_state.sensors_in_available_list_box.end(),
+                    sensor),
+                plot_option_pop_up_state.sensors_in_available_list_box.end());
+        }
 
     }
 
