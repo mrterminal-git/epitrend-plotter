@@ -62,11 +62,35 @@ public:
     // ============================================
     // Multiple axis support
     // ============================================
+    struct YAxisProperties {
+        std::string label = "";
+        Value min = 0.1;
+        Value max = 1.0;
+        bool isLinearScale = true;
+        bool isLogScale = false;
+        double log_base = 10;
+
+        void reset() {
+            label = "";
+            min = 0.1;
+            max = 1.0;
+            isLinearScale = true;
+            isLogScale = false;
+            log_base = 10;
+        }
+    };
     void addYAxisForSensor(const std::string& series_label, ImAxis y_axis);
     ImAxis getYAxisForSensor(const std::string& series_label) const;
     std::vector<std::string> getSensorsForYAxis(ImAxis y_axis) const;
     void deleteYAxisForSensor(const std::string& series_label);
     void clearYAxes();
+    void setYAxisProperties(ImAxis y_axis, const YAxisProperties& properties);
+    void setYAxisPropertiesMin(ImAxis y_axis, Value min);
+    void setYAxisPropertiesMax(ImAxis y_axis, Value max);
+    void setYAxisPropertiesLabel(ImAxis y_axis, const std::string& label);
+    void setYAxisPropertiesLinearScale(ImAxis y_axis, bool isLinearScale);
+    void setYAxisPropertiesLogScale(ImAxis y_axis, bool isLogScale);
+    void setYAxisPropertiesLogBase(ImAxis y_axis, double log_base);
 
 private:
     std::string window_label_; // Window label
@@ -88,6 +112,6 @@ private:
     ImAxis primary_x_axis_ = ImAxis_X1;
     std::map<std::string, ImAxis> data_to_y_axis_;
     std::map<ImAxis, std::string> y_axis_labels_;
-
+    std::map<ImAxis, YAxisProperties> y_axis_properties_;
     
 };

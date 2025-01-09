@@ -2,7 +2,12 @@
 #include "RenderablePlot.hpp"
 
 RenderablePlot::RenderablePlot(const std::string& label, bool real_time)
-    : label_(label), real_time_(real_time), plot_range_({0, 0}) {}
+    : label_(label), real_time_(real_time), plot_range_({0, 0}) {
+        // Initialize the y-axis properties
+        y_axis_properties_[ImAxis_Y1] = YAxisProperties();
+        y_axis_properties_[ImAxis_Y2] = YAxisProperties();
+        y_axis_properties_[ImAxis_Y3] = YAxisProperties();
+    }
 
 // Move constructor
 RenderablePlot::RenderablePlot(RenderablePlot&& other) noexcept
@@ -152,6 +157,65 @@ std::vector<std::string> RenderablePlot::getSensorsForYAxis(ImAxis y_axis) const
     }
     return sensors;
 }
+
+// NOT SAFE BECAUSE IT DOES NOT CHECK IF PROPERTIES ARE VALID
+void RenderablePlot::setYAxisProperties(ImAxis y_axis, const YAxisProperties& properties) {
+    y_axis_properties_[y_axis] = properties;
+}
+
+void RenderablePlot::setYAxisPropertiesMin(ImAxis y_axis, Value min) {
+    y_axis_properties_[y_axis].min = min;
+    if (y_axis_properties_[y_axis].max < min) {
+        y_axis_properties_[y_axis].max = min + 0.1;
+    }
+}
+
+void RenderablePlot::setYAxisPropertiesMax(ImAxis y_axis, Value max) {
+    y_axis_properties_[y_axis].max = max;
+    if (y_axis_properties_[y_axis].min > max) {
+        y_axis_properties_[y_axis].min = max - 0.1;
+    }
+}
+
+void RenderablePlot::setYAxisPropertiesLabel(ImAxis y_axis, const std::string& label) {
+    y_axis_properties_[y_axis].label = label;
+}
+
+void RenderablePlot::setYAxisPropertiesLinearScale(ImAxis y_axis, bool isLinearScale) {
+    // If the axis is log scale and the new scale is linear, set it to linear
+    if (y_axis_properties_[y_axis].isLogScale && isLinearScale) {
+        y_axis_properties_[y_axis].isLogScale = false;
+        y_axis_properties_[y_axis].isLinearScale = isLinearScale;
+
+    }
+
+    // If the axis is not log scale and the new scale is not linear, set it to linear
+    if (!y_axis_properties_[y_axis].isLogScale && !isLinearScale) {
+        y_axis_properties_[y_axis].isLinearScale = true;
+    }
+
+}
+
+void RenderablePlot::setYAxisPropertiesLogScale(ImAxis y_axis, bool isLogScale) {
+    // If the axis is linear scale and the new scale is log, set it to log
+    if (y_axis_properties_[y_axis].isLinearScale && isLogScale) {
+        y_axis_properties_[y_axis].isLinearScale = false;
+        y_axis_properties_[y_axis].isLogScale = isLogScale;
+    }
+
+    // If the axis is not linear scale and the new scale is not log, set it to linear
+    if (!isLogScale && !y_axis_properties_[y_axis].isLinearScale) {
+        y_axis_properties_[y_axis].isLinearScale = true;
+    }
+}
+
+void RenderablePlot::setYAxisPropertiesLogBase(ImAxis y_axis, double log_base) {
+    if (log_base <= 0) {
+        log_base = 10;
+    }
+    y_axis_properties_[y_axis].log_base = log_base;
+}
+
 
 // ============================================
 // Multiple axis support
