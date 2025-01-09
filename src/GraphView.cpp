@@ -449,6 +449,33 @@ void actionSubmitPlotOptionsPopup(RenderablePlot& renderable_plot, PlotOptionsPo
 
 }
 
+// Search bar logic
+bool IsSearchBarMatch(const std::string& search_text, const std::string& sensor) {
+    // Delimiter for search text and split by delimiter
+    const std::string delimiter = " ";
+    std::vector<std::string> search_tokens;
+    
+    // Split search text by delimiter
+    size_t start = 0;
+    size_t end = search_text.find(delimiter);
+    while (end != std::string::npos) {
+        search_tokens.push_back(search_text.substr(start, end - start));
+        start = end + delimiter.length();
+        end = search_text.find(delimiter, start);
+    }
+    search_tokens.push_back(search_text.substr(start, end));
+
+    // Return true if sensor contains any of the search tokens
+    for (const auto& token : search_tokens) {
+        if (sensor.find(token) != std::string::npos) {
+            return true;
+        }
+    }
+
+    // Return false if no match
+    return false;
+}
+
 void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot& renderable_plot) {
     if (ImGui::Button("Options")) {
         ImGui::OpenPopup(("###" + renderable_plot.getLabel()).c_str());
@@ -578,7 +605,11 @@ void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot
 
         }
 
-        // ******* Text boxes with Drag-and-Drop for sensors *******       
+        // ******* Text boxes with Drag-and-Drop for sensors *******
+        // Search bar for available sensors
+        ImGui::InputText("Search", plot_option_pop_up_state.search_available_sensors_buffer, 
+            sizeof(plot_option_pop_up_state.search_available_sensors_buffer));
+
         if (ImGui::BeginListBox("Available Sensors")) {
             // If no sensors are available, display a message to drop sensors here
             if (plot_option_pop_up_state.sensors_in_available_list_box.empty()) {
@@ -631,6 +662,11 @@ void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot
             for (size_t i = 0; 
             i < plot_option_pop_up_state.sensors_in_available_list_box.size(); 
             ++i) {
+                // Check if the sensor matches the search text
+                if (!IsSearchBarMatch(plot_option_pop_up_state.search_available_sensors_buffer, 
+                    plot_option_pop_up_state.sensors_in_available_list_box.at(i)))
+                    continue;
+
                 ImGui::Selectable(plot_option_pop_up_state.sensors_in_available_list_box.at(i).c_str());
 
                 ImGuiDragDropFlags src_flags = 0;
