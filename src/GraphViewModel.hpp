@@ -128,7 +128,7 @@ public:
 
     // Get downsampled data for a specific sensor
     std::pair<std::vector<DataManager::Timestamp>, std::vector<DataManager::Value>> getDownsampledData(
-    const RenderablePlot& plot, const std::string& sensor, double range, int num_pixels);
+    RenderablePlot& plot, const std::string& sensor, double range, int num_pixels);
 
 
 private:
