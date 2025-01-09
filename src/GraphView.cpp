@@ -422,6 +422,27 @@ void SetPlotRangeState(PlotOptionsPopupState& plot_option_pop_up_state) {
     formatTime(start_local_time, plot_option_pop_up_state.plot_range_start_second, sizeof(plot_option_pop_up_state.plot_range_start_second), "%S");
 }
 
+// Handle submit action for plot options popup
+void actionSubmitPlotOptionsPopup(RenderablePlot& renderable_plot, PlotOptionsPopupState& plot_options_popup_state) {
+    // Add all the selected sensors to their respective Y-axis
+    renderable_plot.clearYAxes();
+    std::map<std::string, RenderablePlot::DataSeries> temp_data_series;
+    
+    for (const auto& Y1_sensor : plot_options_popup_state.sensors_in_Y1_list_box) {
+        renderable_plot.addYAxisForSensor(Y1_sensor, ImAxis_Y1);
+        temp_data_series[Y1_sensor] = RenderablePlot::DataSeries();
+    }
+    for (const auto& Y2_sensor : plot_options_popup_state.sensors_in_Y2_list_box) {
+        renderable_plot.addYAxisForSensor(Y2_sensor, ImAxis_Y2);
+        temp_data_series[Y2_sensor] = RenderablePlot::DataSeries();
+    }
+    for (const auto& Y3_sensor : plot_options_popup_state.sensors_in_Y3_list_box) {
+        renderable_plot.addYAxisForSensor(Y3_sensor, ImAxis_Y3);
+        temp_data_series[Y3_sensor] = RenderablePlot::DataSeries();
+    }
+    renderable_plot.setAllData(temp_data_series);
+
+}
 
 void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot& renderable_plot) {
     if (ImGui::Button("Options")) {
@@ -443,6 +464,8 @@ void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot
     if (ImGui::BeginPopupModal(popup_label.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
         // Get the current state of the popup
         auto& plot_option_pop_up_state = viewModel_.getPlotOptionsState();        
+
+        bool is_able_to_submit = true;
 
         // ******* Real-time toggle ********
         ImGui::Checkbox("Real-time", &plot_option_pop_up_state.is_real_time);
@@ -1075,6 +1098,26 @@ void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot
             }
 
             ImGui::EndListBox(); 
+        }
+
+        is_able_to_submit = is_able_to_submit
+            && (!plot_option_pop_up_state.sensors_in_Y1_list_box.empty()
+            || !plot_option_pop_up_state.sensors_in_Y2_list_box.empty()
+            || !plot_option_pop_up_state.sensors_in_Y3_list_box.empty());
+
+        if (is_able_to_submit) {
+            if (ImGui::Button("Submit")) {
+                // Close the popup
+                ImGui::CloseCurrentPopup();
+
+                // Execute submit action
+                actionSubmitPlotOptionsPopup(renderable_plot, plot_option_pop_up_state);
+
+                // Reset the state of the popup
+                plot_option_pop_up_state.reset();
+            }
+        } else {
+            ImGui::Text("Please ensure all sensors are allocated to a Y-axis.");
         }
 
         if (ImGui::Button("Close")) {
