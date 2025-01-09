@@ -18,6 +18,9 @@ RenderablePlot::RenderablePlot(RenderablePlot&& other) noexcept
       plot_id_(other.plot_id_),
       data_(std::move(other.data_)),
       data_to_y_axis_(std::move(other.data_to_y_axis_)),
+      y_axis_labels_(std::move(other.y_axis_labels_)),
+      primary_x_axis_(other.primary_x_axis_),
+      y_axis_properties_(std::move(other.y_axis_properties_)),
       range_callback_(std::move(other.range_callback_)) {}
 
 // Move assignment operator
@@ -31,6 +34,9 @@ RenderablePlot& RenderablePlot::operator=(RenderablePlot&& other) noexcept {
         plot_id_ = other.plot_id_;
         data_ = std::move(other.data_);
         data_to_y_axis_ = std::move(other.data_to_y_axis_);
+        y_axis_labels_ = std::move(other.y_axis_labels_);
+        primary_x_axis_ = other.primary_x_axis_;
+        y_axis_properties_ = std::move(other.y_axis_properties_);
         range_callback_ = std::move(other.range_callback_);
     }
     return *this;
@@ -158,63 +164,6 @@ std::vector<std::string> RenderablePlot::getSensorsForYAxis(ImAxis y_axis) const
     return sensors;
 }
 
-// NOT SAFE BECAUSE IT DOES NOT CHECK IF PROPERTIES ARE VALID
-void RenderablePlot::setYAxisProperties(ImAxis y_axis, const YAxisProperties& properties) {
-    y_axis_properties_[y_axis] = properties;
-}
-
-void RenderablePlot::setYAxisPropertiesMin(ImAxis y_axis, Value min) {
-    y_axis_properties_[y_axis].min = min;
-    if (y_axis_properties_[y_axis].max < min) {
-        y_axis_properties_[y_axis].max = min + 0.1;
-    }
-}
-
-void RenderablePlot::setYAxisPropertiesMax(ImAxis y_axis, Value max) {
-    y_axis_properties_[y_axis].max = max;
-    if (y_axis_properties_[y_axis].min > max) {
-        y_axis_properties_[y_axis].min = max - 0.1;
-    }
-}
-
-void RenderablePlot::setYAxisPropertiesLabel(ImAxis y_axis, const std::string& label) {
-    y_axis_properties_[y_axis].label = label;
-}
-
-void RenderablePlot::setYAxisPropertiesLinearScale(ImAxis y_axis, bool isLinearScale) {
-    // If the axis is log scale and the new scale is linear, set it to linear
-    if (y_axis_properties_[y_axis].isLogScale && isLinearScale) {
-        y_axis_properties_[y_axis].isLogScale = false;
-        y_axis_properties_[y_axis].isLinearScale = isLinearScale;
-
-    }
-
-    // If the axis is not log scale and the new scale is not linear, set it to linear
-    if (!y_axis_properties_[y_axis].isLogScale && !isLinearScale) {
-        y_axis_properties_[y_axis].isLinearScale = true;
-    }
-
-}
-
-void RenderablePlot::setYAxisPropertiesLogScale(ImAxis y_axis, bool isLogScale) {
-    // If the axis is linear scale and the new scale is log, set it to log
-    if (y_axis_properties_[y_axis].isLinearScale && isLogScale) {
-        y_axis_properties_[y_axis].isLinearScale = false;
-        y_axis_properties_[y_axis].isLogScale = isLogScale;
-    }
-
-    // If the axis is not linear scale and the new scale is not log, set it to linear
-    if (!isLogScale && !y_axis_properties_[y_axis].isLinearScale) {
-        y_axis_properties_[y_axis].isLinearScale = true;
-    }
-}
-
-void RenderablePlot::setYAxisPropertiesLogBase(ImAxis y_axis, double log_base) {
-    if (log_base <= 0) {
-        log_base = 10;
-    }
-    y_axis_properties_[y_axis].log_base = log_base;
-}
 
 
 // ============================================
@@ -241,4 +190,70 @@ void RenderablePlot::deleteYAxisForSensor(const std::string& series_label) {
 
 void RenderablePlot::clearYAxes() {
     data_to_y_axis_.clear();
+}
+
+// NOT SAFE BECAUSE IT DOES NOT CHECK IF PROPERTIES ARE VALID
+void RenderablePlot::setYAxisProperties(ImAxis y_axis, const YAxisProperties& properties) {
+    y_axis_properties_[y_axis] = properties;
+}
+
+void RenderablePlot::setYAxisPropertiesMin(ImAxis y_axis, Value min) {
+    y_axis_properties_[y_axis].min = min;
+    if (y_axis_properties_[y_axis].max < min) {
+        y_axis_properties_[y_axis].max = min + 0.1;
+    }
+}
+
+void RenderablePlot::setYAxisPropertiesMax(ImAxis y_axis, Value max) {
+    y_axis_properties_[y_axis].max = max;
+    if (y_axis_properties_[y_axis].min > max) {
+        y_axis_properties_[y_axis].min = max - 0.1;
+    }
+}
+
+void RenderablePlot::setYAxisPropertiesLabel(ImAxis y_axis, const std::string& label) {
+    y_axis_properties_[y_axis].label = label;
+}
+
+void RenderablePlot::setYAxisPropertiesScale(ImAxis y_axis, ScaleType scale_type) {
+    y_axis_properties_[y_axis].scale_type = scale_type;
+}
+
+void RenderablePlot::setYAxisPropertiesLogBase(ImAxis y_axis, double log_base) {
+    if (log_base <= 0) {
+        log_base = 10;
+    }
+    y_axis_properties_[y_axis].log_base = log_base;
+}
+
+void RenderablePlot::setYAxisPropertiesUserSetRange(ImAxis y_axis, bool user_set_range) {
+    y_axis_properties_[y_axis].user_set_range = user_set_range;
+}
+
+RenderablePlot::YAxisProperties RenderablePlot::getYAxisProperties(ImAxis y_axis) {
+    if (y_axis_properties_.find(y_axis) == y_axis_properties_.end()) {
+        return YAxisProperties();
+    }
+    return y_axis_properties_.at(y_axis);
+}
+
+RenderablePlot::Value RenderablePlot::getYAxisPropertiesMin(ImAxis y_axis) {
+    if (y_axis_properties_.find(y_axis) == y_axis_properties_.end()) {
+        return 0.1;
+    }
+    return y_axis_properties_.at(y_axis).min;
+}
+
+RenderablePlot::Value RenderablePlot::getYAxisPropertiesMax(ImAxis y_axis) {
+    if (y_axis_properties_.find(y_axis) == y_axis_properties_.end()) {
+        return 1.0;
+    }
+    return y_axis_properties_.at(y_axis).max;
+}
+
+bool RenderablePlot::getYAxisPropertiesUserSetRange(ImAxis y_axis) {
+    if (y_axis_properties_.find(y_axis) == y_axis_properties_.end()) {
+        return false;
+    }
+    return y_axis_properties_.at(y_axis).user_set_range;
 }

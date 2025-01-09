@@ -171,9 +171,6 @@ void GraphView::renderAddPlotPopup() {
 
         static bool is_able_to_submit = false;
 
-        // Get current year
-        ImGui::Text("Enter values:");
-
         // Temporary buffers to hold input text
         static char window_label_buffer[128] = "";
         static char plot_label_buffer[128] = "";
@@ -447,6 +444,29 @@ void ActionSubmitPlotOptionsPopup(RenderablePlot& renderable_plot, PlotOptionsPo
     }
     renderable_plot.setAllData(temp_data_series);
 
+    // Set the Y-axis properties
+    renderable_plot.setYAxisPropertiesLabel(ImAxis_Y1, plot_options_popup_state.Y1_properties.label);
+    renderable_plot.setYAxisPropertiesMin(ImAxis_Y1, plot_options_popup_state.Y1_properties.min);
+    renderable_plot.setYAxisPropertiesMax(ImAxis_Y1, plot_options_popup_state.Y1_properties.max);
+    renderable_plot.setYAxisPropertiesScale(ImAxis_Y1, plot_options_popup_state.Y1_properties.scale_type);
+    renderable_plot.setYAxisPropertiesLogBase(ImAxis_Y1, plot_options_popup_state.Y1_properties.log_base);
+    renderable_plot.setYAxisPropertiesUserSetRange(ImAxis_Y1, true);
+
+    renderable_plot.setYAxisPropertiesLabel(ImAxis_Y2, plot_options_popup_state.Y2_properties.label);
+    renderable_plot.setYAxisPropertiesMin(ImAxis_Y2, plot_options_popup_state.Y2_properties.min);
+    renderable_plot.setYAxisPropertiesMax(ImAxis_Y2, plot_options_popup_state.Y2_properties.max);
+    renderable_plot.setYAxisPropertiesScale(ImAxis_Y2, plot_options_popup_state.Y2_properties.scale_type);
+    renderable_plot.setYAxisPropertiesLogBase(ImAxis_Y2, plot_options_popup_state.Y2_properties.log_base);
+    renderable_plot.setYAxisPropertiesUserSetRange(ImAxis_Y2, true);
+
+    renderable_plot.setYAxisPropertiesLabel(ImAxis_Y3, plot_options_popup_state.Y3_properties.label);
+    renderable_plot.setYAxisPropertiesMin(ImAxis_Y3, plot_options_popup_state.Y3_properties.min);
+    renderable_plot.setYAxisPropertiesMax(ImAxis_Y3, plot_options_popup_state.Y3_properties.max);
+    renderable_plot.setYAxisPropertiesScale(ImAxis_Y3, plot_options_popup_state.Y3_properties.scale_type);
+    renderable_plot.setYAxisPropertiesLogBase(ImAxis_Y3, plot_options_popup_state.Y3_properties.log_base);
+    renderable_plot.setYAxisPropertiesUserSetRange(ImAxis_Y3, true);
+
+    
 }
 
 // Search bar logic
@@ -515,6 +535,10 @@ void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot
                     sensor),
                 plot_option_pop_up_state.sensors_in_available_list_box.end());
         }
+
+        plot_option_pop_up_state.Y1_properties = renderable_plot.getYAxisProperties(ImAxis_Y1);
+        plot_option_pop_up_state.Y2_properties = renderable_plot.getYAxisProperties(ImAxis_Y2);
+        plot_option_pop_up_state.Y3_properties = renderable_plot.getYAxisProperties(ImAxis_Y3);
 
     }
 
@@ -1172,6 +1196,109 @@ void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot
             || !plot_option_pop_up_state.sensors_in_Y2_list_box.empty()
             || !plot_option_pop_up_state.sensors_in_Y3_list_box.empty());
 
+        // ******* Collapsibles with Y-axis properties *******
+        if (ImGui::CollapsingHeader("Y1 Axis Properties")) {
+            // Y1 Axis properties
+            ImGui::Text("Y1 Axis Properties");
+
+            // Input boxes for minimum and maximum values
+            ImGui::InputDouble("Y1 Minimum", &plot_option_pop_up_state.Y1_properties.min);
+            ImGui::SameLine();
+            ImGui::InputDouble("Y1 Maximum", &plot_option_pop_up_state.Y1_properties.max);
+
+            // Drop-down menu for scale properties
+            const char* scale_options[] = { "Linear", "Logarithmic" };
+            int scale_option_index = static_cast<int>(plot_option_pop_up_state.Y1_properties.scale_type);
+            const char* selected_scale = scale_options[scale_option_index];
+            if (ImGui::BeginCombo("Y1 Scale", selected_scale)) {
+                for (int n = 0; n < IM_ARRAYSIZE(scale_options); n++) {
+                    const bool is_selected = (selected_scale == scale_options[n]);
+                    if (ImGui::Selectable(scale_options[n], is_selected)) {
+                        selected_scale = scale_options[n];
+                        plot_option_pop_up_state.Y1_properties.scale_type = static_cast<RenderablePlot::ScaleType>(n);
+                    }
+                    if (is_selected) {
+                        ImGui::SetItemDefaultFocus();
+                    }
+                }
+                ImGui::EndCombo();
+            }
+            
+            // Input box for log base if scale is logarithmic
+            if (plot_option_pop_up_state.Y1_properties.scale_type == RenderablePlot::ScaleType::Logirithmic) {
+                ImGui::InputDouble("Y1 Log base", &plot_option_pop_up_state.Y1_properties.log_base);
+            }
+        }
+        ImGui::Separator();
+
+        if (ImGui::CollapsingHeader("Y2 Axis Properties")) {
+            // Y2 Axis properties
+            ImGui::Text("Y2 Axis Properties");
+
+            // Input boxes for minimum and maximum values
+            ImGui::InputDouble("Y2 Minimum", &plot_option_pop_up_state.Y2_properties.min);
+            ImGui::SameLine();
+            ImGui::InputDouble("Y2 Maximum", &plot_option_pop_up_state.Y2_properties.max);
+
+            // Drop-down menu for scale properties
+            const char* scale_options[] = { "Linear", "Logarithmic" };
+            int scale_option_index = static_cast<int>(plot_option_pop_up_state.Y2_properties.scale_type);
+            const char* selected_scale = scale_options[scale_option_index];
+            if (ImGui::BeginCombo("Y2 Scale", selected_scale)) {
+                for (int n = 0; n < IM_ARRAYSIZE(scale_options); n++) {
+                    const bool is_selected = (selected_scale == scale_options[n]);
+                    if (ImGui::Selectable(scale_options[n], is_selected)) {
+                        selected_scale = scale_options[n];
+                        plot_option_pop_up_state.Y2_properties.scale_type = static_cast<RenderablePlot::ScaleType>(n);
+                    }
+                    if (is_selected) {
+                        ImGui::SetItemDefaultFocus();
+                    }
+                }
+                ImGui::EndCombo();
+            }
+            
+            // Input box for log base if scale is logarithmic
+            if (plot_option_pop_up_state.Y2_properties.scale_type == RenderablePlot::ScaleType::Logirithmic) {
+                ImGui::InputDouble("Y2 Log base", &plot_option_pop_up_state.Y2_properties.log_base);
+            }
+        }
+        ImGui::Separator();
+
+        if (ImGui::CollapsingHeader("Y3 Axis Properties")) {
+            // Y3 Axis properties
+            ImGui::Text("Y3 Axis Properties");
+
+            // Input boxes for minimum and maximum values
+            ImGui::InputDouble("Y3 Minimum", &plot_option_pop_up_state.Y3_properties.min);
+            ImGui::SameLine();
+            ImGui::InputDouble("Y3 Maximum", &plot_option_pop_up_state.Y3_properties.max);
+
+            // Drop-down menu for scale properties
+            const char* scale_options[] = { "Linear", "Logarithmic" };
+            int scale_option_index = static_cast<int>(plot_option_pop_up_state.Y3_properties.scale_type);
+            const char* selected_scale = scale_options[scale_option_index];
+            if (ImGui::BeginCombo("Y3 Scale", selected_scale)) {
+                for (int n = 0; n < IM_ARRAYSIZE(scale_options); n++) {
+                    const bool is_selected = (selected_scale == scale_options[n]);
+                    if (ImGui::Selectable(scale_options[n], is_selected)) {
+                        selected_scale = scale_options[n];
+                        plot_option_pop_up_state.Y3_properties.scale_type = static_cast<RenderablePlot::ScaleType>(n);
+                    }
+                    if (is_selected) {
+                        ImGui::SetItemDefaultFocus();
+                    }
+                }
+                ImGui::EndCombo();
+            }
+            
+            // Input box for log base if scale is logarithmic
+            if (plot_option_pop_up_state.Y3_properties.scale_type == RenderablePlot::ScaleType::Logirithmic) {
+                ImGui::InputDouble("Y3 Log base", &plot_option_pop_up_state.Y3_properties.log_base);
+            }
+        }
+        ImGui::Separator();
+
         if (is_able_to_submit) {
             if (ImGui::Button("Submit")) {
                 // Close the popup
@@ -1201,7 +1328,7 @@ void GraphView::renderAllPlots(){
     // Plot all RenderablePlots in individual windows
     for (auto& renderable_plot : viewModel_.getRenderablePlots()){
         // Create a sub-window with each plot
-        ImGui::SetNextWindowSize(ImVec2(300, 200), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowSize(ImVec2(300, 600), ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowPos(ImVec2(100, 100), ImGuiCond_FirstUseEver);
 
         ImGui::Begin(renderable_plot.getWindowLabel().c_str(), nullptr, ImGuiWindowFlags_None);
@@ -1227,10 +1354,12 @@ void GraphView::renderAllPlots(){
             // Update the real-time flag if it changes
             renderable_plot.setRealTime(is_real_time);
         }
-
         ImGui::SameLine();
+
+        // Create a button to open the plot options popup
         renderPlotOptions(("###" + renderable_plot.getLabel()), renderable_plot);
 
+        // Render the plot
         if (ImPlot::BeginPlot(("###" + renderable_plot.getLabel()).c_str())) {
             // Get all sensors in the plot
             const std::vector<std::string> sensors = renderable_plot.getAllSensors();
@@ -1240,6 +1369,12 @@ void GraphView::renderAllPlots(){
                 // Get the axis (Y1, Y2, Y3) for the sensor
                 ImAxis plot_axis = renderable_plot.getYAxisForSensor(series_label);
                 ImPlot::SetupAxis(plot_axis, nullptr, ImPlotAxisFlags_AuxDefault);
+                if (renderable_plot.getYAxisPropertiesUserSetRange(plot_axis)) {
+                    std::cout << "Setting axis limits for " << series_label << " to " << renderable_plot.getYAxisPropertiesMin(plot_axis) << " - " << renderable_plot.getYAxisPropertiesMax(plot_axis) << "\n";
+                    ImPlot::SetupAxisLimits(plot_axis, renderable_plot.getYAxisPropertiesMin(plot_axis), 
+                        renderable_plot.getYAxisPropertiesMax(plot_axis), ImGuiCond_Appearing);
+                    renderable_plot.setYAxisPropertiesUserSetRange(plot_axis, false);
+                }
             }
 
             // Set the plot X_axis to time
@@ -1280,6 +1415,33 @@ void GraphView::renderAllPlots(){
                     }
                 }
             }
+
+            // Callback the Y1, Y2, Y3 min and max values
+            for (const auto& axis : {ImAxis_Y1, ImAxis_Y2, ImAxis_Y3}) {
+                // Check if the axis exists in the plot
+                bool axis_exists = false;
+                for (const auto& sensor: sensors) {
+                    if (renderable_plot.getYAxisForSensor(sensor) == axis) {
+                        axis_exists = true;
+                        break;
+                    }
+                }
+                if (!axis_exists) {
+                    continue;
+                }
+
+                // Get the min and max values for the axis
+                ImPlotRect y_axis_limits = ImPlot::GetPlotLimits(ImAxis_X1, axis);
+                double axis_min = y_axis_limits.Y.Min;
+                double axis_max = y_axis_limits.Y.Max;
+                
+                // Update the axis properties in the renderable plot
+                renderable_plot.setYAxisPropertiesMin(axis, axis_min);
+                renderable_plot.setYAxisPropertiesMax(axis, axis_max);
+
+            }
+            
+
 
             ImPlot::EndPlot();
         }

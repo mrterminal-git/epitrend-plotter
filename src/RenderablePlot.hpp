@@ -62,21 +62,25 @@ public:
     // ============================================
     // Multiple axis support
     // ============================================
+    enum class ScaleType {
+        Linear,
+        Logirithmic
+    };
     struct YAxisProperties {
         std::string label = "";
         Value min = 0.1;
         Value max = 1.0;
-        bool isLinearScale = true;
-        bool isLogScale = false;
+        ScaleType scale_type = ScaleType::Linear;
         double log_base = 10;
+        bool user_set_range = false; // important to let rendering logic know if the user has set the range
 
         void reset() {
             label = "";
             min = 0.1;
             max = 1.0;
-            isLinearScale = true;
-            isLogScale = false;
+            ScaleType scale_type = ScaleType::Linear;
             log_base = 10;
+            user_set_range = false;
         }
     };
     void addYAxisForSensor(const std::string& series_label, ImAxis y_axis);
@@ -88,9 +92,13 @@ public:
     void setYAxisPropertiesMin(ImAxis y_axis, Value min);
     void setYAxisPropertiesMax(ImAxis y_axis, Value max);
     void setYAxisPropertiesLabel(ImAxis y_axis, const std::string& label);
-    void setYAxisPropertiesLinearScale(ImAxis y_axis, bool isLinearScale);
-    void setYAxisPropertiesLogScale(ImAxis y_axis, bool isLogScale);
+    void setYAxisPropertiesScale(ImAxis y_axis, ScaleType scale_type);
     void setYAxisPropertiesLogBase(ImAxis y_axis, double log_base);
+    void setYAxisPropertiesUserSetRange(ImAxis y_axis, bool user_set_range);
+    YAxisProperties getYAxisProperties(ImAxis y_axis);
+    Value getYAxisPropertiesMin(ImAxis y_axis);
+    Value getYAxisPropertiesMax(ImAxis y_axis);
+    bool getYAxisPropertiesUserSetRange(ImAxis y_axis);
 
 private:
     std::string window_label_; // Window label

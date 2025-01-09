@@ -62,6 +62,9 @@ struct PlotOptionsPopupState {
     std::vector<std::string> sensors_in_Y2_list_box;
     std::vector<std::string> sensors_in_Y3_list_box;
     char search_available_sensors_buffer[255] = "";
+    RenderablePlot::YAxisProperties Y1_properties;
+    RenderablePlot::YAxisProperties Y2_properties;
+    RenderablePlot::YAxisProperties Y3_properties;
 
     char plot_range_start_year[5] = "";
     char plot_range_start_month[3] = "";
