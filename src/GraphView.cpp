@@ -428,7 +428,7 @@ void SetPlotRangeState(PlotOptionsPopupState& plot_option_pop_up_state) {
 }
 
 // Handle submit action for plot options popup
-void actionSubmitPlotOptionsPopup(RenderablePlot& renderable_plot, PlotOptionsPopupState& plot_options_popup_state) {
+void ActionSubmitPlotOptionsPopup(RenderablePlot& renderable_plot, PlotOptionsPopupState& plot_options_popup_state) {
     // Add all the selected sensors to their respective Y-axis
     renderable_plot.clearYAxes();
     std::map<std::string, RenderablePlot::DataSeries> temp_data_series;
@@ -1178,7 +1178,7 @@ void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot
                 ImGui::CloseCurrentPopup();
 
                 // Execute submit action
-                actionSubmitPlotOptionsPopup(renderable_plot, plot_option_pop_up_state);
+                ActionSubmitPlotOptionsPopup(renderable_plot, plot_option_pop_up_state);
 
                 // Reset the state of the popup
                 plot_option_pop_up_state.reset();
@@ -1261,7 +1261,7 @@ void GraphView::renderAllPlots(){
                 // Get the axis (Y1, Y2, Y3) for the sensor
                 ImAxis plot_axis = renderable_plot.getYAxisForSensor(series_label);
                 ImPlot::SetAxes(ImAxis_X1, plot_axis);
-                ImPlot::PlotLine(series_label.c_str(), xs.data(), ys.data(), xs.size());
+                ImPlot::PlotStairs(series_label.c_str(), xs.data(), ys.data(), xs.size());
             }
 
             // Callback plot range if plot range changes
