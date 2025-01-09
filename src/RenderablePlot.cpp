@@ -4,16 +4,39 @@
 RenderablePlot::RenderablePlot(const std::string& label, bool real_time)
     : label_(label), real_time_(real_time), plot_range_({0, 0}) {}
 
+// Move constructor
+RenderablePlot::RenderablePlot(RenderablePlot&& other) noexcept
+    : label_(std::move(other.label_)),
+      window_label_(std::move(other.window_label_)),
+      plot_range_(std::move(other.plot_range_)),
+      real_time_(other.real_time_),
+      plot_id_(other.plot_id_),
+      data_(std::move(other.data_)),
+      data_to_y_axis_(std::move(other.data_to_y_axis_)),
+      range_callback_(std::move(other.range_callback_)) {}
+
+// Move assignment operator
+RenderablePlot& RenderablePlot::operator=(RenderablePlot&& other) noexcept {
+    if (this != &other) {
+        std::lock_guard<std::mutex> lock(data_mutex_);
+        label_ = std::move(other.label_);
+        window_label_ = std::move(other.window_label_);
+        plot_range_ = std::move(other.plot_range_);
+        real_time_ = other.real_time_;
+        plot_id_ = other.plot_id_;
+        data_ = std::move(other.data_);
+        data_to_y_axis_ = std::move(other.data_to_y_axis_);
+        range_callback_ = std::move(other.range_callback_);
+    }
+    return *this;
+}
+
 void RenderablePlot::setLabel(const std::string& label) {
     label_ = label;
 }
 
 void RenderablePlot::setWindowLabel(const std::string& window_label) {
     window_label_ = window_label;
-}
-
-void RenderablePlot::setData(const std::string& series_label, const RenderablePlot::DataSeries& data) {
-    data_[series_label] = data;
 }
 
 void RenderablePlot::setPlotRange(Timestamp start, Timestamp end) {
@@ -36,14 +59,6 @@ const std::string& RenderablePlot::getLabel() const {
 
 const std::string& RenderablePlot::getWindowLabel() const {
     return window_label_;
-}
-
-const RenderablePlot::DataSeries& RenderablePlot::getData(const std::string& sensor) const {
-    return data_.at(sensor);
-}
-
-const std::map<std::string, RenderablePlot::DataSeries> RenderablePlot::getAllData() const {
-    return data_;
 }
 
 const std::pair<RenderablePlot::Timestamp, RenderablePlot::Timestamp>& RenderablePlot::getPlotRange() const {
@@ -87,4 +102,79 @@ const std::vector<std::string> RenderablePlot::getAllSensors() const {
         sensors.push_back(sensor);
     }
     return sensors;
+}
+
+
+
+
+// ============================================
+// Data Management
+// ============================================
+void RenderablePlot::setData(const std::string& series_label, const RenderablePlot::DataSeries& data) {
+    // Lock the mutex
+    std::lock_guard<std::mutex> lock(data_mutex_);
+    data_[series_label] = data;
+}
+
+void RenderablePlot::setAllData(const std::map<std::string, RenderablePlot::DataSeries> data) {
+    // Lock the mutex
+    std::lock_guard<std::mutex> lock(data_mutex_);
+    data_ = data;
+}
+
+// UNSAFE ACCESS
+const RenderablePlot::DataSeries& RenderablePlot::getData(const std::string& sensor) const {
+    return data_.at(sensor);
+}
+
+// UNSAFE ACCESS
+const std::map<std::string, RenderablePlot::DataSeries> RenderablePlot::getAllData() const {
+    return data_;
+}
+
+// SAFE ACCESS
+RenderablePlot::DataSeries RenderablePlot::getDataSnapshot(const std::string& series_label) {
+    std::lock_guard<std::mutex> lock(data_mutex_);
+    auto it = data_.find(series_label);
+    if (it != data_.end()) {
+        return it->second;
+    }
+    // Return empty data series if not found
+    return DataSeries(); 
+}
+
+std::vector<std::string> RenderablePlot::getSensorsForYAxis(ImAxis y_axis) const {
+    std::vector<std::string> sensors;
+    for (const auto& [sensor, axis] : data_to_y_axis_) {
+        if (axis == y_axis) {
+            sensors.push_back(sensor);
+        }
+    }
+    return sensors;
+}
+
+// ============================================
+// Multiple axis support
+// ============================================
+void RenderablePlot::addYAxisForSensor(const std::string& series_label, ImAxis y_axis) {
+    data_to_y_axis_[series_label] = y_axis;
+}
+
+ImAxis RenderablePlot::getYAxisForSensor(const std::string& series_label) const {
+    auto it = data_to_y_axis_.find(series_label);
+    if (it != data_to_y_axis_.end()) {
+        return it->second;
+    } 
+    // Default to Y1 axis
+    return ImAxis_Y1;
+}
+
+void RenderablePlot::deleteYAxisForSensor(const std::string& series_label) {
+    if (data_to_y_axis_.find(series_label) != data_to_y_axis_.end()) {
+        data_to_y_axis_.erase(series_label);
+    }
+}
+
+void RenderablePlot::clearYAxes() {
+    data_to_y_axis_.clear();
 }

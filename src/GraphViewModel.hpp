@@ -56,6 +56,11 @@ struct PlotOptionsPopupState {
     std::vector<std::string> selected_sensors;
     bool is_range_initialized = false;
     bool is_able_to_submit = false;
+    std::vector<std::string> sensors_in_available_list_box;
+    int selected_sensor_in_available_list_box = -1;
+    std::vector<std::string> sensors_in_Y1_list_box;
+    std::vector<std::string> sensors_in_Y2_list_box;
+    std::vector<std::string> sensors_in_Y3_list_box;
 
     char plot_range_start_year[5] = "";
     char plot_range_start_month[3] = "";
@@ -78,6 +83,10 @@ struct PlotOptionsPopupState {
         selected_sensors.clear();
         is_range_initialized = false;
         is_able_to_submit = false;
+        sensors_in_available_list_box.clear();
+        sensors_in_Y1_list_box.clear();
+        sensors_in_Y2_list_box.clear();
+        selected_sensor_in_available_list_box = -1;
 
         std::fill(std::begin(plot_range_start_year), std::end(plot_range_start_year), '\0');
         std::fill(std::begin(plot_range_start_month), std::end(plot_range_start_month), '\0');
@@ -119,7 +128,7 @@ public:
 
     // Get downsampled data for a specific sensor
     std::pair<std::vector<DataManager::Timestamp>, std::vector<DataManager::Value>> getDownsampledData(
-    const RenderablePlot& plot, const std::string& sensor, double range, int num_pixels);
+    RenderablePlot& plot, const std::string& sensor, double range, int num_pixels);
 
 
 private:

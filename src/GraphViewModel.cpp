@@ -9,7 +9,7 @@ void GraphViewModel::addRenderablePlot(RenderablePlot& object) {
     // Set the plot ID
     object.setPlotId(next_plot_id_++);
 
-    renderable_plots_.push_back(object);
+    renderable_plots_.push_back(std::move(object));
 }
 
 std::vector<RenderablePlot>& GraphViewModel::getRenderablePlots() {
@@ -36,38 +36,23 @@ PlotOptionsPopupState& GraphViewModel::getPlotOptionsState(){
     return plot_options_popup_state_;
 }
 
-
 void GraphViewModel::updatePlotsWithData(DataManager& dataManager) {
-    std::vector<RenderablePlot> temp_plots;
-
-    // Get all the time-series data for each from dataManager via getBuffersSnapshot
-    for (auto& renderable_plot : renderable_plots_) {
-        // Copy the plot to the temporary buffer
-        temp_plots.push_back(renderable_plot);
-
-        // Loop through the sensors in each renderable plot
-        for (const auto& [sensor, _] : renderable_plot.getAllData()) {
+    for (auto& renderable_plot: renderable_plots_) {
+        for (const auto& sensor: renderable_plot.getAllSensors()) {
             std::vector<std::pair<DataManager::Timestamp, DataManager::Value>> data_in_range
              = dataManager.getBuffersSnapshot(
                 sensor, renderable_plot.getPlotRange().first, renderable_plot.getPlotRange().second);
-
-            temp_plots.back().setData(sensor, data_in_range);
+            
+            renderable_plot.setData(sensor, data_in_range);
         }
-
-    }
-
-    // Lock the mutex only when updating the view model
-    {
-        std::lock_guard<std::mutex> lock(update_viewModel_mutex_);
-        renderable_plots_ = std::move(temp_plots);
     }
 }
 
 std::pair<std::vector<DataManager::Timestamp>, std::vector<DataManager::Value>> GraphViewModel::getDownsampledData(
-    const RenderablePlot& plot, const std::string& sensor, double range, int num_pixels) {
+    RenderablePlot& plot, const std::string& sensor, double range, int num_pixels) {
     std::vector<DataManager::Timestamp> timestamps;
     std::vector<DataManager::Value> values;
-    const auto& data = plot.getData(sensor);
+    RenderablePlot::DataSeries data = plot.getDataSnapshot(sensor);
 
     if (data.empty()) {
         return {timestamps, values};
