@@ -98,6 +98,8 @@ public:
     YAxisProperties getYAxisProperties(ImAxis y_axis);
     Value getYAxisPropertiesMin(ImAxis y_axis);
     Value getYAxisPropertiesMax(ImAxis y_axis);
+    ScaleType getYAxisPropertiesScaleType(ImAxis y_axis);
+    double getYAxisPropertiesLogBase(ImAxis y_axis);
     bool getYAxisPropertiesUserSetRange(ImAxis y_axis);
 
 private:
@@ -108,7 +110,7 @@ private:
     std::map<std::string, DataSeries> data_; // Data for each sensor and corresponding time-series
     RangeCallback range_callback_; // Callback for range changes
     long long plot_id_;
-    
+
     // ============================================
     // Data Management
     // ============================================
@@ -121,5 +123,5 @@ private:
     std::map<std::string, ImAxis> data_to_y_axis_;
     std::map<ImAxis, std::string> y_axis_labels_;
     std::map<ImAxis, YAxisProperties> y_axis_properties_;
-    
+
 };

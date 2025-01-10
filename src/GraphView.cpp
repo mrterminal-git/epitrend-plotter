@@ -429,7 +429,7 @@ void ActionSubmitPlotOptionsPopup(RenderablePlot& renderable_plot, PlotOptionsPo
     // Add all the selected sensors to their respective Y-axis
     renderable_plot.clearYAxes();
     std::map<std::string, RenderablePlot::DataSeries> temp_data_series;
-    
+
     for (const auto& Y1_sensor : plot_options_popup_state.sensors_in_Y1_list_box) {
         renderable_plot.addYAxisForSensor(Y1_sensor, ImAxis_Y1);
         temp_data_series[Y1_sensor] = RenderablePlot::DataSeries();
@@ -466,7 +466,7 @@ void ActionSubmitPlotOptionsPopup(RenderablePlot& renderable_plot, PlotOptionsPo
     renderable_plot.setYAxisPropertiesLogBase(ImAxis_Y3, plot_options_popup_state.Y3_properties.log_base);
     renderable_plot.setYAxisPropertiesUserSetRange(ImAxis_Y3, true);
 
-    
+
 }
 
 // Search bar logic
@@ -474,7 +474,7 @@ bool IsSearchBarMatch(const std::string& search_text, const std::string& sensor)
     // Delimiter for search text and split by delimiter
     const std::string delimiter = " ";
     std::vector<std::string> search_tokens;
-    
+
     // Split search text by delimiter
     size_t start = 0;
     size_t end = search_text.find(delimiter);
@@ -496,6 +496,7 @@ bool IsSearchBarMatch(const std::string& search_text, const std::string& sensor)
     return false;
 }
 
+// Render the "Plot options" popup
 void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot& renderable_plot) {
     if (ImGui::Button("Options")) {
         ImGui::OpenPopup(("###" + renderable_plot.getLabel()).c_str());
@@ -506,7 +507,7 @@ void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot
         plot_option_pop_up_state.plot_label = renderable_plot.getLabel();
         plot_option_pop_up_state.available_sensors = viewModel_.getPlottableSensors();
         plot_option_pop_up_state.is_real_time = renderable_plot.isRealTime();
-        plot_option_pop_up_state.sensors_in_available_list_box 
+        plot_option_pop_up_state.sensors_in_available_list_box
             = plot_option_pop_up_state.available_sensors;
         plot_option_pop_up_state.selected_sensor_in_available_list_box = -1;
         plot_option_pop_up_state.sensors_in_Y1_list_box = renderable_plot.getSensorsForYAxis(ImAxis_Y1);
@@ -545,13 +546,13 @@ void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot
     // Start a Popup Modal
     if (ImGui::BeginPopupModal(popup_label.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
         // Get the current state of the popup
-        auto& plot_option_pop_up_state = viewModel_.getPlotOptionsState();        
+        auto& plot_option_pop_up_state = viewModel_.getPlotOptionsState();
 
         bool is_able_to_submit = true;
 
         // ******* Real-time toggle ********
         ImGui::Checkbox("Real-time", &plot_option_pop_up_state.is_real_time);
-        
+
         // ******* Input boxes for plot range *******
         if(!plot_option_pop_up_state.is_real_time) {
             // Enter options for plot range if not real-time
@@ -631,7 +632,7 @@ void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot
 
         // ******* Text boxes with Drag-and-Drop for sensors *******
         // Search bar for available sensors
-        ImGui::InputText("Search", plot_option_pop_up_state.search_available_sensors_buffer, 
+        ImGui::InputText("Search", plot_option_pop_up_state.search_available_sensors_buffer,
             sizeof(plot_option_pop_up_state.search_available_sensors_buffer));
 
         if (ImGui::BeginListBox("Available Sensors")) {
@@ -646,7 +647,7 @@ void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot
                         int payload_n = *(const int*)payload->Data;
                         std::cout << "Payload received from Y1 Sensors into Available Sensors: " << plot_option_pop_up_state.sensors_in_Y1_list_box.at(payload_n) << "\n";
 
-                        // Delete the sensor from the Y1 list and add it to the available list                  
+                        // Delete the sensor from the Y1 list and add it to the available list
                         plot_option_pop_up_state.sensors_in_available_list_box.push_back(plot_option_pop_up_state.sensors_in_Y1_list_box.at(payload_n));
                         plot_option_pop_up_state.sensors_in_Y1_list_box.erase(plot_option_pop_up_state.sensors_in_Y1_list_box.begin() + payload_n);
                     }
@@ -660,7 +661,7 @@ void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot
                         int payload_n = *(const int*)payload->Data;
                         std::cout << "Payload received from Y2 Sensors into Available Sensors: " << plot_option_pop_up_state.sensors_in_Y2_list_box.at(payload_n) << "\n";
 
-                        // Delete the sensor from the Y2 list and add it to the available list                  
+                        // Delete the sensor from the Y2 list and add it to the available list
                         plot_option_pop_up_state.sensors_in_available_list_box.push_back(plot_option_pop_up_state.sensors_in_Y2_list_box.at(payload_n));
                         plot_option_pop_up_state.sensors_in_Y2_list_box.erase(plot_option_pop_up_state.sensors_in_Y2_list_box.begin() + payload_n);
                     }
@@ -674,20 +675,20 @@ void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot
                         int payload_n = *(const int*)payload->Data;
                         std::cout << "Payload received from Y3 Sensors into Available Sensors: " << plot_option_pop_up_state.sensors_in_Y3_list_box.at(payload_n) << "\n";
 
-                        // Delete the sensor from the Y3 list and add it to the available list                  
+                        // Delete the sensor from the Y3 list and add it to the available list
                         plot_option_pop_up_state.sensors_in_available_list_box.push_back(plot_option_pop_up_state.sensors_in_Y3_list_box.at(payload_n));
                         plot_option_pop_up_state.sensors_in_Y3_list_box.erase(plot_option_pop_up_state.sensors_in_Y3_list_box.begin() + payload_n);
                     }
                     ImGui::EndDragDropTarget();
                 }
             }
-            
+
             // List all available sensors that have not been selected
-            for (size_t i = 0; 
-            i < plot_option_pop_up_state.sensors_in_available_list_box.size(); 
+            for (size_t i = 0;
+            i < plot_option_pop_up_state.sensors_in_available_list_box.size();
             ++i) {
                 // Check if the sensor matches the search text
-                if (!IsSearchBarMatch(plot_option_pop_up_state.search_available_sensors_buffer, 
+                if (!IsSearchBarMatch(plot_option_pop_up_state.search_available_sensors_buffer,
                     plot_option_pop_up_state.sensors_in_available_list_box.at(i)))
                     continue;
 
@@ -696,7 +697,7 @@ void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot
                 ImGuiDragDropFlags src_flags = 0;
                 // src_flags |= ImGuiDragDropFlags_SourceNoDisableHover;     // Keep the source displayed as hovered
                 // src_flags |= ImGuiDragDropFlags_SourceNoHoldToOpenOthers; // Because our dragging is local, we disable the feature of opening foreign treenodes/tabs while dragging
-                
+
                 if (ImGui::BeginDragDropSource(src_flags)) {
                     if (!(src_flags))
                         ImGui::Text("Moving \"%s\"", plot_option_pop_up_state.sensors_in_available_list_box.at(i).c_str());
@@ -711,10 +712,10 @@ void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot
                         int payload_n = *(const int*)payload->Data;
                         std::cout << "Payload received from Y1 Sensors into Available Sensors: " << plot_option_pop_up_state.sensors_in_Y1_list_box.at(payload_n) << "\n";
 
-                        // Delete the sensor from the Y1 list and add it to the available list                  
+                        // Delete the sensor from the Y1 list and add it to the available list
                         plot_option_pop_up_state.sensors_in_available_list_box.push_back(plot_option_pop_up_state.sensors_in_Y1_list_box.at(payload_n));
                         plot_option_pop_up_state.sensors_in_Y1_list_box.erase(plot_option_pop_up_state.sensors_in_Y1_list_box.begin() + payload_n);
-                        
+
                         // Re-arrange the sensors in the available list
                         std::map<int, std::string> sensor_pos_map;
                         std::vector<std::string> ordered_by_sensor;
@@ -754,10 +755,10 @@ void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot
                         int payload_n = *(const int*)payload->Data;
                         std::cout << "Payload received from Y1 Sensors into Available Sensors: " << plot_option_pop_up_state.sensors_in_Y2_list_box.at(payload_n) << "\n";
 
-                        // Delete the sensor from the Y1 list and add it to the available list                  
+                        // Delete the sensor from the Y1 list and add it to the available list
                         plot_option_pop_up_state.sensors_in_available_list_box.push_back(plot_option_pop_up_state.sensors_in_Y2_list_box.at(payload_n));
                         plot_option_pop_up_state.sensors_in_Y2_list_box.erase(plot_option_pop_up_state.sensors_in_Y2_list_box.begin() + payload_n);
-                        
+
                         // Re-arrange the sensors in the available list
                         std::map<int, std::string> sensor_pos_map;
                         std::vector<std::string> ordered_by_sensor;
@@ -796,10 +797,10 @@ void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot
                         int payload_n = *(const int*)payload->Data;
                         std::cout << "Payload received from Y3 Sensors into Available Sensors: " << plot_option_pop_up_state.sensors_in_Y3_list_box.at(payload_n) << "\n";
 
-                        // Delete the sensor from the Y3 list and add it to the available list                  
+                        // Delete the sensor from the Y3 list and add it to the available list
                         plot_option_pop_up_state.sensors_in_available_list_box.push_back(plot_option_pop_up_state.sensors_in_Y3_list_box.at(payload_n));
                         plot_option_pop_up_state.sensors_in_Y3_list_box.erase(plot_option_pop_up_state.sensors_in_Y3_list_box.begin() + payload_n);
-                    
+
                         // Re-arrange the sensors in the available list
                         std::map<int, std::string> sensor_pos_map;
                         std::vector<std::string> ordered_by_sensor;
@@ -845,7 +846,7 @@ void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot
                     if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_FROM_AVAILABLE_SENSORS")) {
                         int payload_n = *(const int*)payload->Data;
                         std::cout << "Payload received from Available Sensors: " << plot_option_pop_up_state.sensors_in_available_list_box.at(payload_n) << "\n";
-                        
+
                         // Delete the sensor from the available list and add it to the Y1 list
                         plot_option_pop_up_state.sensors_in_Y1_list_box.push_back(plot_option_pop_up_state.sensors_in_available_list_box.at(payload_n));
                         plot_option_pop_up_state.sensors_in_available_list_box.erase(plot_option_pop_up_state.sensors_in_available_list_box.begin() + payload_n);
@@ -859,14 +860,14 @@ void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot
                     if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_FROM_Y2_SENSORS")) {
                         int payload_n = *(const int*)payload->Data;
                         std::cout << "Payload received from Y2 Sensors into Y1 Sensors: " << plot_option_pop_up_state.sensors_in_Y2_list_box.at(payload_n) << "\n";
-                        
+
                         // Delete the sensor from the Y2 list and add it to the Y1 list
                         plot_option_pop_up_state.sensors_in_Y1_list_box.push_back(plot_option_pop_up_state.sensors_in_Y2_list_box.at(payload_n));
                         plot_option_pop_up_state.sensors_in_Y2_list_box.erase(plot_option_pop_up_state.sensors_in_Y2_list_box.begin() + payload_n);
                     }
                     ImGui::EndDragDropTarget();
                 }
-            
+
                 // FROM Y3 SENSORS TO Y1 SENSORS
                 if (ImGui::BeginDragDropTarget())
                 {
@@ -874,18 +875,18 @@ void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot
                         int payload_n = *(const int*)payload->Data;
                         std::cout << "Payload received from Y3 Sensors into Y1 Sensors: " << plot_option_pop_up_state.sensors_in_Y3_list_box.at(payload_n) << "\n";
 
-                        // Delete the sensor from the Y3 list and add it to the Y1 list                  
+                        // Delete the sensor from the Y3 list and add it to the Y1 list
                         plot_option_pop_up_state.sensors_in_Y1_list_box.push_back(plot_option_pop_up_state.sensors_in_Y3_list_box.at(payload_n));
                         plot_option_pop_up_state.sensors_in_Y3_list_box.erase(plot_option_pop_up_state.sensors_in_Y3_list_box.begin() + payload_n);
                     }
                     ImGui::EndDragDropTarget();
                 }
-            }    
-            
+            }
+
             // Loop through existing sensors in Y1 and allow drag-and-drop
             for (size_t i = 0; i < plot_option_pop_up_state.sensors_in_Y1_list_box.size(); ++i) {
                 ImGui::Selectable(plot_option_pop_up_state.sensors_in_Y1_list_box.at(i).c_str());
-                
+
                 ImGuiDragDropFlags src_flags = 0;
                 if (ImGui::BeginDragDropSource(src_flags)) {
                     if (!(src_flags))
@@ -900,7 +901,7 @@ void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot
                     if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_FROM_AVAILABLE_SENSORS")) {
                         int payload_n = *(const int*)payload->Data;
                         std::cout << "Payload received from Available Sensors into Y1 Sensors: " << plot_option_pop_up_state.sensors_in_available_list_box.at(payload_n) << "\n";
-                        
+
                         // Delete the sensor from the available list and add it to the Y1 list
                         plot_option_pop_up_state.sensors_in_Y1_list_box.push_back(plot_option_pop_up_state.sensors_in_available_list_box.at(payload_n));
                         plot_option_pop_up_state.sensors_in_available_list_box.erase(plot_option_pop_up_state.sensors_in_available_list_box.begin() + payload_n);
@@ -914,20 +915,20 @@ void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot
                     if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_FROM_Y1_SENSORS")) {
                         int payload_n = *(const int*)payload->Data;
                         std::cout << "Payload received from Y1 Sensors: " << plot_option_pop_up_state.sensors_in_Y1_list_box.at(payload_n) << "\n";
-                        
+
                         // Switch the positions of the sensors in the Y1 list into the current position
-                        std::swap(plot_option_pop_up_state.sensors_in_Y1_list_box.at(payload_n), plot_option_pop_up_state.sensors_in_Y1_list_box.at(i));                    
+                        std::swap(plot_option_pop_up_state.sensors_in_Y1_list_box.at(payload_n), plot_option_pop_up_state.sensors_in_Y1_list_box.at(i));
                     }
                     ImGui::EndDragDropTarget();
                 }
-    
+
                 // FROM Y2 SENSORS TO Y1 SENSORS
                 if (ImGui::BeginDragDropTarget())
                 {
                     if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_FROM_Y2_SENSORS")) {
                         int payload_n = *(const int*)payload->Data;
                         std::cout << "Payload received from Y2 Sensors into Y1 Sensors: " << plot_option_pop_up_state.sensors_in_Y2_list_box.at(payload_n) << "\n";
-                        
+
                         // Delete the sensor from the Y2 list and add it to the Y1 list
                         plot_option_pop_up_state.sensors_in_Y1_list_box.push_back(plot_option_pop_up_state.sensors_in_Y2_list_box.at(payload_n));
                         plot_option_pop_up_state.sensors_in_Y2_list_box.erase(plot_option_pop_up_state.sensors_in_Y2_list_box.begin() + payload_n);
@@ -942,7 +943,7 @@ void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot
                         int payload_n = *(const int*)payload->Data;
                         std::cout << "Payload received from Y3 Sensors into Y1 Sensors: " << plot_option_pop_up_state.sensors_in_Y3_list_box.at(payload_n) << "\n";
 
-                        // Delete the sensor from the Y3 list and add it to the Y1 list                  
+                        // Delete the sensor from the Y3 list and add it to the Y1 list
                         plot_option_pop_up_state.sensors_in_Y1_list_box.push_back(plot_option_pop_up_state.sensors_in_Y3_list_box.at(payload_n));
                         plot_option_pop_up_state.sensors_in_Y3_list_box.erase(plot_option_pop_up_state.sensors_in_Y3_list_box.begin() + payload_n);
                     }
@@ -964,7 +965,7 @@ void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot
                     if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_FROM_AVAILABLE_SENSORS")) {
                         int payload_n = *(const int*)payload->Data;
                         std::cout << "Payload received from Available Sensors into Y2 Sensors: " << plot_option_pop_up_state.sensors_in_available_list_box.at(payload_n) << "\n";
-                        
+
                         // Delete the sensor from the available list and add it to the Y2 list
                         plot_option_pop_up_state.sensors_in_Y2_list_box.push_back(plot_option_pop_up_state.sensors_in_available_list_box.at(payload_n));
                         plot_option_pop_up_state.sensors_in_available_list_box.erase(plot_option_pop_up_state.sensors_in_available_list_box.begin() + payload_n);
@@ -978,7 +979,7 @@ void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot
                     if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_FROM_Y1_SENSORS")) {
                         int payload_n = *(const int*)payload->Data;
                         std::cout << "Payload received from Y1 Sensors into Y2 Sensors: " << plot_option_pop_up_state.sensors_in_Y1_list_box.at(payload_n) << "\n";
-                        
+
                         // Delete the sensor from the available list and add it to the Y2 list
                         plot_option_pop_up_state.sensors_in_Y2_list_box.push_back(plot_option_pop_up_state.sensors_in_Y1_list_box.at(payload_n));
                         plot_option_pop_up_state.sensors_in_Y1_list_box.erase(plot_option_pop_up_state.sensors_in_Y1_list_box.begin() + payload_n);
@@ -993,7 +994,7 @@ void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot
                         int payload_n = *(const int*)payload->Data;
                         std::cout << "Payload received from Y3 Sensors into Y2 Sensors: " << plot_option_pop_up_state.sensors_in_Y3_list_box.at(payload_n) << "\n";
 
-                        // Delete the sensor from the Y3 list and add it to the Y1 list                  
+                        // Delete the sensor from the Y3 list and add it to the Y1 list
                         plot_option_pop_up_state.sensors_in_Y2_list_box.push_back(plot_option_pop_up_state.sensors_in_Y3_list_box.at(payload_n));
                         plot_option_pop_up_state.sensors_in_Y3_list_box.erase(plot_option_pop_up_state.sensors_in_Y3_list_box.begin() + payload_n);
                     }
@@ -1004,7 +1005,7 @@ void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot
             // Loop through existing sensors in Y2 and allow drag-and-drop
             for (size_t i = 0; i < plot_option_pop_up_state.sensors_in_Y2_list_box.size(); ++i) {
                 ImGui::Selectable(plot_option_pop_up_state.sensors_in_Y2_list_box.at(i).c_str());
-                
+
                 ImGuiDragDropFlags src_flags = 0;
                 if (ImGui::BeginDragDropSource(src_flags)) {
                     if (!(src_flags))
@@ -1019,9 +1020,9 @@ void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot
                     if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_FROM_Y2_SENSORS")) {
                         int payload_n = *(const int*)payload->Data;
                         std::cout << "Payload received from Y2 Sensors to Y2 Sensors: " << plot_option_pop_up_state.sensors_in_Y2_list_box.at(payload_n) << "\n";
-                        
+
                         // Switch the positions of the sensors in the Y1 list into the current position
-                        std::swap(plot_option_pop_up_state.sensors_in_Y2_list_box.at(payload_n), plot_option_pop_up_state.sensors_in_Y2_list_box.at(i));                    
+                        std::swap(plot_option_pop_up_state.sensors_in_Y2_list_box.at(payload_n), plot_option_pop_up_state.sensors_in_Y2_list_box.at(i));
                     }
                     ImGui::EndDragDropTarget();
                 }
@@ -1032,21 +1033,21 @@ void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot
                     if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_FROM_AVAILABLE_SENSORS")) {
                         int payload_n = *(const int*)payload->Data;
                         std::cout << "Payload received from Available Sensors into Y2 Sensors: " << plot_option_pop_up_state.sensors_in_available_list_box.at(payload_n) << "\n";
-                        
+
                         // Delete the sensor from the available list and add it to the Y2 list
                         plot_option_pop_up_state.sensors_in_Y2_list_box.push_back(plot_option_pop_up_state.sensors_in_available_list_box.at(payload_n));
                         plot_option_pop_up_state.sensors_in_available_list_box.erase(plot_option_pop_up_state.sensors_in_available_list_box.begin() + payload_n);
                     }
                     ImGui::EndDragDropTarget();
                 }
-                
+
                 // FROM Y1 SENSORS TO Y2 SENSORS
                 if (ImGui::BeginDragDropTarget())
                 {
                     if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_FROM_Y1_SENSORS")) {
                         int payload_n = *(const int*)payload->Data;
                         std::cout << "Payload received from Y1 Sensors into Y2 Sensors: " << plot_option_pop_up_state.sensors_in_Y1_list_box.at(payload_n) << "\n";
-                        
+
                         // Delete the sensor from the available list and add it to the Y2 list
                         plot_option_pop_up_state.sensors_in_Y2_list_box.push_back(plot_option_pop_up_state.sensors_in_Y1_list_box.at(payload_n));
                         plot_option_pop_up_state.sensors_in_Y1_list_box.erase(plot_option_pop_up_state.sensors_in_Y1_list_box.begin() + payload_n);
@@ -1061,7 +1062,7 @@ void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot
                         int payload_n = *(const int*)payload->Data;
                         std::cout << "Payload received from Y3 Sensors into Y2 Sensors: " << plot_option_pop_up_state.sensors_in_Y3_list_box.at(payload_n) << "\n";
 
-                        // Delete the sensor from the Y3 list and add it to the Y1 list                  
+                        // Delete the sensor from the Y3 list and add it to the Y1 list
                         plot_option_pop_up_state.sensors_in_Y2_list_box.push_back(plot_option_pop_up_state.sensors_in_Y3_list_box.at(payload_n));
                         plot_option_pop_up_state.sensors_in_Y3_list_box.erase(plot_option_pop_up_state.sensors_in_Y3_list_box.begin() + payload_n);
                     }
@@ -1069,7 +1070,7 @@ void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot
                 }
             }
 
-            ImGui::EndListBox(); 
+            ImGui::EndListBox();
         }
 
         if (ImGui::BeginListBox("Y3 Sensors")) {
@@ -1083,7 +1084,7 @@ void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot
                     if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_FROM_AVAILABLE_SENSORS")) {
                         int payload_n = *(const int*)payload->Data;
                         std::cout << "Payload received from Available Sensors into Y3 Sensors: " << plot_option_pop_up_state.sensors_in_available_list_box.at(payload_n) << "\n";
-                        
+
                         // Delete the sensor from the available list and add it to the Y2 list
                         plot_option_pop_up_state.sensors_in_Y3_list_box.push_back(plot_option_pop_up_state.sensors_in_available_list_box.at(payload_n));
                         plot_option_pop_up_state.sensors_in_available_list_box.erase(plot_option_pop_up_state.sensors_in_available_list_box.begin() + payload_n);
@@ -1097,7 +1098,7 @@ void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot
                     if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_FROM_Y1_SENSORS")) {
                         int payload_n = *(const int*)payload->Data;
                         std::cout << "Payload received from Y1 Sensors into Y3 Sensors: " << plot_option_pop_up_state.sensors_in_Y1_list_box.at(payload_n) << "\n";
-                        
+
                         // Delete the sensor from the Y2 list and add it to the Y2 list
                         plot_option_pop_up_state.sensors_in_Y3_list_box.push_back(plot_option_pop_up_state.sensors_in_Y1_list_box.at(payload_n));
                         plot_option_pop_up_state.sensors_in_Y1_list_box.erase(plot_option_pop_up_state.sensors_in_Y1_list_box.begin() + payload_n);
@@ -1112,7 +1113,7 @@ void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot
                         int payload_n = *(const int*)payload->Data;
                         std::cout << "Payload received from Y2 Sensors into Y3 Sensors: " << plot_option_pop_up_state.sensors_in_Y2_list_box.at(payload_n) << "\n";
 
-                        // Delete the sensor from the Y2 list and add it to the Y3 list                  
+                        // Delete the sensor from the Y2 list and add it to the Y3 list
                         plot_option_pop_up_state.sensors_in_Y3_list_box.push_back(plot_option_pop_up_state.sensors_in_Y2_list_box.at(payload_n));
                         plot_option_pop_up_state.sensors_in_Y2_list_box.erase(plot_option_pop_up_state.sensors_in_Y2_list_box.begin() + payload_n);
                     }
@@ -1123,7 +1124,7 @@ void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot
             // Loop through existing sensors in Y3 and allow drag-and-drop
             for (size_t i = 0; i < plot_option_pop_up_state.sensors_in_Y3_list_box.size(); ++i) {
                 ImGui::Selectable(plot_option_pop_up_state.sensors_in_Y3_list_box.at(i).c_str());
-                
+
                 ImGuiDragDropFlags src_flags = 0;
                 if (ImGui::BeginDragDropSource(src_flags)) {
                     if (!(src_flags))
@@ -1138,9 +1139,9 @@ void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot
                     if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_FROM_Y3_SENSORS")) {
                         int payload_n = *(const int*)payload->Data;
                         std::cout << "Payload received from Y3 Sensors to Y3 Sensors: " << plot_option_pop_up_state.sensors_in_Y3_list_box.at(payload_n) << "\n";
-                        
+
                         // Switch the positions of the sensors in the Y3 list into the current position
-                        std::swap(plot_option_pop_up_state.sensors_in_Y3_list_box.at(payload_n), plot_option_pop_up_state.sensors_in_Y3_list_box.at(i));                    
+                        std::swap(plot_option_pop_up_state.sensors_in_Y3_list_box.at(payload_n), plot_option_pop_up_state.sensors_in_Y3_list_box.at(i));
                     }
                     ImGui::EndDragDropTarget();
                 }
@@ -1151,7 +1152,7 @@ void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot
                     if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_FROM_AVAILABLE_SENSORS")) {
                         int payload_n = *(const int*)payload->Data;
                         std::cout << "Payload received from Available Sensors into Y3 Sensors: " << plot_option_pop_up_state.sensors_in_available_list_box.at(payload_n) << "\n";
-                        
+
                         // Delete the sensor from the available list and add it to the Y2 list
                         plot_option_pop_up_state.sensors_in_Y3_list_box.push_back(plot_option_pop_up_state.sensors_in_available_list_box.at(payload_n));
                         plot_option_pop_up_state.sensors_in_available_list_box.erase(plot_option_pop_up_state.sensors_in_available_list_box.begin() + payload_n);
@@ -1165,7 +1166,7 @@ void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot
                     if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_FROM_Y1_SENSORS")) {
                         int payload_n = *(const int*)payload->Data;
                         std::cout << "Payload received from Y1 Sensors into Y3 Sensors: " << plot_option_pop_up_state.sensors_in_Y1_list_box.at(payload_n) << "\n";
-                        
+
                         // Delete the sensor from the Y2 list and add it to the Y2 list
                         plot_option_pop_up_state.sensors_in_Y3_list_box.push_back(plot_option_pop_up_state.sensors_in_Y1_list_box.at(payload_n));
                         plot_option_pop_up_state.sensors_in_Y1_list_box.erase(plot_option_pop_up_state.sensors_in_Y1_list_box.begin() + payload_n);
@@ -1180,7 +1181,7 @@ void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot
                         int payload_n = *(const int*)payload->Data;
                         std::cout << "Payload received from Y2 Sensors into Y3 Sensors: " << plot_option_pop_up_state.sensors_in_Y2_list_box.at(payload_n) << "\n";
 
-                        // Delete the sensor from the Y2 list and add it to the Y3 list                  
+                        // Delete the sensor from the Y2 list and add it to the Y3 list
                         plot_option_pop_up_state.sensors_in_Y3_list_box.push_back(plot_option_pop_up_state.sensors_in_Y2_list_box.at(payload_n));
                         plot_option_pop_up_state.sensors_in_Y2_list_box.erase(plot_option_pop_up_state.sensors_in_Y2_list_box.begin() + payload_n);
                     }
@@ -1188,7 +1189,7 @@ void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot
                 }
             }
 
-            ImGui::EndListBox(); 
+            ImGui::EndListBox();
         }
 
         is_able_to_submit = is_able_to_submit
@@ -1223,7 +1224,7 @@ void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot
                 }
                 ImGui::EndCombo();
             }
-            
+
             // Input box for log base if scale is logarithmic
             if (plot_option_pop_up_state.Y1_properties.scale_type == RenderablePlot::ScaleType::Logirithmic) {
                 ImGui::InputDouble("Y1 Log base", &plot_option_pop_up_state.Y1_properties.log_base);
@@ -1257,7 +1258,7 @@ void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot
                 }
                 ImGui::EndCombo();
             }
-            
+
             // Input box for log base if scale is logarithmic
             if (plot_option_pop_up_state.Y2_properties.scale_type == RenderablePlot::ScaleType::Logirithmic) {
                 ImGui::InputDouble("Y2 Log base", &plot_option_pop_up_state.Y2_properties.log_base);
@@ -1291,7 +1292,7 @@ void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot
                 }
                 ImGui::EndCombo();
             }
-            
+
             // Input box for log base if scale is logarithmic
             if (plot_option_pop_up_state.Y3_properties.scale_type == RenderablePlot::ScaleType::Logirithmic) {
                 ImGui::InputDouble("Y3 Log base", &plot_option_pop_up_state.Y3_properties.log_base);
@@ -1322,6 +1323,27 @@ void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot
         }
         ImGui::EndPopup();
     }
+}
+
+// Helper transform functions for logarithmic scale
+static inline double TransformForward_Log(double v, void* user_data) {
+    double log_base = *static_cast<double*>(user_data);
+    if (log_base <= 0) {
+        log_base = 10;
+    }
+    if (v <= 0) {
+        return 1E-17;
+    }
+    return log(v) / log(log_base);
+}
+
+// Helper transform functions for logarithmic scale
+static inline double TransformInverse_Log(double v, void* user_data) {
+    double log_base = *static_cast<double*>(user_data);
+    if (log_base <= 0) {
+        log_base = 10;
+    }
+    return pow(log_base, v);
 }
 
 void GraphView::renderAllPlots(){
@@ -1363,7 +1385,7 @@ void GraphView::renderAllPlots(){
         if (ImPlot::BeginPlot(("###" + renderable_plot.getLabel()).c_str())) {
             // Get all sensors in the plot
             const std::vector<std::string> sensors = renderable_plot.getAllSensors();
-            
+
             // Set up the plot Y-axis before any setup locking functions
             for (const auto& series_label : sensors) {
                 // Get the axis (Y1, Y2, Y3) for the sensor
@@ -1371,9 +1393,20 @@ void GraphView::renderAllPlots(){
                 ImPlot::SetupAxis(plot_axis, nullptr, ImPlotAxisFlags_AuxDefault);
                 if (renderable_plot.getYAxisPropertiesUserSetRange(plot_axis)) {
                     std::cout << "Setting axis limits for " << series_label << " to " << renderable_plot.getYAxisPropertiesMin(plot_axis) << " - " << renderable_plot.getYAxisPropertiesMax(plot_axis) << "\n";
-                    ImPlot::SetupAxisLimits(plot_axis, renderable_plot.getYAxisPropertiesMin(plot_axis), 
-                        renderable_plot.getYAxisPropertiesMax(plot_axis), ImGuiCond_Appearing);
+                    ImPlot::SetupAxisLimits(plot_axis, renderable_plot.getYAxisPropertiesMin(plot_axis),
+                        renderable_plot.getYAxisPropertiesMax(plot_axis), ImGuiCond_Always);
                     renderable_plot.setYAxisPropertiesUserSetRange(plot_axis, false);
+                } else {
+                    ImPlot::SetupAxisLimits(plot_axis, renderable_plot.getYAxisPropertiesMin(plot_axis),
+                        renderable_plot.getYAxisPropertiesMax(plot_axis), ImGuiCond_Once);
+                }
+
+                // Set the axis scale type
+                if (renderable_plot.getYAxisPropertiesScaleType(plot_axis) == RenderablePlot::ScaleType::Logirithmic) {
+                    double log_base = renderable_plot.getYAxisPropertiesLogBase(plot_axis);
+                    ImPlot::SetupAxisScale(plot_axis, TransformForward_Log, TransformInverse_Log, &log_base);
+                } else {
+                    ImPlot::SetupAxisScale(plot_axis, ImPlotScale_Linear);
                 }
             }
 
@@ -1434,13 +1467,13 @@ void GraphView::renderAllPlots(){
                 ImPlotRect y_axis_limits = ImPlot::GetPlotLimits(ImAxis_X1, axis);
                 double axis_min = y_axis_limits.Y.Min;
                 double axis_max = y_axis_limits.Y.Max;
-                
+
                 // Update the axis properties in the renderable plot
                 renderable_plot.setYAxisPropertiesMin(axis, axis_min);
                 renderable_plot.setYAxisPropertiesMax(axis, axis_max);
 
             }
-            
+
 
 
             ImPlot::EndPlot();

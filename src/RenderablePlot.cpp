@@ -151,7 +151,7 @@ RenderablePlot::DataSeries RenderablePlot::getDataSnapshot(const std::string& se
         return it->second;
     }
     // Return empty data series if not found
-    return DataSeries(); 
+    return DataSeries();
 }
 
 std::vector<std::string> RenderablePlot::getSensorsForYAxis(ImAxis y_axis) const {
@@ -177,7 +177,7 @@ ImAxis RenderablePlot::getYAxisForSensor(const std::string& series_label) const 
     auto it = data_to_y_axis_.find(series_label);
     if (it != data_to_y_axis_.end()) {
         return it->second;
-    } 
+    }
     // Default to Y1 axis
     return ImAxis_Y1;
 }
@@ -249,6 +249,20 @@ RenderablePlot::Value RenderablePlot::getYAxisPropertiesMax(ImAxis y_axis) {
         return 1.0;
     }
     return y_axis_properties_.at(y_axis).max;
+}
+
+RenderablePlot::ScaleType RenderablePlot::getYAxisPropertiesScaleType(ImAxis y_axis) {
+    if (y_axis_properties_.find(y_axis) == y_axis_properties_.end()) {
+        return ScaleType::Linear;
+    }
+    return y_axis_properties_.at(y_axis).scale_type;
+}
+
+double RenderablePlot::getYAxisPropertiesLogBase(ImAxis y_axis) {
+    if (y_axis_properties_.find(y_axis) == y_axis_properties_.end()) {
+        return 10;
+    }
+    return y_axis_properties_.at(y_axis).log_base;
 }
 
 bool RenderablePlot::getYAxisPropertiesUserSetRange(ImAxis y_axis) {
