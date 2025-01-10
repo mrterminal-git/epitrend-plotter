@@ -1305,6 +1305,31 @@ void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot
         }
         ImGui::Separator();
 
+        // ******* Drop-down menu of sensors and plotline properties *******
+        // Drop-down menu for sensors
+        std::string drop_down_label = "Select a sensor...";
+        if (plot_option_pop_up_state.sensors_in_Y1_list_box.empty()
+            && plot_option_pop_up_state.sensors_in_Y2_list_box.empty()
+            && plot_option_pop_up_state.sensors_in_Y3_list_box.empty()) {
+                drop_down_label = "Please allocate a sensor to a Y-axis...";
+        }
+        if (ImGui::BeginCombo("Available Sensors", drop_down_label.c_str(), ImGuiComboFlags_WidthFitPreview)) {
+            // Loop through all the sensors inside Y1, Y2, and Y3 list boxes
+            std::vector<std::string> all_plot_sensors;
+            all_plot_sensors.insert(all_plot_sensors.end(), plot_option_pop_up_state.sensors_in_Y1_list_box.begin(), plot_option_pop_up_state.sensors_in_Y1_list_box.end());
+            all_plot_sensors.insert(all_plot_sensors.end(), plot_option_pop_up_state.sensors_in_Y2_list_box.begin(), plot_option_pop_up_state.sensors_in_Y2_list_box.end());
+            all_plot_sensors.insert(all_plot_sensors.end(), plot_option_pop_up_state.sensors_in_Y3_list_box.begin(), plot_option_pop_up_state.sensors_in_Y3_list_box.end());
+
+            for (const std::string& sensor : all_plot_sensors) {
+                bool is_selected = false;
+                ImGui::Selectable(sensor.c_str(), &is_selected);
+                if (is_selected) {
+                    std::cout << "Selected sensor: " << sensor << "\n";
+                }
+            }
+            ImGui::EndCombo();
+        }
+
         if (is_able_to_submit) {
             if (ImGui::Button("Submit")) {
                 // Close the popup
