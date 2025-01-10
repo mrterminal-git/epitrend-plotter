@@ -153,6 +153,11 @@ void GraphView::actionSubmitAddPlotPopup(AddPlotPopupState& state) {
         plot.addYAxisForSensor(sensor, ImAxis_Y1);
     }
 
+    // Add selected sensors into the list of plotline properties
+    for(const auto& sensor : state.selected_sensors) {
+        plot.addPlotLineProperties(sensor, RenderablePlot::PlotLineProperties());
+    }
+
     // Add the plot to the view model
     viewModel_.addRenderablePlot(plot);
 
