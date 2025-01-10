@@ -130,6 +130,7 @@ public:
         }
     };
     void setPlotLineProperties(const std::string& series_label, const PlotLineProperties& properties);
+    void addPlotLineProperties(const std::string& series_label, const PlotLineProperties& properties);
     void setPlotLinePropertiesColour(const std::string& series_label, ImVec4 colour);
     void setPlotLinePropertiesThickness(const std::string& series_label, double thickness);
     void setPlotLinePropertiesMarkerStyle(const std::string& series_label, ImPlotMarker marker_style);
@@ -148,6 +149,11 @@ public:
     void resetPlotLineProperties(const std::string& series_label);
 
 private:
+// ===================!!!=========================
+// NOTE: The move constructor and move assignment operator is implemented.
+// If you need to add more data members, you need to update these functions.
+// ===================!!!=========================
+
     std::string window_label_; // Window label
     std::string label_; // Plot label
     bool real_time_;    // Real-time plotting flag

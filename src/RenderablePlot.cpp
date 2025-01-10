@@ -21,6 +21,7 @@ RenderablePlot::RenderablePlot(RenderablePlot&& other) noexcept
       y_axis_labels_(std::move(other.y_axis_labels_)),
       primary_x_axis_(other.primary_x_axis_),
       y_axis_properties_(std::move(other.y_axis_properties_)),
+      data_to_plotline_properties_(std::move(other.data_to_plotline_properties_)),
       range_callback_(std::move(other.range_callback_)) {}
 
 // Move assignment operator
@@ -37,6 +38,7 @@ RenderablePlot& RenderablePlot::operator=(RenderablePlot&& other) noexcept {
         y_axis_labels_ = std::move(other.y_axis_labels_);
         primary_x_axis_ = other.primary_x_axis_;
         y_axis_properties_ = std::move(other.y_axis_properties_);
+        data_to_plotline_properties_ = std::move(other.data_to_plotline_properties_);
         range_callback_ = std::move(other.range_callback_);
     }
     return *this;
@@ -279,6 +281,16 @@ bool RenderablePlot::getYAxisPropertiesUserSetRange(ImAxis y_axis) {
 // ============================================
 // UNSAFE BECAUSE IT DOES NOT CHECK IF PROPERTIES ARE VALID
 void RenderablePlot::setPlotLineProperties(const std::string& series_label, const PlotLineProperties& properties) {
+    // Check if the series label exists
+    if (data_to_plotline_properties_.find(series_label) == data_to_plotline_properties_.end()) {
+        // Series label does not exist
+        return;
+    }
+    data_to_plotline_properties_[series_label] = properties;
+}
+
+// UNSAFE BECAUSE IT DOES NOT CHECK IF PROPERTIES ARE VALID. OKAY TO USE IF INPUTTING DEFAULT PROPERTIES
+void RenderablePlot::addPlotLineProperties(const std::string& series_label, const PlotLineProperties& properties) {
     data_to_plotline_properties_[series_label] = properties;
 }
 
