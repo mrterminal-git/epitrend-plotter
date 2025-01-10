@@ -271,3 +271,92 @@ bool RenderablePlot::getYAxisPropertiesUserSetRange(ImAxis y_axis) {
     }
     return y_axis_properties_.at(y_axis).user_set_range;
 }
+
+
+
+// ============================================
+// Plotline properties
+// ============================================
+// UNSAFE BECAUSE IT DOES NOT CHECK IF PROPERTIES ARE VALID
+void RenderablePlot::setPlotLineProperties(const std::string& series_label, const PlotLineProperties& properties) {
+    data_to_plotline_properties_[series_label] = properties;
+}
+
+void RenderablePlot::setPlotLinePropertiesColour(const std::string& series_label, ImVec4 colour) {
+    // Check if the color is valid
+    if (colour.x < 0 || colour.x > 1 || colour.y < 0 || colour.y > 1 || colour.z < 0 || colour.z > 1 || colour.w < 0 || colour.w > 1) {
+        // Invalid color values are ignored
+        return;
+    }
+    data_to_plotline_properties_[series_label].colour = colour;
+}
+
+void RenderablePlot::setPlotLinePropertiesThickness(const std::string& series_label, double thickness) {
+    // Check if the thickness is valid
+    if (thickness < 0) {
+        // Invalid thickness values are ignored
+        return;
+    } else if (thickness > 10) {
+        // Thickness is capped at 10
+        data_to_plotline_properties_[series_label].thickness = 10;
+        return;
+    }
+    data_to_plotline_properties_[series_label].thickness = thickness;
+}
+
+void RenderablePlot::setPlotLinePropertiesMarkerStyle(const std::string& series_label, ImPlotMarker marker_style) {
+    // Check if the marker style is valid
+    if (marker_style < ImPlotMarker_None || marker_style >= ImPlotMarker_COUNT) {
+        // Invalid marker style values are ignored
+        return;
+    }
+    data_to_plotline_properties_[series_label].marker_style = marker_style;
+}
+
+void RenderablePlot::setPlotLinePropertiesMarkerSize(const std::string& series_label, double marker_size) {
+    // Check if the marker size is valid
+    if (marker_size < 0) {
+        // Invalid marker size values are ignored
+        return;
+    } else if (marker_size > 10) {
+        // Marker size is capped at 10
+        data_to_plotline_properties_[series_label].marker_size = 5;
+        return;
+    }
+    data_to_plotline_properties_[series_label].marker_size = marker_size;
+}
+
+void RenderablePlot::setPlotLinePropertiesFill(const std::string& series_label, ImVec4 fill) {
+    // Check if the fill color is valid
+    if (fill.x < 0 || fill.x > 1 || fill.y < 0 || fill.y > 1 || fill.z < 0 || fill.z > 1 || fill.w < 0 || fill.w > 1) {
+        // Invalid fill color values are ignored
+        return;
+    }
+    data_to_plotline_properties_[series_label].fill = fill;
+}
+
+void RenderablePlot::setPlotLinePropertiesFillWeight(const std::string& series_label, double fill_weight) {
+    // Check if the fill weight is valid
+    if (fill_weight < 0) {
+        // Invalid fill weight values are ignored
+        return;
+    } else if (fill_weight > 10) {
+        // Fill weight is capped at 10
+        data_to_plotline_properties_[series_label].fill_weight = 5;
+        return;
+    }
+    data_to_plotline_properties_[series_label].fill_weight = fill_weight;
+}
+
+void RenderablePlot::setPlotLinePropertiesFillOutline(const std::string& series_label, ImVec4 fill_outline) {
+    // Check if the fill outline color is valid
+    if (fill_outline.x < 0 || fill_outline.x > 1 || fill_outline.y < 0 || fill_outline.y > 1 || fill_outline.z < 0 || fill_outline.z > 1 || fill_outline.w < 0 || fill_outline.w > 1) {
+        // Invalid fill outline color values are ignored
+        return;
+    }
+    data_to_plotline_properties_[series_label].fill_outline = fill_outline;
+}
+
+void RenderablePlot::resetPlotLineProperties(const std::string& series_label) {
+    data_to_plotline_properties_[series_label].reset();
+}

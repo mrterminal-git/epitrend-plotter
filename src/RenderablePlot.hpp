@@ -52,11 +52,14 @@ public:
     const std::map<std::string, DataSeries> getAllData() const;
     DataSeries getDataSnapshot(const std::string& series_label); // SAFE ACCESS
 
+
+
     // ============================================
     // Callback invocation
     // ============================================
     void notifyRangeChange(Timestamp start, Timestamp end) const;
     void setRangeCallback(const RangeCallback& callback);
+
 
 
     // ============================================
@@ -102,6 +105,48 @@ public:
     double getYAxisPropertiesLogBase(ImAxis y_axis);
     bool getYAxisPropertiesUserSetRange(ImAxis y_axis);
 
+
+
+    // ============================================
+    // Plotline properties
+    // ============================================
+    struct PlotLineProperties {
+        ImVec4 colour = ImVec4(1, 1, 1, 1); // Default white
+        double thickness = 1.0;
+        ImPlotMarker marker_style = ImPlotMarker_None; // Default to no marker
+        double marker_size = 1.0;
+        ImVec4 fill = ImVec4(0, 0, 0, 0); // Default to no fill
+        double fill_weight = 0.0; // Default to no fill
+        ImVec4 fill_outline = ImVec4(0, 0, 0, 0); // Default to outline
+
+        void reset() {
+            colour = ImVec4(1, 1, 1, 1);
+            thickness = 1.0;
+            marker_style = ImPlotMarker_None;
+            marker_size = 1.0;
+            fill = ImVec4(0, 0, 0, 0);
+            fill_weight = 0.0;
+            fill_outline = ImVec4(0, 0, 0, 0);
+        }
+    };
+    void setPlotLineProperties(const std::string& series_label, const PlotLineProperties& properties);
+    void setPlotLinePropertiesColour(const std::string& series_label, ImVec4 colour);
+    void setPlotLinePropertiesThickness(const std::string& series_label, double thickness);
+    void setPlotLinePropertiesMarkerStyle(const std::string& series_label, ImPlotMarker marker_style);
+    void setPlotLinePropertiesMarkerSize(const std::string& series_label, double marker_size);
+    void setPlotLinePropertiesFill(const std::string& series_label, ImVec4 fill);
+    void setPlotLinePropertiesFillWeight(const std::string& series_label, double fill_weight);
+    void setPlotLinePropertiesFillOutline(const std::string& series_label, ImVec4 fill_outline);
+    PlotLineProperties getPlotLineProperties(const std::string& series_label);
+    ImVec4 getPlotLinePropertiesColour(const std::string& series_label);
+    double getPlotLinePropertiesThickness(const std::string& series_label);
+    ImPlotMarker getPlotLinePropertiesMarkerStyle(const std::string& series_label);
+    double getPlotLinePropertiesMarkerSize(const std::string& series_label);
+    ImVec4 getPlotLinePropertiesFill(const std::string& series_label);
+    double getPlotLinePropertiesFillWeight(const std::string& series_label);
+    ImVec4 getPlotLinePropertiesFillOutline(const std::string& series_label);
+    void resetPlotLineProperties(const std::string& series_label);
+
 private:
     std::string window_label_; // Window label
     std::string label_; // Plot label
@@ -123,5 +168,10 @@ private:
     std::map<std::string, ImAxis> data_to_y_axis_;
     std::map<ImAxis, std::string> y_axis_labels_;
     std::map<ImAxis, YAxisProperties> y_axis_properties_;
+
+    // ============================================
+    // Plotline properties
+    // ============================================
+    std::map<std::string, PlotLineProperties> data_to_plotline_properties_;
 
 };
