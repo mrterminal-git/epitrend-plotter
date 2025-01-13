@@ -353,8 +353,8 @@ void RenderablePlot::setPlotLinePropertiesMarkerSize(const std::string& series_l
     if (marker_size < 0) {
         // Invalid marker size values are ignored
         return;
-    } else if (marker_size > 10) {
-        // Marker size is capped at 10
+    } else if (marker_size > 5) {
+        // Marker size is capped at 5
         data_to_plotline_properties_[series_label].marker_size = 5;
         return;
     }

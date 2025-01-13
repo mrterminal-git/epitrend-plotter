@@ -491,6 +491,10 @@ void ActionSubmitPlotOptionsPopup(RenderablePlot& renderable_plot, PlotOptionsPo
         // Set the plotline properties
         renderable_plot.setPlotLinePropertiesColour(sensor, properties.colour);
         renderable_plot.setPlotLinePropertiesMarkerStyle(sensor, properties.marker_style);
+        renderable_plot.setPlotLinePropertiesMarkerSize(sensor, properties.marker_size);
+        renderable_plot.setPlotLinePropertiesFill(sensor, properties.fill);
+        renderable_plot.setPlotLinePropertiesFillWeight(sensor, properties.fill_weight);
+        renderable_plot.setPlotLinePropertiesFillOutline(sensor, properties.fill_outline);
     }
 
     // Remove any plotline properties of RenderablePlot that are not in either Y1, Y2, Y3
@@ -1403,6 +1407,28 @@ void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot
                 ImGui::EndCombo();
             }
 
+            // Marker options if marker is not "None"
+            if (plot_option_pop_up_state.sensor_to_plotline_properties[plot_option_pop_up_state.plotline_properties_selected_sensor].marker_style != ImPlotMarker_None) {
+                // Marker size input box
+                float marker_size = static_cast<float>(plot_option_pop_up_state.sensor_to_plotline_properties[plot_option_pop_up_state.plotline_properties_selected_sensor].marker_size);
+                if (ImGui::InputFloat("Marker Size", &marker_size)) {
+                    plot_option_pop_up_state.sensor_to_plotline_properties[plot_option_pop_up_state.plotline_properties_selected_sensor].marker_size = static_cast<double>(marker_size);
+                }
+
+                // Marker fill color
+                ImVec4& marker_fill_color = plot_option_pop_up_state.sensor_to_plotline_properties[plot_option_pop_up_state.plotline_properties_selected_sensor].fill;
+                ImGui::ColorEdit4("Marker Fill Color", &marker_fill_color.x);
+
+                // Marker weight
+                float marker_weight = static_cast<float>(plot_option_pop_up_state.sensor_to_plotline_properties[plot_option_pop_up_state.plotline_properties_selected_sensor].fill_weight);
+                if (ImGui::InputFloat("Marker Weight", &marker_weight)) {
+                    plot_option_pop_up_state.sensor_to_plotline_properties[plot_option_pop_up_state.plotline_properties_selected_sensor].fill_weight = static_cast<double>(marker_weight);
+                }
+
+                // Marker outline color
+                ImVec4& marker_outline_color = plot_option_pop_up_state.sensor_to_plotline_properties[plot_option_pop_up_state.plotline_properties_selected_sensor].fill_outline;
+                ImGui::ColorEdit4("Marker Outline Color", &marker_outline_color.x);
+            }
         }
 
         ImGui::Separator();
@@ -1539,7 +1565,10 @@ void GraphView::renderAllPlots(){
                 ImPlot::SetNextLineStyle(renderable_plot.getPlotLineProperties(series_label).colour);
 
                 // Marker style
-                ImPlot::SetNextMarkerStyle(renderable_plot.getPlotLineProperties(series_label).marker_style);
+                ImPlot::SetNextMarkerStyle(renderable_plot.getPlotLineProperties(series_label).marker_style,
+                    renderable_plot.getPlotLineProperties(series_label).marker_size,
+                    renderable_plot.getPlotLineProperties(series_label).fill, renderable_plot.getPlotLineProperties(series_label).fill_weight,
+                    renderable_plot.getPlotLineProperties(series_label).fill_outline);
 
                 // Get the axis (Y1, Y2, Y3) for the sensor
                 ImAxis plot_axis = renderable_plot.getYAxisForSensor(series_label);
