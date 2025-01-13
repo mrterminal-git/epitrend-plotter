@@ -148,6 +148,8 @@ public:
     double getPlotLinePropertiesFillWeight(const std::string& series_label);
     ImVec4 getPlotLinePropertiesFillOutline(const std::string& series_label);
     void resetPlotLineProperties(const std::string& series_label);
+    void removePlotLineProperties(const std::string& series_label);
+    bool hasPlotLineProperties(const std::string& series_label);
 
 private:
 // ===================!!!=========================

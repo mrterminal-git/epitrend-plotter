@@ -295,11 +295,34 @@ void RenderablePlot::addPlotLineProperties(const std::string& series_label, cons
 }
 
 void RenderablePlot::setPlotLinePropertiesColour(const std::string& series_label, ImVec4 colour) {
-    // Check if the color is valid
-    if (colour.x < 0 || colour.x > 1 || colour.y < 0 || colour.y > 1 || colour.z < 0 || colour.z > 1 || colour.w < 0 || colour.w > 1) {
-        // Invalid color values are ignored
-        return;
+    // Check if the color is valid. Set to the maximum value if invalid
+    if (colour.x > 1) {
+        colour.x = 1;
     }
+    if (colour.y > 1) {
+        colour.y = 1;
+    }
+    if (colour.z > 1) {
+        colour.z = 1;
+    }
+    if (colour.w > 1) {
+        colour.w = 1;
+    }
+
+    // Set to the minimum value if invalid
+    if (colour.x < 0) {
+        colour.x = 0;
+    }
+    if (colour.y < 0) {
+        colour.y = 0;
+    }
+    if (colour.z < 0) {
+        colour.z = 0;
+    }
+    if (colour.w < 0) {
+        colour.w = 0;
+    }
+
     data_to_plotline_properties_[series_label].colour = colour;
 }
 
@@ -373,6 +396,23 @@ std::map<std::string, RenderablePlot::PlotLineProperties> RenderablePlot::getAll
     return data_to_plotline_properties_;
 }
 
+RenderablePlot::PlotLineProperties RenderablePlot::getPlotLineProperties(const std::string& series_label) {
+    if (data_to_plotline_properties_.find(series_label) == data_to_plotline_properties_.end()) {
+        return PlotLineProperties();
+    }
+    return data_to_plotline_properties_.at(series_label);
+}
+
 void RenderablePlot::resetPlotLineProperties(const std::string& series_label) {
     data_to_plotline_properties_[series_label].reset();
+}
+
+void RenderablePlot::removePlotLineProperties(const std::string& series_label) {
+    if (data_to_plotline_properties_.find(series_label) != data_to_plotline_properties_.end()) {
+        data_to_plotline_properties_.erase(series_label);
+    }
+}
+
+bool RenderablePlot::hasPlotLineProperties(const std::string& series_label) {
+    return data_to_plotline_properties_.find(series_label) != data_to_plotline_properties_.end();
 }
