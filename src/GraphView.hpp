@@ -34,11 +34,15 @@ private:
     // ==============================
     void renderAll();
 
+
+
     // ==============================
     // renderAddPlotPopup
     // ==============================
     void actionSubmitAddPlotPopup(AddPlotPopupState& state);
     void renderAddPlotPopup();
+
+
 
     // ==============================
     // renderAllPlots
@@ -46,7 +50,19 @@ private:
     void renderPlotOptions(
         const std::string& popup_label, RenderablePlot& renderable_plot
     );
-    
+
+
+
+    // ==============================
+    // renderAllWindowPlots
+    // ==============================
+    void renderAllWindowPlots();
+
+
+
+    // ==============================
+    // renderAllPlots
+    // ==============================
     void renderAllPlots();
 
 

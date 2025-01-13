@@ -4,6 +4,7 @@
 
 #include "RenderablePlot.hpp"
 #include "DataManager.hpp"
+#include "WindowPlots.hpp"
 
 struct AddPlotPopupState {
     std::string window_label;
@@ -139,6 +140,13 @@ public:
     std::pair<std::vector<DataManager::Timestamp>, std::vector<DataManager::Value>> getDownsampledData(
     RenderablePlot& plot, const std::string& sensor, double range, int num_pixels);
 
+    // ============================================
+    // Windows with renderable plots
+    // ============================================
+    void addWindowPlots(const std::string& window_label, const WindowPlots& window_plots);
+    void removeWindowPlots(const std::string& window_label);
+    bool hasWindowPlots(const std::string& window_label) const;
+    const std::map<std::string, WindowPlots>& getWindowPlots() const;
 
 private:
     // Each renderable plot is a separate window
@@ -159,4 +167,9 @@ private:
     // "Plot options" popup state
     PlotOptionsPopupState plot_options_popup_state_;
 
+
+    // ============================================
+    // Windows with renderable plots
+    // ============================================
+    std::map<std::string, WindowPlots> window_plots_;
 };

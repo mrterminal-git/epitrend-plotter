@@ -42,7 +42,7 @@ void GraphViewModel::updatePlotsWithData(DataManager& dataManager) {
             std::vector<std::pair<DataManager::Timestamp, DataManager::Value>> data_in_range
              = dataManager.getBuffersSnapshot(
                 sensor, renderable_plot.getPlotRange().first, renderable_plot.getPlotRange().second);
-            
+
             renderable_plot.setData(sensor, data_in_range);
         }
     }
@@ -91,4 +91,31 @@ std::pair<std::vector<DataManager::Timestamp>, std::vector<DataManager::Value>> 
     // std::cout << "counter: " << counter << "\n";
 
     return {timestamps, values};
+}
+
+
+
+// ============================================
+// Windows with renderable plots
+// ============================================
+
+// Note: this method ignores the window if it already exists. It is up to the caller to check if the window exists (by calling hasWindowPlots())
+void GraphViewModel::addWindowPlots(const std::string& window_label, const WindowPlots& window_plots) {
+    // Check if the window already exists
+    if (window_plots_.find(window_label) != window_plots_.end()) {
+        return;
+    }
+    window_plots_.emplace(window_label, window_plots);
+}
+
+void GraphViewModel::removeWindowPlots(const std::string& window_label) {
+    window_plots_.erase(window_label);
+}
+
+bool GraphViewModel::hasWindowPlots(const std::string& window_label) const {
+    return window_plots_.find(window_label) != window_plots_.end();
+}
+
+const std::map<std::string, WindowPlots>& GraphViewModel::getWindowPlots() const {
+    return window_plots_;
 }

@@ -21,7 +21,7 @@ void GraphView::Draw(const std::string label)
 {
     //        ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
     constexpr static auto window_flags =
-        ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar |
+        ImGuiWindowFlags_NoSavedSettings |
         ImGuiWindowFlags_NoBringToFrontOnFocus;
     constexpr static auto window_size = ImVec2(1280.0F, 720.0F);
     constexpr static auto window_pos = ImVec2(0.0F, 0.0F);
@@ -1630,6 +1630,41 @@ void GraphView::renderAllPlots(){
 
 
 // ==============================
+// renderAllWindowPlots
+// ==============================
+
+// Render plots within window object
+void RenderAllPlots(WindowPlots& window) {
+
+}
+
+
+// Render all plots in their respective windows
+void GraphView::renderAllWindowPlots(){
+    // Loop through all the windows inside the view model
+    for (const auto& [window_label, window] : viewModel_.getWindowPlots()) {
+        // Set up the window
+        ImGui::SetNextWindowScroll(ImVec2(0, 0));
+        ImGui::SetNextWindowBgAlpha(0.5f);
+        ImGui::SetNextWindowSize(ImVec2(300, 600), ImGuiCond_Always);
+        ImGui::SetNextWindowPos(ImVec2(100, 100), ImGuiCond_Always);
+        ImGuiWindowFlags flags = ImGuiWindowFlags_NoSavedSettings;
+        if (ImGui::Begin(window_label.c_str(), nullptr, flags)) {
+            // Loop through all the plots inside the window and render them
+            for (const std::string& plot_label : window.getRenderablePlotLabels()) {
+                // Get the renderable plot object
+                RenderablePlot& renderable_plot = window.getRenderablePlot(plot_label);
+
+            }
+
+            ImGui::End();
+        }
+    }
+}
+
+
+
+// ==============================
 // renderAll
 // ==============================
 
@@ -1639,4 +1674,6 @@ void GraphView::renderAll() {
 
     // Render all plots
     renderAllPlots();
+
+    //
 }
