@@ -158,6 +158,16 @@ void GraphView::actionSubmitAddPlotPopup(AddPlotPopupState& state) {
         plot.addPlotLineProperties(sensor, RenderablePlot::PlotLineProperties());
     }
 
+    // Add selected sensors into the list of plotline properties
+    // Rotate through color pallette
+    int color_index = 0;
+    for(const auto& sensor : state.selected_sensors) {
+        plot.addPlotLineProperties(sensor, RenderablePlot::PlotLineProperties());
+        ImVec4 color = ImPlot::GetColormapColor(color_index);
+        plot.setPlotLinePropertiesColour(sensor, color);
+        color_index = (color_index + 1) % 10;
+    }
+
     // Add the plot to the view model
     viewModel_.addRenderablePlot(plot);
 
@@ -471,7 +481,27 @@ void ActionSubmitPlotOptionsPopup(RenderablePlot& renderable_plot, PlotOptionsPo
     renderable_plot.setYAxisPropertiesLogBase(ImAxis_Y3, plot_options_popup_state.Y3_properties.log_base);
     renderable_plot.setYAxisPropertiesUserSetRange(ImAxis_Y3, true);
 
+    // Set the plotline properties for each sensor
+    for (const auto& [sensor, properties] : plot_options_popup_state.sensor_to_plotline_properties) {
+        //  Check if plotline properties exist for the sensor
+        if (!renderable_plot.hasPlotLineProperties(sensor)) {
+            renderable_plot.addPlotLineProperties(sensor, RenderablePlot::PlotLineProperties());
+        }
 
+        // Set the plotline properties
+        renderable_plot.setPlotLinePropertiesColour(sensor, properties.colour);
+    }
+
+    // Remove any plotline properties of RenderablePlot that are not in either Y1, Y2, Y3
+    std::vector<std::string> sensors_in_Y_axes;
+    sensors_in_Y_axes.insert(sensors_in_Y_axes.end(), plot_options_popup_state.sensors_in_Y1_list_box.begin(), plot_options_popup_state.sensors_in_Y1_list_box.end());
+    sensors_in_Y_axes.insert(sensors_in_Y_axes.end(), plot_options_popup_state.sensors_in_Y2_list_box.begin(), plot_options_popup_state.sensors_in_Y2_list_box.end());
+    sensors_in_Y_axes.insert(sensors_in_Y_axes.end(), plot_options_popup_state.sensors_in_Y3_list_box.begin(), plot_options_popup_state.sensors_in_Y3_list_box.end());
+    for (const auto& [sensor, properties] : renderable_plot.getAllPlotLineProperties()) {
+        if (std::find(sensors_in_Y_axes.begin(), sensors_in_Y_axes.end(), sensor) == sensors_in_Y_axes.end()) {
+            renderable_plot.removePlotLineProperties(sensor);
+        }
+    }
 }
 
 // Search bar logic
@@ -547,7 +577,7 @@ void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot
         plot_option_pop_up_state.Y3_properties = renderable_plot.getYAxisProperties(ImAxis_Y3);
 
         // Set the current plotline properties for each sensor
-        plot_option_pop_up_state.data_to_plotline_properties = renderable_plot.getAllPlotLineProperties();
+        plot_option_pop_up_state.sensor_to_plotline_properties = renderable_plot.getAllPlotLineProperties();
     }
 
     // Start a Popup Modal
@@ -1331,6 +1361,11 @@ void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot
                 ImGui::Selectable(sensor.c_str(), &is_selected);
                 if (is_selected) {
                     plot_option_pop_up_state.plotline_properties_selected_sensor = sensor;
+
+                    // Check if plotline properties exists for the selected sensor. If not, create a default one
+                    if (plot_option_pop_up_state.sensor_to_plotline_properties.find(plot_option_pop_up_state.plotline_properties_selected_sensor) == plot_option_pop_up_state.sensor_to_plotline_properties.end()) {
+                        plot_option_pop_up_state.sensor_to_plotline_properties[plot_option_pop_up_state.plotline_properties_selected_sensor] = RenderablePlot::PlotLineProperties();
+                    }
                 }
             }
             ImGui::EndCombo();
@@ -1344,6 +1379,10 @@ void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot
         // Plotline properties of selected sensor
         if(!plot_option_pop_up_state.plotline_properties_selected_sensor.empty()) {
             ImGui::Text("Plotline properties of %s", plot_option_pop_up_state.plotline_properties_selected_sensor.c_str());
+
+            // Colour picker for plotline color
+            ImVec4& color = plot_option_pop_up_state.sensor_to_plotline_properties[plot_option_pop_up_state.plotline_properties_selected_sensor].colour;
+            ImGui::ColorEdit4("Plotline Color", &color.x);
         }
 
         ImGui::Separator();
@@ -1470,9 +1509,14 @@ void GraphView::renderAllPlots(){
             double range = limits.X.Max - limits.X.Min;
             int num_pixels = ImPlot::GetPlotPos().x + ImPlot::GetPlotSize().x;
 
+            // Plot all sensors
             for (const auto& series_label : sensors) {
                 // Get downsampled data
                 auto [xs, ys] = viewModel_.getDownsampledData(renderable_plot, series_label, range, num_pixels);
+
+                // Apply the plotline properties
+                // Line colour
+                ImPlot::SetNextLineStyle(renderable_plot.getPlotLineProperties(series_label).colour);
 
                 // Get the axis (Y1, Y2, Y3) for the sensor
                 ImAxis plot_axis = renderable_plot.getYAxisForSensor(series_label);
