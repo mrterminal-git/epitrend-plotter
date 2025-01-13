@@ -47,6 +47,7 @@ add_executable(${PROJECT_NAME}
     src/DataManager.cpp
     src/TimeSeriesBuffer.cpp
     src/RenderablePlot.cpp
+    src/WindowPlots.cpp
 )
 
 add_compile_definitions(NOMINMAX)
