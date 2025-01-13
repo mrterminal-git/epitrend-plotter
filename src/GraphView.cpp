@@ -490,6 +490,7 @@ void ActionSubmitPlotOptionsPopup(RenderablePlot& renderable_plot, PlotOptionsPo
 
         // Set the plotline properties
         renderable_plot.setPlotLinePropertiesColour(sensor, properties.colour);
+        renderable_plot.setPlotLinePropertiesMarkerStyle(sensor, properties.marker_style);
     }
 
     // Remove any plotline properties of RenderablePlot that are not in either Y1, Y2, Y3
@@ -1383,6 +1384,25 @@ void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot
             // Colour picker for plotline color
             ImVec4& color = plot_option_pop_up_state.sensor_to_plotline_properties[plot_option_pop_up_state.plotline_properties_selected_sensor].colour;
             ImGui::ColorEdit4("Plotline Color", &color.x);
+
+            // Marker drop-down for plotline marker
+            const char* marker_options[] = { "None", "Circle", "Square", "Diamond", "Up", "Down", "Left", "Right", "Cross", "Plus", "Asterisk" };
+            int marker_option_index = static_cast<int>(plot_option_pop_up_state.sensor_to_plotline_properties[plot_option_pop_up_state.plotline_properties_selected_sensor].marker_style) + 1;
+            const char* selected_marker = marker_options[marker_option_index];
+            if (ImGui::BeginCombo("Plotline Marker", selected_marker)) {
+                for (int n = 0; n < IM_ARRAYSIZE(marker_options); n++) {
+                    const bool is_selected = (selected_marker == marker_options[n]);
+                    if (ImGui::Selectable(marker_options[n], is_selected)) {
+                        selected_marker = marker_options[n];
+                        plot_option_pop_up_state.sensor_to_plotline_properties[plot_option_pop_up_state.plotline_properties_selected_sensor].marker_style = static_cast<ImPlotMarker>(n) - 1;
+                    }
+                    if (is_selected) {
+                        ImGui::SetItemDefaultFocus();
+                    }
+                }
+                ImGui::EndCombo();
+            }
+
         }
 
         ImGui::Separator();
@@ -1517,6 +1537,9 @@ void GraphView::renderAllPlots(){
                 // Apply the plotline properties
                 // Line colour
                 ImPlot::SetNextLineStyle(renderable_plot.getPlotLineProperties(series_label).colour);
+
+                // Marker style
+                ImPlot::SetNextMarkerStyle(renderable_plot.getPlotLineProperties(series_label).marker_style);
 
                 // Get the axis (Y1, Y2, Y3) for the sensor
                 ImAxis plot_axis = renderable_plot.getYAxisForSensor(series_label);
