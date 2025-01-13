@@ -546,6 +546,8 @@ void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot
         plot_option_pop_up_state.Y2_properties = renderable_plot.getYAxisProperties(ImAxis_Y2);
         plot_option_pop_up_state.Y3_properties = renderable_plot.getYAxisProperties(ImAxis_Y3);
 
+        // Set the current plotline properties for each sensor
+        plot_option_pop_up_state.data_to_plotline_properties = renderable_plot.getAllPlotLineProperties();
     }
 
     // Start a Popup Modal
@@ -1306,8 +1308,17 @@ void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot
         ImGui::Separator();
 
         // ******* Drop-down menu of sensors and plotline properties *******
+        //  Get all sensors in Y1, Y2, and Y3 list boxes
+        std::vector<std::string> all_plot_sensors;
+        all_plot_sensors.insert(all_plot_sensors.end(), plot_option_pop_up_state.sensors_in_Y1_list_box.begin(), plot_option_pop_up_state.sensors_in_Y1_list_box.end());
+        all_plot_sensors.insert(all_plot_sensors.end(), plot_option_pop_up_state.sensors_in_Y2_list_box.begin(), plot_option_pop_up_state.sensors_in_Y2_list_box.end());
+        all_plot_sensors.insert(all_plot_sensors.end(), plot_option_pop_up_state.sensors_in_Y3_list_box.begin(), plot_option_pop_up_state.sensors_in_Y3_list_box.end());
+
         // Drop-down menu for sensors
         std::string drop_down_label = "Select a sensor...";
+        if (!plot_option_pop_up_state.plotline_properties_selected_sensor.empty()) {
+            drop_down_label = plot_option_pop_up_state.plotline_properties_selected_sensor;
+        }
         if (plot_option_pop_up_state.sensors_in_Y1_list_box.empty()
             && plot_option_pop_up_state.sensors_in_Y2_list_box.empty()
             && plot_option_pop_up_state.sensors_in_Y3_list_box.empty()) {
@@ -1315,20 +1326,27 @@ void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot
         }
         if (ImGui::BeginCombo("Available Sensors", drop_down_label.c_str(), ImGuiComboFlags_WidthFitPreview)) {
             // Loop through all the sensors inside Y1, Y2, and Y3 list boxes
-            std::vector<std::string> all_plot_sensors;
-            all_plot_sensors.insert(all_plot_sensors.end(), plot_option_pop_up_state.sensors_in_Y1_list_box.begin(), plot_option_pop_up_state.sensors_in_Y1_list_box.end());
-            all_plot_sensors.insert(all_plot_sensors.end(), plot_option_pop_up_state.sensors_in_Y2_list_box.begin(), plot_option_pop_up_state.sensors_in_Y2_list_box.end());
-            all_plot_sensors.insert(all_plot_sensors.end(), plot_option_pop_up_state.sensors_in_Y3_list_box.begin(), plot_option_pop_up_state.sensors_in_Y3_list_box.end());
-
             for (const std::string& sensor : all_plot_sensors) {
                 bool is_selected = false;
                 ImGui::Selectable(sensor.c_str(), &is_selected);
                 if (is_selected) {
-                    std::cout << "Selected sensor: " << sensor << "\n";
+                    plot_option_pop_up_state.plotline_properties_selected_sensor = sensor;
                 }
             }
             ImGui::EndCombo();
         }
+
+        // Detect if the selected sensor has been removed from all Y-axis
+        if (std::find(all_plot_sensors.begin(), all_plot_sensors.end(), plot_option_pop_up_state.plotline_properties_selected_sensor) == all_plot_sensors.end()) {
+            plot_option_pop_up_state.plotline_properties_selected_sensor.clear();
+        }
+
+        // Plotline properties of selected sensor
+        if(!plot_option_pop_up_state.plotline_properties_selected_sensor.empty()) {
+            ImGui::Text("Plotline properties of %s", plot_option_pop_up_state.plotline_properties_selected_sensor.c_str());
+        }
+
+        ImGui::Separator();
 
         if (is_able_to_submit) {
             if (ImGui::Button("Submit")) {
@@ -1342,7 +1360,7 @@ void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot
                 plot_option_pop_up_state.reset();
             }
         } else {
-            ImGui::Text("Please ensure all sensors are allocated to a Y-axis.");
+            ImGui::Text("Please ensure at least one sensors is allocated to a Y-axis.");
         }
 
         if (ImGui::Button("Close")) {

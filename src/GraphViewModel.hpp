@@ -65,6 +65,8 @@ struct PlotOptionsPopupState {
     RenderablePlot::YAxisProperties Y1_properties;
     RenderablePlot::YAxisProperties Y2_properties;
     RenderablePlot::YAxisProperties Y3_properties;
+    std::map<std::string, RenderablePlot::PlotLineProperties> data_to_plotline_properties;
+    std::string plotline_properties_selected_sensor = "";
 
     char plot_range_start_year[5] = "";
     char plot_range_start_month[3] = "";
@@ -92,6 +94,7 @@ struct PlotOptionsPopupState {
         sensors_in_Y2_list_box.clear();
         selected_sensor_in_available_list_box = -1;
         std::fill(std::begin(search_available_sensors_buffer), std::end(search_available_sensors_buffer), '\0');
+        plotline_properties_selected_sensor = "";
 
         std::fill(std::begin(plot_range_start_year), std::end(plot_range_start_year), '\0');
         std::fill(std::begin(plot_range_start_month), std::end(plot_range_start_month), '\0');
@@ -154,5 +157,5 @@ private:
 
     // "Plot options" popup state
     PlotOptionsPopupState plot_options_popup_state_;
-    
+
 };

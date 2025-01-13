@@ -369,6 +369,10 @@ void RenderablePlot::setPlotLinePropertiesFillOutline(const std::string& series_
     data_to_plotline_properties_[series_label].fill_outline = fill_outline;
 }
 
+std::map<std::string, RenderablePlot::PlotLineProperties> RenderablePlot::getAllPlotLineProperties() const {
+    return data_to_plotline_properties_;
+}
+
 void RenderablePlot::resetPlotLineProperties(const std::string& series_label) {
     data_to_plotline_properties_[series_label].reset();
 }

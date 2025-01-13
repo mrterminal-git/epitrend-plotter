@@ -139,6 +139,7 @@ public:
     void setPlotLinePropertiesFillWeight(const std::string& series_label, double fill_weight);
     void setPlotLinePropertiesFillOutline(const std::string& series_label, ImVec4 fill_outline);
     PlotLineProperties getPlotLineProperties(const std::string& series_label);
+    std::map<std::string, PlotLineProperties> getAllPlotLineProperties() const;
     ImVec4 getPlotLinePropertiesColour(const std::string& series_label);
     double getPlotLinePropertiesThickness(const std::string& series_label);
     ImPlotMarker getPlotLinePropertiesMarkerStyle(const std::string& series_label);
