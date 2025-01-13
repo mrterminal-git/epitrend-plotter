@@ -11,7 +11,7 @@ void WindowPlots::addRenderablePlot(const std::string& plot_label, RenderablePlo
         // Ignore if the plot already exists
         return;
     }
-    renderable_plots_[plot_label] = std::move(renderable_plot);
+    renderable_plots_.emplace(plot_label, std::move(renderable_plot));
 }
 
 bool WindowPlots::hasRenderablePlot(const std::string& plot_label) {
