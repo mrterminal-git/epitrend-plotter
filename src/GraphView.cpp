@@ -1754,12 +1754,20 @@ void GraphView::renderWindowPlotAddPlotPopup(WindowPlots *window){
         ImGui::Separator();
 
         // ********** List plottable sensors **********
+        // Search bar for available sensors
+        ImGui::InputText("Search", window_plot_add_plot_popup_state.search_available_sensors_buffer,
+            sizeof(window_plot_add_plot_popup_state.search_available_sensors_buffer));
         std::vector<std::string>& sensors = window_plot_add_plot_popup_state.available_sensors;
         int& selected_sensor = window_plot_add_plot_popup_state.selected_sensor_in_available_list_box;
 
         ImGui::Text("Select sensors to plot");
         if (ImGui::BeginListBox("##Sensors")) {
             for (size_t i = 0; i < sensors.size(); ++i) {
+                // Check if the sensor matches the search text
+                if (!IsSearchBarMatch(window_plot_add_plot_popup_state.search_available_sensors_buffer,
+                    window_plot_add_plot_popup_state.available_sensors.at(i)))
+                    continue;
+
                 const bool is_selected = (selected_sensor == static_cast<int>(i));
                 if (ImGui::Selectable(sensors[i].c_str(), is_selected)) {
                     // Remove the selected sensor from the list and move them into the selected sensors list

@@ -139,6 +139,7 @@ struct WindowPlotAddPlotPopupState {
     char plot_range_end_second[3] = "";
 
     char plot_label_buffer[255] = "";
+    char search_available_sensors_buffer[255] = "";
     std::tm input_start_time = {};
     std::tm input_end_time = {};
 
@@ -167,6 +168,7 @@ struct WindowPlotAddPlotPopupState {
         std::fill(std::begin(plot_range_end_second), std::end(plot_range_end_second), '\0');
 
         std::fill(std::begin(plot_label_buffer), std::end(plot_label_buffer), '\0');
+        std::fill(std::begin(search_available_sensors_buffer), std::end(search_available_sensors_buffer), '\0');
         input_start_time = {};
     }
 };
