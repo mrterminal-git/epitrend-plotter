@@ -570,7 +570,6 @@ static inline double TransformInverse_Log(double v, void* user_data) {
 
 
 // ********** RENDERING **********
-
 // Render plots within window object
 void GraphView::renderAllPlotsInWindow(WindowPlots* window) {
     // Loop through all renderable plots in the window
@@ -737,6 +736,10 @@ void RenderWindowMenuBar(WindowPlots* window) {
 
             if (ImGui::MenuItem("Remove Plot")) {
                 // Remove plot
+            }
+
+            if (ImGui::MenuItem("Configure Window")) {
+                // Configure window popup
             }
             ImGui::EndMenu();
         }
@@ -1668,6 +1671,33 @@ void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot
     }
 }
 
+void GraphView::renderWindowPlotAddPlotPopup (){
+    // Example of creating a popup window with textbox input fields
+    if (ImGui::Button("+")) {
+        ImGui::OpenPopup("Add new plot to window");
+        auto& window_plot_add_plot_popup_state = viewModel_.getWindowPlotAddPlotPopupState();
+        // Reset the state of the popup
+        window_plot_add_plot_popup_state.reset();
+    }
+
+    if (ImGui::BeginPopupModal("Add new plot to window", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+        auto& window_plot_add_plot_popup_state = viewModel_.getWindowPlotAddPlotPopupState();
+
+
+
+        // Close the popup if the user presses the "Close" button
+        if (ImGui::Button("Close")) {
+            ImGui::CloseCurrentPopup();
+
+            // Reset the state of the popup
+            window_plot_add_plot_popup_state.reset();
+        }
+
+        ImGui::EndPopup();
+    }
+
+}
+
 // Render all plots in their respective windows
 void GraphView::renderAllWindowPlots(){
     // Loop through all the windows inside the view model
@@ -1688,9 +1718,7 @@ void GraphView::renderAllWindowPlots(){
             renderAllPlotsInWindow(&window);
 
             // Add plot button
-            if (ImGui::Button("+")) {
-                // Add plot popup
-            }
+            renderWindowPlotAddPlotPopup();
         }
 
         ImGui::End();

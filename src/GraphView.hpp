@@ -44,17 +44,10 @@ private:
     void renderAddPlotPopup();
 
 
-
-    // ==============================
-    // renderAllPlots
-    // ==============================
-
-
-
-
     // ==============================
     // renderAllWindowPlots
     // ==============================
+    void renderWindowPlotAddPlotPopup();
     void renderPlotOptions(
         const std::string& popup_label, RenderablePlot& renderable_plot
     );
