@@ -5,7 +5,7 @@ WindowPlots::WindowPlots(const std::string& label) : label_(label) {}
 WindowPlots::~WindowPlots() {}
 
 // Warning: This function moves the ownership renderable_plot object
-void WindowPlots::addRenderablePlot(const std::string& plot_label, RenderablePlot& renderable_plot) {
+void WindowPlots::addRenderablePlot(const std::string& plot_label, std::unique_ptr<RenderablePlot> renderable_plot) {
     // Check if the plot already exists
     if (renderable_plots_.find(plot_label) != renderable_plots_.end()) {
         // Ignore if the plot already exists
@@ -24,10 +24,10 @@ RenderablePlot& WindowPlots::getRenderablePlot(const std::string& plot_label) {
     if (!hasRenderablePlot(plot_label)) {
         throw std::runtime_error("Error in WindowsPlot::getRenderablePlot call: Plot does not exist");
     }
-    return renderable_plots_.at(plot_label);
+    return *renderable_plots_.at(plot_label);
 }
 
-const std::map<std::string, RenderablePlot>& WindowPlots::getRenderablePlots() const {
+const std::map<std::string, std::unique_ptr<RenderablePlot>>& WindowPlots::getRenderablePlots() const {
     return renderable_plots_;
 }
 

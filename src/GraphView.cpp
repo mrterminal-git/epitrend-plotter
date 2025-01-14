@@ -1651,9 +1651,8 @@ void GraphView::renderAllWindowPlots(){
         ImGuiWindowFlags flags = ImGuiWindowFlags_NoSavedSettings;
         if (ImGui::Begin(window_label.c_str(), nullptr, flags)) {
             // Loop through all the plots inside the window and render them
-            for (const std::string& plot_label : window.getRenderablePlotLabels()) {
-                // Get the renderable plot object
-                RenderablePlot& renderable_plot = window.getRenderablePlot(plot_label);
+            for (const std::string& plot_label : window->getRenderablePlotLabels()) {
+                RenderablePlot& renderable_plot = window->getRenderablePlot(plot_label);
 
             }
 

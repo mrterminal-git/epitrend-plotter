@@ -143,10 +143,10 @@ public:
     // ============================================
     // Windows with renderable plots
     // ============================================
-    void addWindowPlots(const std::string& window_label, const WindowPlots& window_plots);
+    void addWindowPlots(const std::string& window_label, std::unique_ptr<WindowPlots> window_plots);
     void removeWindowPlots(const std::string& window_label);
     bool hasWindowPlots(const std::string& window_label) const;
-    const std::map<std::string, WindowPlots>& getWindowPlots() const;
+    const std::map<std::string, std::unique_ptr<WindowPlots>>& getWindowPlots() const;
 
 private:
     // Each renderable plot is a separate window
@@ -171,5 +171,5 @@ private:
     // ============================================
     // Windows with renderable plots
     // ============================================
-    std::map<std::string, WindowPlots> window_plots_;
+    std::map<std::string, std::unique_ptr<WindowPlots>> window_plots_;
 };

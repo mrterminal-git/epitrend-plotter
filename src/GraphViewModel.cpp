@@ -100,12 +100,12 @@ std::pair<std::vector<DataManager::Timestamp>, std::vector<DataManager::Value>> 
 // ============================================
 
 // Note: this method ignores the window if it already exists. It is up to the caller to check if the window exists (by calling hasWindowPlots())
-void GraphViewModel::addWindowPlots(const std::string& window_label, const WindowPlots& window_plots) {
+void GraphViewModel::addWindowPlots(const std::string& window_label, std::unique_ptr<WindowPlots> window_plots) {
     // Check if the window already exists
     if (window_plots_.find(window_label) != window_plots_.end()) {
         return;
     }
-    window_plots_.emplace(window_label, window_plots);
+    window_plots_.emplace(window_label, std::move(window_plots));
 }
 
 void GraphViewModel::removeWindowPlots(const std::string& window_label) {
@@ -116,6 +116,6 @@ bool GraphViewModel::hasWindowPlots(const std::string& window_label) const {
     return window_plots_.find(window_label) != window_plots_.end();
 }
 
-const std::map<std::string, WindowPlots>& GraphViewModel::getWindowPlots() const {
+const std::map<std::string, std::unique_ptr<WindowPlots>>& GraphViewModel::getWindowPlots() const {
     return window_plots_;
 }

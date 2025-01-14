@@ -17,10 +17,10 @@ class WindowPlots
         // ============================================
         // Renderable Plot Management
         // ============================================
-        void addRenderablePlot(const std::string& plot_label, RenderablePlot& renderable_plot); // Warning: This function moves the renderable_plot object
+        void addRenderablePlot(const std::string& plot_label, std::unique_ptr<RenderablePlot> renderable_plot); // Warning: This function moves the renderable_plot object
         bool hasRenderablePlot(const std::string& plot_label);
         RenderablePlot& getRenderablePlot(const std::string& plot_label);
-        const std::map<std::string, RenderablePlot>& getRenderablePlots() const;
+        const std::map<std::string, std::unique_ptr<RenderablePlot>>& getRenderablePlots() const;
         void clearAllRenderablePlots();
         void removeRenderablePlot(const std::string& plot_label);
         std::vector<std::string> getRenderablePlotLabels() const;
@@ -44,7 +44,7 @@ class WindowPlots
         // Renderable Plot Management
         // ============================================
         std::string label_;
-        std::map<std::string, RenderablePlot> renderable_plots_;
+        std::map<std::string, std::unique_ptr<RenderablePlot>> renderable_plots_;
 
 
 
