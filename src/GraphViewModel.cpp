@@ -5,20 +5,6 @@
 
 GraphViewModel::GraphViewModel(std::mutex& mutex)
     : update_viewModel_mutex_(mutex) {}
-void GraphViewModel::addRenderablePlot(RenderablePlot& object) {
-    // Set the plot ID
-    object.setPlotId(next_plot_id_++);
-
-    renderable_plots_.push_back(std::move(object));
-}
-
-std::vector<RenderablePlot>& GraphViewModel::getRenderablePlots() {
-    return renderable_plots_;
-}
-
-void GraphViewModel::clear() {
-    renderable_plots_.clear();
-}
 
 void GraphViewModel::setPlottableSensors(const std::vector<std::string>& sensors) {
     plottable_sensors_ = sensors;
@@ -37,13 +23,23 @@ PlotOptionsPopupState& GraphViewModel::getPlotOptionsState(){
 }
 
 void GraphViewModel::updatePlotsWithData(DataManager& dataManager) {
-    for (auto& renderable_plot: renderable_plots_) {
-        for (const auto& sensor: renderable_plot.getAllSensors()) {
-            std::vector<std::pair<DataManager::Timestamp, DataManager::Value>> data_in_range
-             = dataManager.getBuffersSnapshot(
-                sensor, renderable_plot.getPlotRange().first, renderable_plot.getPlotRange().second);
+    // Loop through all windows and renderable plots
+    for (auto& window_plot_label : getWindowPlotLabels()) {
+        WindowPlots& window_plot = getWindowPlot(window_plot_label);
 
-            renderable_plot.setData(sensor, data_in_range);
+        // Loop through all renderable plots in the window
+        for (auto& renderable_plot_labels: window_plot.getRenderablePlotLabels()) {
+            RenderablePlot& renderable_plot = window_plot.getRenderablePlot(renderable_plot_labels);
+
+            // Update the data for all sensors in the plot
+            for (const auto& sensor: renderable_plot.getAllSensors()) {
+                std::vector<std::pair<DataManager::Timestamp, DataManager::Value>> data_in_range
+                 = dataManager.getBuffersSnapshot(
+                    sensor, renderable_plot.getPlotRange().first, renderable_plot.getPlotRange().second);
+
+                renderable_plot.setData(sensor, data_in_range);
+            }
+
         }
     }
 }
@@ -118,4 +114,19 @@ bool GraphViewModel::hasWindowPlots(const std::string& window_label) const {
 
 const std::map<std::string, std::unique_ptr<WindowPlots>>& GraphViewModel::getWindowPlots() const {
     return window_plots_;
+}
+
+WindowPlots& GraphViewModel::getWindowPlot(const std::string& window_label) {
+    if (!hasWindowPlots(window_label)) {
+        throw std::runtime_error("Error in GraphViewModel::getWindowPlots call: Window does not exist");
+    }
+    return *window_plots_.at(window_label);
+}
+
+std::vector<std::string> GraphViewModel::getWindowPlotLabels() const {
+    std::vector<std::string> labels;
+    for (const auto& [label, window] : window_plots_) {
+        labels.push_back(label);
+    }
+    return labels;
 }

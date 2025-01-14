@@ -116,12 +116,8 @@ struct PlotOptionsPopupState {
 
 class GraphViewModel {
 public:
+    // Constructor
     GraphViewModel(std::mutex& mutex);
-
-    void addRenderablePlot(RenderablePlot& object);
-    std::vector<RenderablePlot>& getRenderablePlots();
-
-    void clear(); // Clear all renderables
 
     // Plottable sensors storage
     void setPlottableSensors(const std::vector<std::string>& sensors);
@@ -140,6 +136,8 @@ public:
     std::pair<std::vector<DataManager::Timestamp>, std::vector<DataManager::Value>> getDownsampledData(
     RenderablePlot& plot, const std::string& sensor, double range, int num_pixels);
 
+
+
     // ============================================
     // Windows with renderable plots
     // ============================================
@@ -147,11 +145,12 @@ public:
     void removeWindowPlots(const std::string& window_label);
     bool hasWindowPlots(const std::string& window_label) const;
     const std::map<std::string, std::unique_ptr<WindowPlots>>& getWindowPlots() const;
+    WindowPlots& getWindowPlot(const std::string& window_label);
+    std::vector<std::string> getWindowPlotLabels() const;
+
+
 
 private:
-    // Each renderable plot is a separate window
-    std::vector<RenderablePlot> renderable_plots_;
-
     // Plottable sensors
     std::vector<std::string> plottable_sensors_;
 
