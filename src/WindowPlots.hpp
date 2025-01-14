@@ -14,6 +14,16 @@ class WindowPlots
         // Destructor
         ~WindowPlots();
 
+        // Deleted copy constructor and copy assignment operator
+        WindowPlots(const WindowPlots&) = delete;
+        WindowPlots& operator=(const WindowPlots&) = delete;
+
+        // Move constructorand move assignment operator
+        WindowPlots(WindowPlots&& other) noexcept;
+        WindowPlots& operator=(WindowPlots&& other) noexcept;
+
+
+
         // ============================================
         // Renderable Plot Management
         // ============================================
@@ -40,6 +50,11 @@ class WindowPlots
 
 
     private:
+    // ===================!!!=========================
+    // NOTE: The move constructor and move assignment operator is implemented.
+    // If you need to add more data members, you need to update these functions.
+    // ===================!!!=========================
+
         // ============================================
         // Renderable Plot Management
         // ============================================

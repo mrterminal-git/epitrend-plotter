@@ -4,6 +4,28 @@ WindowPlots::WindowPlots(const std::string& label) : label_(label) {}
 
 WindowPlots::~WindowPlots() {}
 
+// Move constructor
+WindowPlots::WindowPlots(WindowPlots&& other) noexcept
+    : label_(std::move(other.label_)),
+      renderable_plots_(std::move(other.renderable_plots_)),
+      pos_x_(other.pos_x_),
+      pos_y_(other.pos_y_),
+      width_(other.width_),
+      height_(other.height_) {}
+
+// Move assignment operator
+WindowPlots& WindowPlots::operator=(WindowPlots&& other) noexcept {
+    if (this != &other) {
+        label_ = std::move(other.label_);
+        renderable_plots_ = std::move(other.renderable_plots_);
+        pos_x_ = other.pos_x_;
+        pos_y_ = other.pos_y_;
+        width_ = other.width_;
+        height_ = other.height_;
+    }
+    return *this;
+}
+
 // Warning: This function moves the ownership renderable_plot object
 void WindowPlots::addRenderablePlot(const std::string& plot_label, std::unique_ptr<RenderablePlot> renderable_plot) {
     // Check if the plot already exists
