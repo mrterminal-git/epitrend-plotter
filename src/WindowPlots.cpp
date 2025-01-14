@@ -68,3 +68,7 @@ std::vector<std::string> WindowPlots::getRenderablePlotLabels() const {
     }
     return labels;
 }
+
+std::string WindowPlots::getLabel() const {
+    return label_;
+}

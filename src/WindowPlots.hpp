@@ -34,6 +34,7 @@ class WindowPlots
         void clearAllRenderablePlots();
         void removeRenderablePlot(const std::string& plot_label);
         std::vector<std::string> getRenderablePlotLabels() const;
+        std::string getLabel() const;
 
 
 
