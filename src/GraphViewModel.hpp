@@ -117,8 +117,12 @@ struct PlotOptionsPopupState {
 struct WindowPlotAddPlotPopupState {
     std::string plot_label;
     bool is_real_time = true;
+    std::vector<std::string> all_sensors;
     std::vector<std::string> available_sensors;
     std::vector<std::string> selected_sensors;
+    int selected_sensor_in_available_list_box = -1;
+    int selected_sensor_in_selected_list_box = -1;
+    bool is_range_initialized = false;
 
     char plot_range_start_year[5] = "";
     char plot_range_start_month[3] = "";
@@ -134,10 +138,19 @@ struct WindowPlotAddPlotPopupState {
     char plot_range_end_minute[3] = "";
     char plot_range_end_second[3] = "";
 
+    char plot_label_buffer[255] = "";
+    std::tm input_start_time = {};
+    std::tm input_end_time = {};
+
     void reset() {
         plot_label.clear();
         is_real_time = true;
+        all_sensors.clear();
+        available_sensors.clear();
         selected_sensors.clear();
+        selected_sensor_in_available_list_box = -1;
+        selected_sensor_in_selected_list_box = -1;
+        is_range_initialized = false;
 
         std::fill(std::begin(plot_range_start_year), std::end(plot_range_start_year), '\0');
         std::fill(std::begin(plot_range_start_month), std::end(plot_range_start_month), '\0');
@@ -152,6 +165,9 @@ struct WindowPlotAddPlotPopupState {
         std::fill(std::begin(plot_range_end_hour), std::end(plot_range_end_hour), '\0');
         std::fill(std::begin(plot_range_end_minute), std::end(plot_range_end_minute), '\0');
         std::fill(std::begin(plot_range_end_second), std::end(plot_range_end_second), '\0');
+
+        std::fill(std::begin(plot_label_buffer), std::end(plot_label_buffer), '\0');
+        input_start_time = {};
     }
 };
 
