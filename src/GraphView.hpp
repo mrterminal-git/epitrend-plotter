@@ -47,7 +47,7 @@ private:
     // ==============================
     // renderAllWindowPlots
     // ==============================
-    void renderWindowPlotAddPlotPopup();
+    void renderWindowPlotAddPlotPopup(WindowPlots* window);
     void renderPlotOptions(
         const std::string& popup_label, RenderablePlot& renderable_plot
     );
