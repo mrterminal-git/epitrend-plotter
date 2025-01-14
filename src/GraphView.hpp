@@ -9,6 +9,7 @@
 
 #include "TimeSeriesBuffer.hpp"
 #include "GraphViewModel.hpp"
+#include "WindowPlots.hpp"
 
 class GraphView
 {
@@ -47,23 +48,18 @@ private:
     // ==============================
     // renderAllPlots
     // ==============================
-    void renderPlotOptions(
-        const std::string& popup_label, RenderablePlot& renderable_plot
-    );
+
 
 
 
     // ==============================
     // renderAllWindowPlots
     // ==============================
+    void renderPlotOptions(
+        const std::string& popup_label, RenderablePlot& renderable_plot
+    );
+    void renderAllPlotsInWindow(WindowPlots* window);
     void renderAllWindowPlots();
-
-
-
-    // ==============================
-    // renderAllPlots
-    // ==============================
-    void renderAllPlots();
 
 
 };

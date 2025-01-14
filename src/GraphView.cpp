@@ -34,7 +34,9 @@ void GraphView::Draw(const std::string label)
     renderAll();
 
     ImGui::End();
+
 }
+
 
 
 
@@ -44,6 +46,7 @@ void GraphView::Draw(const std::string label)
 void GraphView::setUpdateRangeCallback(UpdateRangeCallback callback) {
     update_range_callback_ = callback;
 }
+
 
 
 
@@ -168,8 +171,13 @@ void GraphView::actionSubmitAddPlotPopup(AddPlotPopupState& state) {
         color_index = (color_index + 1) % 10;
     }
 
-    // Add the plot to the view model
-    viewModel_.addRenderablePlot(plot);
+    // // Add the plot to the view model
+    // viewModel_.addRenderablePlot(plot);
+
+    // Initialize a window and add the plot to a window
+    WindowPlots window(state.window_label);
+    window.addRenderablePlot(state.plot_label, std::make_unique<RenderablePlot>(std::move(plot)));
+    viewModel_.addWindowPlots(state.window_label, std::make_unique<WindowPlots>(std::move(window)));
 
 }
 
@@ -386,9 +394,12 @@ void GraphView::renderAddPlotPopup() {
 
 
 
+
 // ==============================
-// renderAllPlots
+// renderAllWindowPlots
 // ==============================
+
+// ********** HELPER FUNCTIONS **********
 
 // Helper function to initialize plot range for Brisbane time in the plot options popup
 void SetPlotRangeState(PlotOptionsPopupState& plot_option_pop_up_state) {
@@ -534,6 +545,205 @@ bool IsSearchBarMatch(const std::string& search_text, const std::string& sensor)
 
     // Return false if no match
     return false;
+}
+
+// Helper transform functions for logarithmic scale
+static inline double TransformForward_Log(double v, void* user_data) {
+    double log_base = *static_cast<double*>(user_data);
+    if (log_base <= 0) {
+        log_base = 10;
+    }
+    if (v <= 0) {
+        return 1E-17;
+    }
+    return log(v) / log(log_base);
+}
+
+// Helper transform functions for logarithmic scale
+static inline double TransformInverse_Log(double v, void* user_data) {
+    double log_base = *static_cast<double*>(user_data);
+    if (log_base <= 0) {
+        log_base = 10;
+    }
+    return pow(log_base, v);
+}
+
+
+// ********** RENDERING **********
+
+// Render plots within window object
+void GraphView::renderAllPlotsInWindow(WindowPlots* window) {
+    // Loop through all renderable plots in the window
+    for (const std::string& plot_label : window->getRenderablePlotLabels()) {
+        RenderablePlot& renderable_plot = window->getRenderablePlot(plot_label);
+
+        // Create the plot
+        std::time_t plot_start, plot_end;
+        if(renderable_plot.isRealTime()){
+            std::time_t current_time = std::time(nullptr) + 10 * 3600; // Brisbane time
+            std::time_t max_data_time_range = 1000;
+
+            plot_start = current_time - max_data_time_range;
+            plot_end = current_time;
+
+        } else {
+            plot_start = renderable_plot.getPlotRange().first;
+            plot_end = renderable_plot.getPlotRange().second;
+
+        }
+
+        // Store the real-time flag in a local variable
+        bool is_real_time = renderable_plot.isRealTime();
+        if (ImGui::Checkbox("Real-time (AEST)", &is_real_time)) {
+            // Update the real-time flag if it changes
+            renderable_plot.setRealTime(is_real_time);
+        }
+        ImGui::SameLine();
+
+        // Create a button to open the plot options popup
+        renderPlotOptions(("###" + renderable_plot.getLabel()), renderable_plot);
+
+        // Render the plot
+        if (ImPlot::BeginPlot(("###" + renderable_plot.getLabel()).c_str())) {
+            // Get all sensors in the plot
+            const std::vector<std::string> sensors = renderable_plot.getAllSensors();
+
+            // Set up the plot Y-axis before any setup locking functions
+            for (const auto& series_label : sensors) {
+                // Get the axis (Y1, Y2, Y3) for the sensor
+                ImAxis plot_axis = renderable_plot.getYAxisForSensor(series_label);
+                ImPlot::SetupAxis(plot_axis, nullptr, ImPlotAxisFlags_AuxDefault);
+                if (renderable_plot.getYAxisPropertiesUserSetRange(plot_axis)) {
+                    std::cout << "Setting axis limits for " << series_label << " to " << renderable_plot.getYAxisPropertiesMin(plot_axis) << " - " << renderable_plot.getYAxisPropertiesMax(plot_axis) << "\n";
+                    ImPlot::SetupAxisLimits(plot_axis, renderable_plot.getYAxisPropertiesMin(plot_axis),
+                        renderable_plot.getYAxisPropertiesMax(plot_axis), ImGuiCond_Always);
+                    renderable_plot.setYAxisPropertiesUserSetRange(plot_axis, false);
+                } else {
+                    ImPlot::SetupAxisLimits(plot_axis, renderable_plot.getYAxisPropertiesMin(plot_axis),
+                        renderable_plot.getYAxisPropertiesMax(plot_axis), ImGuiCond_Once);
+                }
+
+                // Set the axis scale type
+                if (renderable_plot.getYAxisPropertiesScaleType(plot_axis) == RenderablePlot::ScaleType::Logirithmic) {
+                    double log_base = renderable_plot.getYAxisPropertiesLogBase(plot_axis);
+                    ImPlot::SetupAxisScale(plot_axis, TransformForward_Log, TransformInverse_Log, &log_base);
+                } else {
+                    ImPlot::SetupAxisScale(plot_axis, ImPlotScale_Linear);
+                }
+            }
+
+            // Set the plot X_axis to time
+            ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
+            if(renderable_plot.isRealTime()){
+                ImPlot::SetupAxisLimits(ImAxis_X1, plot_start, plot_end, ImGuiCond_Always);
+            } else {
+                ImPlot::SetupAxisLimits(ImAxis_X1, plot_start, plot_end, ImGuiCond_Once);
+            }
+
+            ImPlotRect limits = ImPlot::GetPlotLimits();
+            double range = limits.X.Max - limits.X.Min;
+            int num_pixels = ImPlot::GetPlotPos().x + ImPlot::GetPlotSize().x;
+
+            // Plot all sensors
+            for (const auto& series_label : sensors) {
+                // Get downsampled data
+                auto [xs, ys] = viewModel_.getDownsampledData(renderable_plot, series_label, range, num_pixels);
+
+                // Apply the plotline properties
+                // Line colour
+                ImPlot::SetNextLineStyle(renderable_plot.getPlotLineProperties(series_label).colour);
+
+                // Marker style
+                ImPlot::SetNextMarkerStyle(renderable_plot.getPlotLineProperties(series_label).marker_style,
+                    renderable_plot.getPlotLineProperties(series_label).marker_size,
+                    renderable_plot.getPlotLineProperties(series_label).fill, renderable_plot.getPlotLineProperties(series_label).fill_weight,
+                    renderable_plot.getPlotLineProperties(series_label).fill_outline);
+
+                // Get the axis (Y1, Y2, Y3) for the sensor
+                ImAxis plot_axis = renderable_plot.getYAxisForSensor(series_label);
+                ImPlot::SetAxes(ImAxis_X1, plot_axis);
+                ImPlot::PlotStairs(series_label.c_str(), xs.data(), ys.data(), xs.size());
+            }
+
+            // Callback plot range if plot range changes
+            // ImPlotRect limits = ImPlot::GetPlotLimits();
+            if (limits.X.Min != renderable_plot.getPlotRange().first || limits.X.Max != renderable_plot.getPlotRange().second) {
+                renderable_plot.notifyRangeChange(limits.X.Min, limits.X.Max);
+
+                // Update the plot range
+                renderable_plot.setPlotRange(limits.X.Min, limits.X.Max);
+
+                // Callback to update the range in the data manager
+                if (update_range_callback_) {
+                    // Update the range for all sensors in the plot
+                    for (const auto& sensor : sensors) {
+                        update_range_callback_(sensor, renderable_plot.getPlotId(), limits.X.Min, limits.X.Max);
+                    }
+                }
+            }
+
+            // Callback the Y1, Y2, Y3 min and max values
+            for (const auto& axis : {ImAxis_Y1, ImAxis_Y2, ImAxis_Y3}) {
+                // Check if the axis exists in the plot
+                bool axis_exists = false;
+                for (const auto& sensor: sensors) {
+                    if (renderable_plot.getYAxisForSensor(sensor) == axis) {
+                        axis_exists = true;
+                        break;
+                    }
+                }
+                if (!axis_exists) {
+                    continue;
+                }
+
+                // Get the min and max values for the axis
+                ImPlotRect y_axis_limits = ImPlot::GetPlotLimits(ImAxis_X1, axis);
+                double axis_min = y_axis_limits.Y.Min;
+                double axis_max = y_axis_limits.Y.Max;
+
+                // Update the axis properties in the renderable plot
+                renderable_plot.setYAxisPropertiesMin(axis, axis_min);
+                renderable_plot.setYAxisPropertiesMax(axis, axis_max);
+
+            }
+
+            ImPlot::EndPlot();
+        }
+        ImGui::Separator();
+    }
+}
+
+// Render menu bar for the window
+void RenderWindowMenuBar(WindowPlots* window) {
+    // Menu bar for the window
+    if (ImGui::BeginMenuBar()) {
+        // ********** File menu **********
+        if (ImGui::BeginMenu("File")) {
+            if (ImGui::MenuItem("Save Window")) {
+                // Save plot
+            }
+
+            if (ImGui::MenuItem("Save Window As...")) {
+                // Save plot as. Open file dialog
+            }
+            ImGui::EndMenu();
+        }
+
+        // ********** Options menu **********
+        if (ImGui::BeginMenu("Options")) {
+            if (ImGui::MenuItem("Add Plot")) {
+                // Add plot popup
+            }
+
+            if (ImGui::MenuItem("Remove Plot")) {
+                // Remove plot
+            }
+            ImGui::EndMenu();
+        }
+
+        // End the menu bar
+        ImGui::EndMenuBar();
+    }
 }
 
 // Render the "Plot options" popup
@@ -1458,208 +1668,36 @@ void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot
     }
 }
 
-// Helper transform functions for logarithmic scale
-static inline double TransformForward_Log(double v, void* user_data) {
-    double log_base = *static_cast<double*>(user_data);
-    if (log_base <= 0) {
-        log_base = 10;
-    }
-    if (v <= 0) {
-        return 1E-17;
-    }
-    return log(v) / log(log_base);
-}
-
-// Helper transform functions for logarithmic scale
-static inline double TransformInverse_Log(double v, void* user_data) {
-    double log_base = *static_cast<double*>(user_data);
-    if (log_base <= 0) {
-        log_base = 10;
-    }
-    return pow(log_base, v);
-}
-
-void GraphView::renderAllPlots(){
-    // Plot all RenderablePlots in individual windows
-    for (auto& renderable_plot : viewModel_.getRenderablePlots()){
-        // Create a sub-window with each plot
-        ImGui::SetNextWindowSize(ImVec2(300, 600), ImGuiCond_FirstUseEver);
-        ImGui::SetNextWindowPos(ImVec2(100, 100), ImGuiCond_FirstUseEver);
-
-        ImGui::Begin(renderable_plot.getWindowLabel().c_str(), nullptr, ImGuiWindowFlags_None);
-
-        // Create the plot
-        std::time_t plot_start, plot_end;
-        if(renderable_plot.isRealTime()){
-            std::time_t current_time = std::time(nullptr) + 10 * 3600; // Brisbane time
-            std::time_t max_data_time_range = 1000;
-
-            plot_start = current_time - max_data_time_range;
-            plot_end = current_time;
-
-        } else {
-            plot_start = renderable_plot.getPlotRange().first;
-            plot_end = renderable_plot.getPlotRange().second;
-
-        }
-
-        // Store the real-time flag in a local variable
-        bool is_real_time = renderable_plot.isRealTime();
-        if (ImGui::Checkbox("Real-time (AEST)", &is_real_time)) {
-            // Update the real-time flag if it changes
-            renderable_plot.setRealTime(is_real_time);
-        }
-        ImGui::SameLine();
-
-        // Create a button to open the plot options popup
-        renderPlotOptions(("###" + renderable_plot.getLabel()), renderable_plot);
-
-        // Render the plot
-        if (ImPlot::BeginPlot(("###" + renderable_plot.getLabel()).c_str())) {
-            // Get all sensors in the plot
-            const std::vector<std::string> sensors = renderable_plot.getAllSensors();
-
-            // Set up the plot Y-axis before any setup locking functions
-            for (const auto& series_label : sensors) {
-                // Get the axis (Y1, Y2, Y3) for the sensor
-                ImAxis plot_axis = renderable_plot.getYAxisForSensor(series_label);
-                ImPlot::SetupAxis(plot_axis, nullptr, ImPlotAxisFlags_AuxDefault);
-                if (renderable_plot.getYAxisPropertiesUserSetRange(plot_axis)) {
-                    std::cout << "Setting axis limits for " << series_label << " to " << renderable_plot.getYAxisPropertiesMin(plot_axis) << " - " << renderable_plot.getYAxisPropertiesMax(plot_axis) << "\n";
-                    ImPlot::SetupAxisLimits(plot_axis, renderable_plot.getYAxisPropertiesMin(plot_axis),
-                        renderable_plot.getYAxisPropertiesMax(plot_axis), ImGuiCond_Always);
-                    renderable_plot.setYAxisPropertiesUserSetRange(plot_axis, false);
-                } else {
-                    ImPlot::SetupAxisLimits(plot_axis, renderable_plot.getYAxisPropertiesMin(plot_axis),
-                        renderable_plot.getYAxisPropertiesMax(plot_axis), ImGuiCond_Once);
-                }
-
-                // Set the axis scale type
-                if (renderable_plot.getYAxisPropertiesScaleType(plot_axis) == RenderablePlot::ScaleType::Logirithmic) {
-                    double log_base = renderable_plot.getYAxisPropertiesLogBase(plot_axis);
-                    ImPlot::SetupAxisScale(plot_axis, TransformForward_Log, TransformInverse_Log, &log_base);
-                } else {
-                    ImPlot::SetupAxisScale(plot_axis, ImPlotScale_Linear);
-                }
-            }
-
-            // Set the plot X_axis to time
-            ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
-            if(renderable_plot.isRealTime()){
-                ImPlot::SetupAxisLimits(ImAxis_X1, plot_start, plot_end, ImGuiCond_Always);
-            } else {
-                ImPlot::SetupAxisLimits(ImAxis_X1, plot_start, plot_end, ImGuiCond_Once);
-            }
-
-            ImPlotRect limits = ImPlot::GetPlotLimits();
-            double range = limits.X.Max - limits.X.Min;
-            int num_pixels = ImPlot::GetPlotPos().x + ImPlot::GetPlotSize().x;
-
-            // Plot all sensors
-            for (const auto& series_label : sensors) {
-                // Get downsampled data
-                auto [xs, ys] = viewModel_.getDownsampledData(renderable_plot, series_label, range, num_pixels);
-
-                // Apply the plotline properties
-                // Line colour
-                ImPlot::SetNextLineStyle(renderable_plot.getPlotLineProperties(series_label).colour);
-
-                // Marker style
-                ImPlot::SetNextMarkerStyle(renderable_plot.getPlotLineProperties(series_label).marker_style,
-                    renderable_plot.getPlotLineProperties(series_label).marker_size,
-                    renderable_plot.getPlotLineProperties(series_label).fill, renderable_plot.getPlotLineProperties(series_label).fill_weight,
-                    renderable_plot.getPlotLineProperties(series_label).fill_outline);
-
-                // Get the axis (Y1, Y2, Y3) for the sensor
-                ImAxis plot_axis = renderable_plot.getYAxisForSensor(series_label);
-                ImPlot::SetAxes(ImAxis_X1, plot_axis);
-                ImPlot::PlotStairs(series_label.c_str(), xs.data(), ys.data(), xs.size());
-            }
-
-            // Callback plot range if plot range changes
-            // ImPlotRect limits = ImPlot::GetPlotLimits();
-            if (limits.X.Min != renderable_plot.getPlotRange().first || limits.X.Max != renderable_plot.getPlotRange().second) {
-                renderable_plot.notifyRangeChange(limits.X.Min, limits.X.Max);
-
-                // Update the plot range
-                renderable_plot.setPlotRange(limits.X.Min, limits.X.Max);
-
-                // Callback to update the range in the data manager
-                if (update_range_callback_) {
-                    // Update the range for all sensors in the plot
-                    for (const auto& sensor : sensors) {
-                        update_range_callback_(sensor, renderable_plot.getPlotId(), limits.X.Min, limits.X.Max);
-                    }
-                }
-            }
-
-            // Callback the Y1, Y2, Y3 min and max values
-            for (const auto& axis : {ImAxis_Y1, ImAxis_Y2, ImAxis_Y3}) {
-                // Check if the axis exists in the plot
-                bool axis_exists = false;
-                for (const auto& sensor: sensors) {
-                    if (renderable_plot.getYAxisForSensor(sensor) == axis) {
-                        axis_exists = true;
-                        break;
-                    }
-                }
-                if (!axis_exists) {
-                    continue;
-                }
-
-                // Get the min and max values for the axis
-                ImPlotRect y_axis_limits = ImPlot::GetPlotLimits(ImAxis_X1, axis);
-                double axis_min = y_axis_limits.Y.Min;
-                double axis_max = y_axis_limits.Y.Max;
-
-                // Update the axis properties in the renderable plot
-                renderable_plot.setYAxisPropertiesMin(axis, axis_min);
-                renderable_plot.setYAxisPropertiesMax(axis, axis_max);
-
-            }
-
-
-
-            ImPlot::EndPlot();
-        }
-        ImGui::Text("Plot range: %s - %s", std::ctime(&plot_start), std::ctime(&plot_end));
-        ImGui::End();
-    }
-}
-
-
-
-// ==============================
-// renderAllWindowPlots
-// ==============================
-
-// Render plots within window object
-void RenderAllPlots(WindowPlots& window) {
-
-}
-
-
 // Render all plots in their respective windows
 void GraphView::renderAllWindowPlots(){
     // Loop through all the windows inside the view model
-    for (const auto& [window_label, window] : viewModel_.getWindowPlots()) {
+    for (const std::string& window_label : viewModel_.getWindowPlotLabels()) {
         // Set up the window
-        ImGui::SetNextWindowScroll(ImVec2(0, 0));
-        ImGui::SetNextWindowBgAlpha(0.5f);
-        ImGui::SetNextWindowSize(ImVec2(300, 600), ImGuiCond_Always);
-        ImGui::SetNextWindowPos(ImVec2(100, 100), ImGuiCond_Always);
-        ImGuiWindowFlags flags = ImGuiWindowFlags_NoSavedSettings;
+        WindowPlots& window = viewModel_.getWindowPlot(window_label);
+        ImGui::SetNextWindowSize(ImVec2(1080, 600), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowPos(ImVec2(100, 100), ImGuiCond_FirstUseEver);
+        ImGuiWindowFlags flags =
+            ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_MenuBar;
+
+        // Render the window
         if (ImGui::Begin(window_label.c_str(), nullptr, flags)) {
+            // Menu bar for the window
+            RenderWindowMenuBar(&window);
+
             // Loop through all the plots inside the window and render them
-            for (const std::string& plot_label : window->getRenderablePlotLabels()) {
-                RenderablePlot& renderable_plot = window->getRenderablePlot(plot_label);
+            renderAllPlotsInWindow(&window);
 
+            // Add plot button
+            if (ImGui::Button("+")) {
+                // Add plot popup
             }
-
-            ImGui::End();
         }
+
+        ImGui::End();
+
     }
 }
+
 
 
 
@@ -1671,8 +1709,6 @@ void GraphView::renderAll() {
     // Render "Add plot" button and popup
     renderAddPlotPopup();
 
-    // Render all plots
-    renderAllPlots();
-
-    //
+    // Render all window plots
+    renderAllWindowPlots();
 }
