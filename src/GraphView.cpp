@@ -12,6 +12,7 @@
 #include <implot.h>
 
 #include "GraphView.hpp"
+#include "L2DFileDialog.hpp"
 
 // Constructor
 GraphView::GraphView(GraphViewModel& viewModel) : viewModel_(viewModel) {}
@@ -816,7 +817,7 @@ void GraphView::renderAllPlotsInWindow(WindowPlots* window) {
 }
 
 // Render menu bar for the window
-void RenderWindowMenuBar(WindowPlots* window) {
+void GraphView::renderWindowMenuBar(WindowPlots* window) {
     // Menu bar for the window
     if (ImGui::BeginMenuBar()) {
         // ********** File menu **********
@@ -827,6 +828,9 @@ void RenderWindowMenuBar(WindowPlots* window) {
 
             if (ImGui::MenuItem("Save Window As...")) {
                 // Save plot as. Open file dialog
+                FileDialog::file_dialog_open = true;
+                FileDialog::file_dialog_open_type = FileDialog::FileDialogType::SelectFolder;
+
             }
             ImGui::EndMenu();
         }
@@ -849,6 +853,15 @@ void RenderWindowMenuBar(WindowPlots* window) {
 
         // End the menu bar
         ImGui::EndMenuBar();
+    }
+
+    // Render the file dialog
+    if (FileDialog::file_dialog_open) {
+        // Get the file dialog state
+        auto& file_dialog_state = viewModel_.getFileDialogState();
+
+        FileDialog::ShowFileDialog(&FileDialog::file_dialog_open, file_dialog_state.path_buffer, sizeof(file_dialog_state.path_buffer), FileDialog::file_dialog_open_type);
+        // End L2DFileDialog code.
     }
 }
 
@@ -2009,7 +2022,7 @@ void GraphView::renderAllWindowPlots(){
         // Render the window
         if (ImGui::Begin(window_label.c_str(), nullptr, flags)) {
             // Menu bar for the window
-            RenderWindowMenuBar(&window);
+            renderWindowMenuBar(&window);
 
             // Loop through all the plots inside the window and render them
             renderAllPlotsInWindow(&window);

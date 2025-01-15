@@ -52,6 +52,7 @@ private:
         const std::string& popup_label, RenderablePlot& renderable_plot
     );
     void renderAllPlotsInWindow(WindowPlots* window);
+    void renderWindowMenuBar(WindowPlots* window);
     void renderAllWindowPlots();
 
 
