@@ -2,7 +2,8 @@
 #include "RenderablePlot.hpp"
 
 RenderablePlot::RenderablePlot(const std::string& label, bool real_time)
-    : label_(label), real_time_(real_time), plot_range_({0, 0}) {
+    : label_(label), real_time_(real_time), plot_range_({0, 0}),
+    plot_id_(UniqueIdGenerator::generateId()) {
         // Initialize the y-axis properties
         y_axis_properties_[ImAxis_Y1] = YAxisProperties();
         y_axis_properties_[ImAxis_Y2] = YAxisProperties();

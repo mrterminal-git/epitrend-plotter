@@ -9,6 +9,16 @@
 
 class RenderablePlot {
 public:
+    // Inner class for unique ID generation
+    class UniqueIdGenerator {
+    public:
+        static long long generateId() {
+            static std::atomic<long long> counter{0};
+            return ++counter;
+        }
+    };
+
+public:
     using Timestamp = double;
     using Value = double;
     using RangeCallback = std::function<void(Timestamp start, Timestamp end)>;
