@@ -614,7 +614,60 @@ void SetPlotRangeState(WindowPlotAddPlotPopupState& add_plot_pop_up_state) {
     formatTime(start_local_time, add_plot_pop_up_state.plot_range_start_second, sizeof(add_plot_pop_up_state.plot_range_start_second), "%S");
 }
 
-void ActionSubmitWindowPlotAddPlotPopup(WindowPlotAddPlotPopupState& state) {}
+void ActionSubmitWindowPlotAddPlotPopup(WindowPlotAddPlotPopupState& state, WindowPlots& window) {
+    // Handle submit action
+    RenderablePlot plot(state.plot_label, state.is_real_time);
+    plot.setWindowLabel(window.getLabel());
+
+    // Convert date/time fields to timestamps
+    std::tm start_time = {};
+    start_time.tm_year = std::stoi(state.plot_range_start_year) - 1900;
+    start_time.tm_mon = std::stoi(state.plot_range_start_month) - 1;
+    start_time.tm_mday = std::stoi(state.plot_range_start_day);
+    start_time.tm_hour = std::stoi(state.plot_range_start_hour);
+    start_time.tm_min = std::stoi(state.plot_range_start_minute);
+    start_time.tm_sec = std::stoi(state.plot_range_start_second);
+    std::time_t start = std::mktime(&start_time) + 10 * 3600; // Convert to Brisbane time + 10hrs
+
+    std::tm end_time = {};
+    end_time.tm_year = std::stoi(state.plot_range_end_year) - 1900;
+    end_time.tm_mon = std::stoi(state.plot_range_end_month) - 1;
+    end_time.tm_mday = std::stoi(state.plot_range_end_day);
+    end_time.tm_hour = std::stoi(state.plot_range_end_hour);
+    end_time.tm_min = std::stoi(state.plot_range_end_minute);
+    end_time.tm_sec = std::stoi(state.plot_range_end_second);
+    std::time_t end = std::mktime(&end_time) + 10 * 3600; // Convert to Brisbane time + 10hrs;
+
+    plot.setPlotRange(start, end);
+
+    // Add selected sensors to the plot
+    for (const auto& sensor : state.selected_sensors) {
+        plot.setData(sensor, {});
+    }
+
+    // Add selected sensors to Y1 axis by default
+    for(const auto& sensor : state.selected_sensors) {
+        plot.addYAxisForSensor(sensor, ImAxis_Y1);
+    }
+
+    // Add selected sensors into the list of plotline properties
+    for(const auto& sensor : state.selected_sensors) {
+        plot.addPlotLineProperties(sensor, RenderablePlot::PlotLineProperties());
+    }
+
+    // Add selected sensors into the list of plotline properties
+    // Rotate through color pallette
+    int color_index = 0;
+    for(const auto& sensor : state.selected_sensors) {
+        plot.addPlotLineProperties(sensor, RenderablePlot::PlotLineProperties());
+        ImVec4 color = ImPlot::GetColormapColor(color_index);
+        plot.setPlotLinePropertiesColour(sensor, color);
+        color_index = (color_index + 1) % 10;
+    }
+
+    // Add the plot to the window object
+    window.addRenderablePlot(state.plot_label, std::make_unique<RenderablePlot>(std::move(plot)));
+}
 
 // ********** RENDERING **********
 // Render plots within window object
@@ -638,9 +691,12 @@ void GraphView::renderAllPlotsInWindow(WindowPlots* window) {
 
         }
 
+        // Title for the plot
+        ImGui::SeparatorText(renderable_plot.getLabel().c_str());
+
         // Store the real-time flag in a local variable
         bool is_real_time = renderable_plot.isRealTime();
-        if (ImGui::Checkbox("Real-time (AEST)", &is_real_time)) {
+        if (ImGui::Checkbox(("Real-time (AEST)###" + renderable_plot.getLabel() + "IsRealTimeCheckBox").c_str(), &is_real_time)) {
             // Update the real-time flag if it changes
             renderable_plot.setRealTime(is_real_time);
         }
@@ -798,7 +854,7 @@ void RenderWindowMenuBar(WindowPlots* window) {
 
 // Render the "Plot options" popup
 void GraphView::renderPlotOptions(const std::string& popup_label, RenderablePlot& renderable_plot) {
-    if (ImGui::Button("Options")) {
+    if (ImGui::Button(("Options###" + renderable_plot.getLabel() + "OptionsMenu").c_str())) {
         ImGui::OpenPopup(("###" + renderable_plot.getLabel()).c_str());
 
         // Set the current state of the popup
@@ -1925,7 +1981,7 @@ void GraphView::renderWindowPlotAddPlotPopup(WindowPlots *window){
         if(is_able_to_submit) {
             if (ImGui::Button("Submit")) {
                 // Handle submit action
-                ActionSubmitWindowPlotAddPlotPopup(window_plot_add_plot_popup_state);
+                ActionSubmitWindowPlotAddPlotPopup(window_plot_add_plot_popup_state, *window);
 
                 window_plot_add_plot_popup_state.reset();
                 ImGui::CloseCurrentPopup();
