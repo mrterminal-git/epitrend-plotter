@@ -38,6 +38,7 @@ find_package(glfw3 CONFIG REQUIRED)
 find_package(imgui CONFIG REQUIRED)
 find_package(implot CONFIG REQUIRED)
 find_package(OpenGL REQUIRED)
+find_package(nlohmann_json CONFIG REQUIRED)
 
 add_executable(${PROJECT_NAME}
     src/main.cpp
@@ -48,6 +49,7 @@ add_executable(${PROJECT_NAME}
     src/TimeSeriesBuffer.cpp
     src/RenderablePlot.cpp
     src/WindowPlots.cpp
+    src/WindowPlotsSaveLoad.cpp
 )
 
 add_compile_definitions(NOMINMAX)
@@ -64,3 +66,4 @@ target_link_libraries(${PROJECT_NAME} PRIVATE glfw)
 target_link_libraries(${PROJECT_NAME} PRIVATE OpenGL::GL)
 target_link_libraries(${PROJECT_NAME} PRIVATE imgui::imgui)
 target_link_libraries(${PROJECT_NAME} PRIVATE implot::implot)
+target_link_libraries(${PROJECT_NAME} PRIVATE nlohmann_json::nlohmann_json)
