@@ -1,10 +1,13 @@
 #pragma once
 #include <vector>
 #include <string>
+#include <filesystem>
 
 #include "RenderablePlot.hpp"
 #include "DataManager.hpp"
 #include "WindowPlots.hpp"
+#include <shlobj.h>
+#include <windows.h>
 
 struct AddPlotPopupState {
     std::string window_label;
@@ -173,6 +176,50 @@ struct WindowPlotAddPlotPopupState {
     }
 };
 
+struct FileDialogState {
+    std::string current_path = "";
+    std::string current_file = "";
+    std::string current_folder = "";
+    std::string error = "";
+    char path_buffer[255] = "";
+    std::vector<std::filesystem::directory_entry> files;
+    std::vector<std::filesystem::directory_entry> folders;
+    int file_select_index = 0;
+    int folder_select_index = 0;
+    bool open = false;
+    bool initial_path_set = false;
+
+    void reset() {
+        current_path.clear();
+        current_file.clear();
+        current_folder.clear();
+        error.clear();
+        std::fill(std::begin(path_buffer), std::end(path_buffer), '\0');
+        files.clear();
+        folders.clear();
+        file_select_index = 0;
+        folder_select_index = 0;
+        open = false;
+        initial_path_set = false;
+
+        // Reinitialize path_buffer with the user's "Downloads" folder path
+        PWSTR default_path = NULL;
+        if (SUCCEEDED(SHGetKnownFolderPath(FOLDERID_Desktop, 0, NULL, &default_path))) {
+            wcstombs(path_buffer, default_path, sizeof(path_buffer));
+            CoTaskMemFree(default_path);
+        }
+    }
+
+    FileDialogState() {
+        // Initialize path_buffer with the user's "Downloads" folder path
+        PWSTR default_path = NULL;
+        if (SUCCEEDED(SHGetKnownFolderPath(FOLDERID_Desktop, 0, NULL, &default_path))) {
+            wcstombs(path_buffer, default_path, sizeof(path_buffer));
+            CoTaskMemFree(default_path);
+        }
+    }
+};
+
 class GraphViewModel {
 public:
     // Constructor
@@ -208,6 +255,7 @@ public:
     std::vector<std::string> getWindowPlotLabels() const;
 
     WindowPlotAddPlotPopupState& getWindowPlotAddPlotPopupState();
+    FileDialogState& getFileDialogState();
 
 
 private:
@@ -232,5 +280,6 @@ private:
     // ============================================
     std::map<std::string, std::unique_ptr<WindowPlots>> window_plots_;
     WindowPlotAddPlotPopupState window_plot_add_plot_popup_state_;
+    FileDialogState file_dialog_state_;
 
 };

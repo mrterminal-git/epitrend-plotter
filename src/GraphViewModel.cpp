@@ -134,3 +134,7 @@ std::vector<std::string> GraphViewModel::getWindowPlotLabels() const {
 WindowPlotAddPlotPopupState& GraphViewModel::getWindowPlotAddPlotPopupState() {
     return window_plot_add_plot_popup_state_;
 }
+
+FileDialogState& GraphViewModel::getFileDialogState() {
+    return file_dialog_state_;
+}
