@@ -72,3 +72,11 @@ std::vector<std::string> WindowPlots::getRenderablePlotLabels() const {
 std::string WindowPlots::getLabel() const {
     return label_;
 }
+
+std::pair<float,float> WindowPlots::getPosition() const {
+    return {pos_x_, pos_y_};
+}
+
+std::pair<float,float> WindowPlots::getSize() const {
+    return {width_,height_};
+}
