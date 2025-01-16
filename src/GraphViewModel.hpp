@@ -220,6 +220,42 @@ struct FileDialogState {
     }
 };
 
+struct FileMenuState {
+    bool save_as_open_popup = false;
+
+    void reset() {
+        save_as_open_popup = false;
+    }
+};
+
+struct SaveWindowAsPopupState {
+    std::string window_label;
+    char file_path_buffer[255] = "";
+    char file_name_buffer[255] = "";
+
+    void reset() {
+        window_label.clear();
+        std::fill(std::begin(file_path_buffer), std::end(file_path_buffer), '\0');
+        std::fill(std::begin(file_name_buffer), std::end(file_name_buffer), '\0');
+
+        // Initialize path_buffer with the user's "Desktop" folder path
+        PWSTR default_path = NULL;
+        if (SUCCEEDED(SHGetKnownFolderPath(FOLDERID_Desktop, 0, NULL, &default_path))) {
+            wcstombs(file_path_buffer, default_path, sizeof(file_path_buffer));
+            CoTaskMemFree(default_path);
+        }
+    }
+
+    SaveWindowAsPopupState() {
+        // Initialize path_buffer with the user's "Desktop" folder path
+        PWSTR default_path = NULL;
+        if (SUCCEEDED(SHGetKnownFolderPath(FOLDERID_Desktop, 0, NULL, &default_path))) {
+            wcstombs(file_path_buffer, default_path, sizeof(file_path_buffer));
+            CoTaskMemFree(default_path);
+        }
+    }
+};
+
 class GraphViewModel {
 public:
     // Constructor
@@ -256,6 +292,8 @@ public:
 
     WindowPlotAddPlotPopupState& getWindowPlotAddPlotPopupState();
     FileDialogState& getFileDialogState();
+    FileMenuState& getFileMenuState();
+    SaveWindowAsPopupState& getSaveWindowAsPopupState();
 
 
 private:
@@ -281,5 +319,7 @@ private:
     std::map<std::string, std::unique_ptr<WindowPlots>> window_plots_;
     WindowPlotAddPlotPopupState window_plot_add_plot_popup_state_;
     FileDialogState file_dialog_state_;
+    FileMenuState file_menu_state_;
+    SaveWindowAsPopupState save_window_as_popup_state_;
 
 };

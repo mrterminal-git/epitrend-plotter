@@ -138,3 +138,11 @@ WindowPlotAddPlotPopupState& GraphViewModel::getWindowPlotAddPlotPopupState() {
 FileDialogState& GraphViewModel::getFileDialogState() {
     return file_dialog_state_;
 }
+
+FileMenuState& GraphViewModel::getFileMenuState() {
+    return file_menu_state_;
+}
+
+SaveWindowAsPopupState& GraphViewModel::getSaveWindowAsPopupState() {
+    return save_window_as_popup_state_;
+}
