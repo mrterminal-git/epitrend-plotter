@@ -818,6 +818,9 @@ void GraphView::renderAllPlotsInWindow(WindowPlots* window) {
 
 // Render menu bar for the window
 void GraphView::renderWindowMenuBar(WindowPlots* window) {
+    // Get the file menu state
+    auto& file_menu_state = viewModel_.getFileMenuState();
+
     // Menu bar for the window
     if (ImGui::BeginMenuBar()) {
         // ********** File menu **********
@@ -827,11 +830,10 @@ void GraphView::renderWindowMenuBar(WindowPlots* window) {
             }
 
             if (ImGui::MenuItem("Save Window As...")) {
-                // Save plot as. Open file dialog
-                FileDialog::file_dialog_open = true;
-                FileDialog::file_dialog_open_type = FileDialog::FileDialogType::SelectFolder;
-
+                // Open the "Save Window As" popup
+                file_menu_state.save_as_open_popup = true;
             }
+
             ImGui::EndMenu();
         }
 
@@ -855,14 +857,89 @@ void GraphView::renderWindowMenuBar(WindowPlots* window) {
         ImGui::EndMenuBar();
     }
 
-    // Render the file dialog
-    if (FileDialog::file_dialog_open) {
-        // Get the file dialog state
+    // Check if the "Save Window As" popup should be rendered
+    if (file_menu_state.save_as_open_popup) {
+        ImGui::OpenPopup(("Save Window As###" + window->getLabel()).c_str());
+
+        // Get the SaveWindowAsPopupState
+        auto& save_window_as_popup_state = viewModel_.getSaveWindowAsPopupState();
+
+        // Reset the SaveWindowAsPopupState
+        save_window_as_popup_state.reset();
+
+        // Set the window label
+        save_window_as_popup_state.window_label = window->getLabel();
+
+        // Set the file name buffer to the window label
+        std::strcpy(save_window_as_popup_state.file_name_buffer, window->getLabel().c_str());
+
+    }
+
+    // Render the "Save Window As" popup
+    if (ImGui::BeginPopupModal(("Save Window As###" + window->getLabel()).c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+        // Get the file dialog state and save window as popup state
+        auto& save_window_as_popup_state = viewModel_.getSaveWindowAsPopupState();
         auto& file_dialog_state = viewModel_.getFileDialogState();
 
-        FileDialog::ShowFileDialog(&FileDialog::file_dialog_open, file_dialog_state.path_buffer, sizeof(file_dialog_state.path_buffer), FileDialog::file_dialog_open_type);
-        // End L2DFileDialog code.
+        // Input text for the folder path to save the window.
+        // Check if the path is valid
+        if (!std::filesystem::exists(save_window_as_popup_state.file_path_buffer))
+            ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "Path does not exist");
+        ImGui::Text("Folder path:");
+        ImGui::SameLine();
+        float input_text_width = ImGui::CalcTextSize(save_window_as_popup_state.file_path_buffer).x + ImGui::GetStyle().FramePadding.x * 2.0f;
+        ImGui::SetNextItemWidth(input_text_width);
+        ImGui::InputText("###Folder path", save_window_as_popup_state.file_path_buffer,
+            sizeof(save_window_as_popup_state.file_path_buffer));
+        ImGui::SameLine();
+
+        // Browse button
+        if (ImGui::Button("Browse")) {
+            // Open the file dialog
+            FileDialog::file_dialog_open = true;
+            FileDialog::file_dialog_open_type = FileDialog::FileDialogType::SelectFolder;
+
+            // Copy the current path to the file dialog path buffer if it exists
+            if (std::filesystem::exists(save_window_as_popup_state.file_path_buffer)) {
+                std::strcpy(file_dialog_state.path_buffer, save_window_as_popup_state.file_path_buffer);
+            }
+        }
+
+        // Input text for title but disabled
+        ImGui::Text("File name");
+        input_text_width = std::max(
+            ImGui::CalcTextSize(save_window_as_popup_state.file_name_buffer).x + ImGui::GetStyle().FramePadding.x * 2.0f,
+            input_text_width);
+        ImGui::SetNextItemWidth(input_text_width);
+        ImGui::SameLine();
+        ImGui::InputText("###File name", save_window_as_popup_state.file_name_buffer,
+            sizeof(save_window_as_popup_state.file_name_buffer), ImGuiInputTextFlags_ReadOnly);
+
+        // Render the file dialog if it is open
+        if (FileDialog::file_dialog_open) {
+            // Render the file dialog
+            FileDialog::ShowFileDialog(&FileDialog::file_dialog_open, file_dialog_state.path_buffer, sizeof(file_dialog_state.path_buffer), FileDialog::file_dialog_open_type);
+
+            // Copy the selected path to the save window as popup state if it exists
+            if (!FileDialog::file_dialog_open && std::filesystem::exists(file_dialog_state.path_buffer)) {
+                std::cout << "Selected path: " << file_dialog_state.path_buffer << "\n";
+                std::strcpy(save_window_as_popup_state.file_path_buffer, file_dialog_state.path_buffer);
+            }
+        }
+
+
+        // Close the popup
+        if (ImGui::Button("Cancel")) {
+            // Close the popup
+            ImGui::CloseCurrentPopup();
+        }
+
+        // End the popup
+        ImGui::EndPopup();
     }
+
+    // Reset the file dialog state
+    file_menu_state.reset();
 }
 
 // Render the "Plot options" popup
