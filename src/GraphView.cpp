@@ -670,6 +670,15 @@ void ActionSubmitWindowPlotAddPlotPopup(WindowPlotAddPlotPopupState& state, Wind
     window.addRenderablePlot(state.plot_label, std::make_unique<RenderablePlot>(std::move(plot)));
 }
 
+void ActionSubmitSaveWindowAsPlotPopup(WindowPlots& window, SaveWindowAsPopupState& save_window_as_popup_state) {
+    // Logic for submitting "Save Window As" popup
+    // Save the file into file location if it exists
+    if (std::filesystem::exists(save_window_as_popup_state.file_path_buffer)) {
+        // Convert window into JSON format and save file into folder
+        // WindowPlotsSaveLoad::saveToFile(window, save_window_as_popup_state.file_path_buffer + save_window_as_popup_state.file_name_buffer);
+    }
+}
+
 // ********** RENDERING **********
 // Render plots within window object
 void GraphView::renderAllPlotsInWindow(WindowPlots* window) {
@@ -932,6 +941,14 @@ void GraphView::renderWindowMenuBar(WindowPlots* window) {
         if (ImGui::Button("Cancel")) {
             // Close the popup
             ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::SameLine();
+
+        // Save to folder
+        if (ImGui::Button("Save to folder")) {
+            // Save the folder action function
+            ActionSubmitSaveWindowAsPlotPopup(*window, save_window_as_popup_state);
         }
 
         // End the popup
