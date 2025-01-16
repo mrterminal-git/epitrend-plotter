@@ -4,6 +4,10 @@
 nlohmann::json WindowPlotsSaveLoad::serialize(const WindowPlots& windowPlots) {
     nlohmann::json j;
     j["label"] = windowPlots.getLabel();
+    j["pos_x"] = windowPlots.getPosition().first;
+    j["pos_y"] = windowPlots.getPosition().second;
+    j["width"] = windowPlots.getSize().first;
+    j["height"] = windowPlots.getSize().second;
     j["renderable_plots"] = nlohmann::json::array();
     for (const auto& [label, plot] : windowPlots.getRenderablePlots()) {
         j["renderable_plots"].push_back({{"label", label}, {"plot", serialize(*plot)}});
