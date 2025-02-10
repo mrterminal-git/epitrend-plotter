@@ -675,9 +675,7 @@ void ActionSubmitSaveWindowAsPlotPopup(WindowPlots& window, SaveWindowAsPopupSta
     // Save the file into file location if it exists
     if (std::filesystem::exists(save_window_as_popup_state.file_path_buffer)) {
         // Convert window into JSON format and save file into folder
-        std::filesystem::path file_path = std::filesystem::path(save_window_as_popup_state.file_path_buffer) / save_window_as_popup_state.file_name_buffer;
-        save_window_as_popup_state.save_path = file_path.string();
-        WindowPlotsSaveLoad::saveToFile(window, file_path.string());
+        WindowPlotsSaveLoad::saveToFile(window, save_window_as_popup_state.save_path.string());
     }
 }
 
@@ -957,14 +955,24 @@ void GraphView::renderWindowMenuBar(WindowPlots* window) {
             ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
         }
         if (ImGui::Button("Save to folder")) {
-            // Save the folder action function
-            ActionSubmitSaveWindowAsPlotPopup(*window, save_window_as_popup_state);
+            save_window_as_popup_state.save_path =
+            (std::filesystem::path(save_window_as_popup_state.file_path_buffer) / save_window_as_popup_state.file_name_buffer).string();
 
-            // Start the popup to check if the file was saved
-            save_window_as_popup_state.save_success_popup = true;
+            // Check if the file path exists
+            if (std::filesystem::exists(save_window_as_popup_state.save_path)
+                || (std::filesystem::exists(save_window_as_popup_state.save_path.string() + ".json"))) {
+                // Begin the popup to make sure user wants to overwrite the file
+                save_window_as_popup_state.overwrite_file_popup = true;
 
-            // Close the popup
-            // ImGui::CloseCurrentPopup();
+            } else {
+                // Save the window to the folder
+                // Save the folder action function
+                ActionSubmitSaveWindowAsPlotPopup(*window, save_window_as_popup_state);
+
+                // Start the popup to check if the file was saved
+                save_window_as_popup_state.save_success_popup = true;
+
+            }
         }
         if (!save_window_as_popup_state.is_able_to_save) {
             ImGui::PopItemFlag();
@@ -1029,6 +1037,37 @@ void GraphView::renderWindowMenuBar(WindowPlots* window) {
             // End the popup
             ImGui::EndPopup();
 
+        }
+
+        // Check if the "Overwrite File" popup should be rendered
+        if (save_window_as_popup_state.overwrite_file_popup) {
+            ImGui::OpenPopup("###Overwrite File");
+
+            // Reset the file dialog state
+            save_window_as_popup_state.overwrite_file_popup = false;
+        }
+        if (ImGui::BeginPopupModal("###Overwrite File", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+            // Render the "Overwrite File" popup
+            ImGui::Text("File already exists. Do you want to overwrite the file?");
+
+            // Yes button
+            if (ImGui::Button("Yes")) {
+                // Save the window to the folder
+                // Save the folder action function
+                ActionSubmitSaveWindowAsPlotPopup(*window, save_window_as_popup_state);
+
+                // Start the popup to check if the file was saved
+                save_window_as_popup_state.save_success_popup = true;
+            }
+
+            // No button
+            if (ImGui::Button("No")) {
+                // Close the popup
+                ImGui::CloseCurrentPopup();
+            }
+
+            // End the popup
+            ImGui::EndPopup();
         }
 
         // Close the popup after saving

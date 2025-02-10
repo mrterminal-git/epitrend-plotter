@@ -238,6 +238,7 @@ struct SaveWindowAsPopupState {
     int check_save_attempt = 0;
     int check_save_attempt_max = 600;
     bool close_after_save = false;
+    bool overwrite_file_popup = false;
 
     void reset() {
         window_label.clear();
@@ -249,6 +250,7 @@ struct SaveWindowAsPopupState {
         check_save_attempt = 0;
         check_save_attempt_max = 600;
         close_after_save = false;
+        overwrite_file_popup = false;
 
         // Initialize path_buffer with the user's "Desktop" folder path
         PWSTR default_path = NULL;
