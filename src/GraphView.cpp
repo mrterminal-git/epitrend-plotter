@@ -892,14 +892,19 @@ void GraphView::renderWindowMenuBar(WindowPlots* window) {
 
         // Input text for the folder path to save the window.
         // Check if the path is valid
-        if (!std::filesystem::exists(save_window_as_popup_state.file_path_buffer))
+        if (!std::filesystem::exists(save_window_as_popup_state.file_path_buffer)) {
             ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "Path does not exist");
+            save_window_as_popup_state.is_able_to_save = false;
+        } else {
+            save_window_as_popup_state.is_able_to_save = true;
+        }
         ImGui::Text("Folder path:");
         ImGui::SameLine();
         float input_text_width = ImGui::CalcTextSize(save_window_as_popup_state.file_path_buffer).x + ImGui::GetStyle().FramePadding.x * 2.0f;
         ImGui::SetNextItemWidth(input_text_width);
         ImGui::InputText("###Folder path", save_window_as_popup_state.file_path_buffer,
             sizeof(save_window_as_popup_state.file_path_buffer));
+
         ImGui::SameLine();
 
         // Browse button
@@ -946,9 +951,18 @@ void GraphView::renderWindowMenuBar(WindowPlots* window) {
         ImGui::SameLine();
 
         // Save to folder
+        if (!save_window_as_popup_state.is_able_to_save) {
+            // Disable the save button if cannot be saved
+            ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+            ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
+        }
         if (ImGui::Button("Save to folder")) {
             // Save the folder action function
             ActionSubmitSaveWindowAsPlotPopup(*window, save_window_as_popup_state);
+        }
+        if (!save_window_as_popup_state.is_able_to_save) {
+            ImGui::PopItemFlag();
+            ImGui::PopStyleVar();
         }
 
         // End the popup

@@ -232,11 +232,13 @@ struct SaveWindowAsPopupState {
     std::string window_label;
     char file_path_buffer[255] = "";
     char file_name_buffer[255] = "";
+    bool is_able_to_save = true;
 
     void reset() {
         window_label.clear();
         std::fill(std::begin(file_path_buffer), std::end(file_path_buffer), '\0');
         std::fill(std::begin(file_name_buffer), std::end(file_name_buffer), '\0');
+        is_able_to_save = true;
 
         // Initialize path_buffer with the user's "Desktop" folder path
         PWSTR default_path = NULL;
