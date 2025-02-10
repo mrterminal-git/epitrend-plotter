@@ -10,6 +10,7 @@
 #include "TimeSeriesBuffer.hpp"
 #include "GraphViewModel.hpp"
 #include "WindowPlots.hpp"
+#include "WindowPlotsSaveLoad.hpp"
 
 class GraphView
 {

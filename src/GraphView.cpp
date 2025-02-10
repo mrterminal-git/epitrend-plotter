@@ -675,7 +675,8 @@ void ActionSubmitSaveWindowAsPlotPopup(WindowPlots& window, SaveWindowAsPopupSta
     // Save the file into file location if it exists
     if (std::filesystem::exists(save_window_as_popup_state.file_path_buffer)) {
         // Convert window into JSON format and save file into folder
-        // WindowPlotsSaveLoad::saveToFile(window, save_window_as_popup_state.file_path_buffer + save_window_as_popup_state.file_name_buffer);
+        std::filesystem::path file_path = std::filesystem::path(save_window_as_popup_state.file_path_buffer) / save_window_as_popup_state.file_name_buffer;
+        WindowPlotsSaveLoad::saveToFile(window, file_path.string());
     }
 }
 
@@ -958,6 +959,9 @@ void GraphView::renderWindowMenuBar(WindowPlots* window) {
         if (ImGui::Button("Save to folder")) {
             // Save the folder action function
             ActionSubmitSaveWindowAsPlotPopup(*window, save_window_as_popup_state);
+
+            // Close the popup
+            ImGui::CloseCurrentPopup();
         }
         if (!save_window_as_popup_state.is_able_to_save) {
             ImGui::PopItemFlag();
