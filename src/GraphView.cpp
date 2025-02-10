@@ -941,7 +941,6 @@ void GraphView::renderWindowMenuBar(WindowPlots* window) {
             }
         }
 
-
         // Close the popup
         if (ImGui::Button("Cancel")) {
             // Close the popup
