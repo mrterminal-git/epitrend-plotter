@@ -6,6 +6,7 @@
 #include "RenderablePlot.hpp"
 
 class WindowPlotsSaveLoad {
+
 public:
     static nlohmann::json serialize(const WindowPlots& windowPlots);
     static WindowPlots deserialize(const nlohmann::json& j);
@@ -15,5 +16,7 @@ public:
 
     static void saveToFile(const WindowPlots& windowPlots, const std::string& filename);
     static WindowPlots loadFromFile(const std::string& filename);
-};
 
+private:
+    static WindowPlots deserializeV1(const nlohmann::json& j);
+};
