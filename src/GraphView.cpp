@@ -676,6 +676,7 @@ void ActionSubmitSaveWindowAsPlotPopup(WindowPlots& window, SaveWindowAsPopupSta
     if (std::filesystem::exists(save_window_as_popup_state.file_path_buffer)) {
         // Convert window into JSON format and save file into folder
         std::filesystem::path file_path = std::filesystem::path(save_window_as_popup_state.file_path_buffer) / save_window_as_popup_state.file_name_buffer;
+        save_window_as_popup_state.save_path = file_path.string();
         WindowPlotsSaveLoad::saveToFile(window, file_path.string());
     }
 }
@@ -882,7 +883,6 @@ void GraphView::renderWindowMenuBar(WindowPlots* window) {
 
         // Set the file name buffer to the window label
         std::strcpy(save_window_as_popup_state.file_name_buffer, window->getLabel().c_str());
-
     }
 
     // Render the "Save Window As" popup
@@ -960,12 +960,81 @@ void GraphView::renderWindowMenuBar(WindowPlots* window) {
             // Save the folder action function
             ActionSubmitSaveWindowAsPlotPopup(*window, save_window_as_popup_state);
 
+            // Start the popup to check if the file was saved
+            save_window_as_popup_state.save_success_popup = true;
+
             // Close the popup
-            ImGui::CloseCurrentPopup();
+            // ImGui::CloseCurrentPopup();
         }
         if (!save_window_as_popup_state.is_able_to_save) {
             ImGui::PopItemFlag();
             ImGui::PopStyleVar();
+        }
+
+        // Check if the "Save Success" popup should be rendered
+        if (save_window_as_popup_state.save_success_popup) {
+            ImGui::OpenPopup("###Save Success");
+
+            // Reset the file dialog state
+            save_window_as_popup_state.save_success_popup = false;
+        }
+        if (ImGui::BeginPopupModal("###Save Success", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+            // Render the "Save Success" popup
+            // Check if the file was saved successfully with certain number of tries
+            if (std::filesystem::exists(save_window_as_popup_state.save_path)
+                || (std::filesystem::exists(save_window_as_popup_state.save_path.string() + ".json"))) {
+                // Text to indicate the file was saved
+                ImGui::Text("File was saved successfully");
+
+                // Close the popup
+                if (ImGui::Button("OK")) {
+                    // Close the popup
+                    ImGui::CloseCurrentPopup();
+
+                    // Close the "Save Window As" popup
+                    save_window_as_popup_state.close_after_save = true;
+                }
+            } else if (save_window_as_popup_state.check_save_attempt > save_window_as_popup_state.check_save_attempt_max) {
+                // Text to indicate the file was not saved
+                ImGui::Text("File was not saved");
+
+                // Close the popup
+                if (ImGui::Button("OK")) {
+                    // Close the popup
+                    ImGui::CloseCurrentPopup();
+
+                    // Close the "Save Window As" popup
+                    save_window_as_popup_state.close_after_save = true;
+                }
+            }
+            else {
+                save_window_as_popup_state.check_save_attempt++;
+
+                ImGui::Text(save_window_as_popup_state.save_path.string().c_str());
+
+                // Dynamically change the text every 60 frames
+                if (static_cast<int>(floor(save_window_as_popup_state.check_save_attempt / 60)) % 4 == 0) {
+                    ImGui::Text("Checking if the file was saved");
+                } else if (static_cast<int>(floor(save_window_as_popup_state.check_save_attempt / 60)) % 4 == 1) {
+                    ImGui::Text("Checking if the file was saved.");
+                } else if (static_cast<int>(floor(save_window_as_popup_state.check_save_attempt / 60)) % 4 == 2) {
+                    ImGui::Text("Checking if the file was saved..");
+                } else if (static_cast<int>(floor(save_window_as_popup_state.check_save_attempt / 60)) % 4 == 3) {
+                    ImGui::Text("Checking if the file was saved...");
+                } else {
+                    ImGui::Text("Checking if the file was saved");
+                }
+            }
+
+            // End the popup
+            ImGui::EndPopup();
+
+        }
+
+        // Close the popup after saving
+        if (save_window_as_popup_state.close_after_save) {
+            // Close the popup
+            ImGui::CloseCurrentPopup();
         }
 
         // End the popup
