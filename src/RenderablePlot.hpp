@@ -108,12 +108,13 @@ public:
     void setYAxisPropertiesScale(ImAxis y_axis, ScaleType scale_type);
     void setYAxisPropertiesLogBase(ImAxis y_axis, double log_base);
     void setYAxisPropertiesUserSetRange(ImAxis y_axis, bool user_set_range);
-    YAxisProperties getYAxisProperties(ImAxis y_axis);
-    Value getYAxisPropertiesMin(ImAxis y_axis);
-    Value getYAxisPropertiesMax(ImAxis y_axis);
-    ScaleType getYAxisPropertiesScaleType(ImAxis y_axis);
-    double getYAxisPropertiesLogBase(ImAxis y_axis);
-    bool getYAxisPropertiesUserSetRange(ImAxis y_axis);
+    YAxisProperties getYAxisProperties(ImAxis y_axis) const;
+    Value getYAxisPropertiesMin(ImAxis y_axis) const;
+    Value getYAxisPropertiesMax(ImAxis y_axis) const;
+    ScaleType getYAxisPropertiesScaleType(ImAxis y_axis) const;
+    double getYAxisPropertiesLogBase(ImAxis y_axis) const;
+    bool getYAxisPropertiesUserSetRange(ImAxis y_axis) const;
+    std::string getYAxisLabel(ImAxis y_axis) const;
 
 
 

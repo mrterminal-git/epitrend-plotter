@@ -233,48 +233,54 @@ void RenderablePlot::setYAxisPropertiesUserSetRange(ImAxis y_axis, bool user_set
     y_axis_properties_[y_axis].user_set_range = user_set_range;
 }
 
-RenderablePlot::YAxisProperties RenderablePlot::getYAxisProperties(ImAxis y_axis) {
+RenderablePlot::YAxisProperties RenderablePlot::getYAxisProperties(ImAxis y_axis) const {
     if (y_axis_properties_.find(y_axis) == y_axis_properties_.end()) {
         return YAxisProperties();
     }
     return y_axis_properties_.at(y_axis);
 }
 
-RenderablePlot::Value RenderablePlot::getYAxisPropertiesMin(ImAxis y_axis) {
+RenderablePlot::Value RenderablePlot::getYAxisPropertiesMin(ImAxis y_axis) const{
     if (y_axis_properties_.find(y_axis) == y_axis_properties_.end()) {
         return 0.1;
     }
     return y_axis_properties_.at(y_axis).min;
 }
 
-RenderablePlot::Value RenderablePlot::getYAxisPropertiesMax(ImAxis y_axis) {
+RenderablePlot::Value RenderablePlot::getYAxisPropertiesMax(ImAxis y_axis) const {
     if (y_axis_properties_.find(y_axis) == y_axis_properties_.end()) {
         return 1.0;
     }
     return y_axis_properties_.at(y_axis).max;
 }
 
-RenderablePlot::ScaleType RenderablePlot::getYAxisPropertiesScaleType(ImAxis y_axis) {
+RenderablePlot::ScaleType RenderablePlot::getYAxisPropertiesScaleType(ImAxis y_axis) const {
     if (y_axis_properties_.find(y_axis) == y_axis_properties_.end()) {
         return ScaleType::Linear;
     }
     return y_axis_properties_.at(y_axis).scale_type;
 }
 
-double RenderablePlot::getYAxisPropertiesLogBase(ImAxis y_axis) {
+double RenderablePlot::getYAxisPropertiesLogBase(ImAxis y_axis) const {
     if (y_axis_properties_.find(y_axis) == y_axis_properties_.end()) {
         return 10;
     }
     return y_axis_properties_.at(y_axis).log_base;
 }
 
-bool RenderablePlot::getYAxisPropertiesUserSetRange(ImAxis y_axis) {
+bool RenderablePlot::getYAxisPropertiesUserSetRange(ImAxis y_axis) const {
     if (y_axis_properties_.find(y_axis) == y_axis_properties_.end()) {
         return false;
     }
     return y_axis_properties_.at(y_axis).user_set_range;
 }
 
+std::string RenderablePlot::getYAxisLabel(ImAxis y_axis) const {
+    if (y_axis_labels_.find(y_axis) == y_axis_labels_.end()) {
+        return "";
+    }
+    return y_axis_properties_.at(y_axis).label;
+}
 
 
 // ============================================
