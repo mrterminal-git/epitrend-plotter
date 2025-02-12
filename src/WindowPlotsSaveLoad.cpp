@@ -35,9 +35,128 @@ WindowPlots WindowPlotsSaveLoad::deserialize(const nlohmann::json& j) {
 
 nlohmann::json WindowPlotsSaveLoad::serialize(const RenderablePlot& renderablePlot) {
     nlohmann::json j;
+    j["type"] = "RenderablePlot";
     j["label"] = renderablePlot.getLabel();
+    j["window_label"] = renderablePlot.getWindowLabel();
+    j["plot_range"] = {renderablePlot.getPlotRange().first, renderablePlot.getPlotRange().second};
     j["real_time"] = renderablePlot.isRealTime();
-    // Serialize other members...
+
+    // Serialize Y axis labels
+    nlohmann::json y_axis_labels_mappings;
+    // Loop through YAxis_Y1, YAxis_Y2, and YAxis_Y3 to serialize the labels
+    for (const auto implot_y_axis : {ImAxis_Y1, ImAxis_Y2, ImAxis_Y3}) {
+        const auto label = renderablePlot.getYAxisLabel(implot_y_axis);
+        if (!label.empty()) {
+            if (implot_y_axis == ImAxis_Y1) {
+                y_axis_labels_mappings["Y1"] = label;
+            } else if (implot_y_axis == ImAxis_Y2) {
+                y_axis_labels_mappings["Y2"] = label;
+            } else if (implot_y_axis == ImAxis_Y3) {
+                y_axis_labels_mappings["Y3"] = label;
+            }
+        }
+    }
+    j["y_axis_labels"] = y_axis_labels_mappings;
+
+    // Serialize Y axis properties
+    nlohmann::json y_axis_properties_mappings;
+    for (const auto implot_y_axis : {ImAxis_Y1, ImAxis_Y2, ImAxis_Y3}) {
+        RenderablePlot::Value min = renderablePlot.getYAxisPropertiesMin(implot_y_axis);
+        RenderablePlot::Value max = renderablePlot.getYAxisPropertiesMax(implot_y_axis);
+        RenderablePlot::ScaleType scale_type = renderablePlot.getYAxisPropertiesScaleType(implot_y_axis);
+        double log_base = renderablePlot.getYAxisPropertiesLogBase(implot_y_axis);
+        bool user_set_range = renderablePlot.getYAxisPropertiesUserSetRange(implot_y_axis);
+
+        if (implot_y_axis == ImAxis_Y1) {
+            y_axis_properties_mappings["Y1"] =
+            {   {"min", min},
+                {"max", max},
+                {"scale_type", scale_type},
+                {"log_base", log_base},
+                {"user_set_range", user_set_range}};
+        } else if (implot_y_axis == ImAxis_Y2) {
+            y_axis_properties_mappings["Y2"] =
+            {   {"min", min},
+                {"max", max},
+                {"scale_type", scale_type},
+                {"log_base", log_base},
+                {"user_set_range", user_set_range}};
+        } else if (implot_y_axis == ImAxis_Y3) {
+            y_axis_properties_mappings["Y3"] =
+            {   {"min", min},
+                {"max", max},
+                {"scale_type", scale_type},
+                {"log_base", log_base},
+                {"user_set_range", user_set_range}};
+        }
+    }
+    j["y_axis_properties"] = y_axis_properties_mappings;
+
+    // Serialize data series names for each Y axis
+    nlohmann::json data_to_y_axis_mappings;
+    for (const auto implot_y_axis : {ImAxis_Y1, ImAxis_Y2, ImAxis_Y3}) {
+        if (implot_y_axis == ImAxis_Y1) {
+            // Add data series label mappings for Y1
+            data_to_y_axis_mappings["Y1"] = renderablePlot.getSensorsForYAxis(implot_y_axis);
+        } else if (implot_y_axis == ImAxis_Y2) {
+            data_to_y_axis_mappings["Y2"] = renderablePlot.getSensorsForYAxis(implot_y_axis);
+        } else if (implot_y_axis == ImAxis_Y3) {
+            data_to_y_axis_mappings["Y3"] = renderablePlot.getSensorsForYAxis(implot_y_axis);
+        }
+    }
+    j["data_to_y_axis"] = data_to_y_axis_mappings;
+
+    // Serialize data series properties
+    nlohmann::json data_to_plotline_properties_mappings;
+    for (const auto implot_y_axis : {ImAxis_Y1, ImAxis_Y2, ImAxis_Y3}) {
+        for (std::string data_series_label : renderablePlot.getSensorsForYAxis(implot_y_axis)) {
+            ImVec4 colour = renderablePlot.getPlotLinePropertiesColour(data_series_label);
+            double thickness = renderablePlot.getPlotLinePropertiesThickness(data_series_label);
+            ImPlotMarker marker_style = renderablePlot.getPlotLinePropertiesMarkerStyle(data_series_label);
+            double marker_size = renderablePlot.getPlotLinePropertiesMarkerSize(data_series_label);
+            ImVec4 fill = renderablePlot.getPlotLinePropertiesFill(data_series_label);
+            double fill_weight = renderablePlot.getPlotLinePropertiesFillWeight(data_series_label);
+            ImVec4 fill_outline = renderablePlot.getPlotLinePropertiesFillOutline(data_series_label);
+
+            if (implot_y_axis == ImAxis_Y1) {
+                data_to_plotline_properties_mappings["Y1"].push_back({
+                    {"data_series_label", data_series_label},
+                    {"colour", {colour.x, colour.y, colour.z, colour.w}},
+                    {"thickness", thickness},
+                    {"marker_style", marker_style},
+                    {"marker_size", marker_size},
+                    {"fill", {fill.x, fill.y, fill.z, fill.w}},
+                    {"fill_weight", fill_weight},
+                    {"fill_outline", {fill_outline.x, fill_outline.y, fill_outline.z, fill_outline.w}}
+                });
+            } else if (implot_y_axis == ImAxis_Y2) {
+                data_to_plotline_properties_mappings["Y2"].push_back({
+                    {"data_series_label", data_series_label},
+                    {"colour", {colour.x, colour.y, colour.z, colour.w}},
+                    {"thickness", thickness},
+                    {"marker_style", marker_style},
+                    {"marker_size", marker_size},
+                    {"fill", {fill.x, fill.y, fill.z, fill.w}},
+                    {"fill_weight", fill_weight},
+                    {"fill_outline", {fill_outline.x, fill_outline.y, fill_outline.z, fill_outline.w}}
+                });
+            } else if (implot_y_axis == ImAxis_Y3) {
+                data_to_plotline_properties_mappings["Y3"].push_back({
+                    {"data_series_label", data_series_label},
+                    {"colour", {colour.x, colour.y, colour.z, colour.w}},
+                    {"thickness", thickness},
+                    {"marker_style", marker_style},
+                    {"marker_size", marker_size},
+                    {"fill", {fill.x, fill.y, fill.z, fill.w}},
+                    {"fill_weight", fill_weight},
+                    {"fill_outline", {fill_outline.x, fill_outline.y, fill_outline.z, fill_outline.w}}
+                });
+            }
+
+        }
+    }
+    j["data_to_plotline_properties"] = data_to_plotline_properties_mappings;
+
     return j;
 }
 
