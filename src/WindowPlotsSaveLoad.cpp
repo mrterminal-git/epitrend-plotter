@@ -20,7 +20,7 @@ nlohmann::json WindowPlotsSaveLoad::serialize(const WindowPlots& windowPlots) {
     j["height"] = windowPlots.getSize().second;
     j["renderable_plots"] = nlohmann::json::array();
     for (const auto& [label, plot] : windowPlots.getRenderablePlots()) {
-        j["renderable_plots"].push_back({{"label", label}, {"plot", serialize(*plot)}});
+        j["renderable_plots"].push_back({{"plot", serialize(*plot)}});
     }
     return j;
 }
