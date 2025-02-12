@@ -410,6 +410,55 @@ RenderablePlot::PlotLineProperties RenderablePlot::getPlotLineProperties(const s
     return data_to_plotline_properties_.at(series_label);
 }
 
+ImVec4 RenderablePlot::getPlotLinePropertiesColour(const std::string& series_label) const {
+    if (data_to_plotline_properties_.find(series_label) == data_to_plotline_properties_.end()) {
+        return ImVec4(1, 1, 1, 1);
+    }
+    return data_to_plotline_properties_.at(series_label).colour;
+}
+
+double RenderablePlot::getPlotLinePropertiesThickness(const std::string& series_label) const {
+    if (data_to_plotline_properties_.find(series_label) == data_to_plotline_properties_.end()) {
+        return 1.0;
+    }
+    return data_to_plotline_properties_.at(series_label).thickness;
+}
+
+ImPlotMarker RenderablePlot::getPlotLinePropertiesMarkerStyle(const std::string& series_label) const {
+    if (data_to_plotline_properties_.find(series_label) == data_to_plotline_properties_.end()) {
+        return ImPlotMarker_None;
+    }
+    return data_to_plotline_properties_.at(series_label).marker_style;
+}
+
+double RenderablePlot::getPlotLinePropertiesMarkerSize(const std::string& series_label) const {
+    if (data_to_plotline_properties_.find(series_label) == data_to_plotline_properties_.end()) {
+        return 1.0;
+    }
+    return data_to_plotline_properties_.at(series_label).marker_size;
+}
+
+ImVec4 RenderablePlot::getPlotLinePropertiesFill(const std::string& series_label) const {
+    if (data_to_plotline_properties_.find(series_label) == data_to_plotline_properties_.end()) {
+        return ImVec4(1, 1, 1, 1);
+    }
+    return data_to_plotline_properties_.at(series_label).fill;
+}
+
+double RenderablePlot::getPlotLinePropertiesFillWeight(const std::string& series_label) const {
+    if (data_to_plotline_properties_.find(series_label) == data_to_plotline_properties_.end()) {
+        return 1.0;
+    }
+    return data_to_plotline_properties_.at(series_label).fill_weight;
+}
+
+ImVec4 RenderablePlot::getPlotLinePropertiesFillOutline(const std::string& series_label) const {
+    if (data_to_plotline_properties_.find(series_label) == data_to_plotline_properties_.end()) {
+        return ImVec4(1, 1, 1, 1);
+    }
+    return data_to_plotline_properties_.at(series_label).fill_outline;
+}
+
 void RenderablePlot::resetPlotLineProperties(const std::string& series_label) {
     data_to_plotline_properties_[series_label].reset();
 }
