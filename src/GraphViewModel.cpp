@@ -91,6 +91,17 @@ std::pair<std::vector<DataManager::Timestamp>, std::vector<DataManager::Value>> 
 
 
 
+
+// ============================================
+// Load Window from file
+// ============================================
+LoadWindowFileDialogState& GraphViewModel::getLoadWindowFileDialogState() {
+    return load_window_file_dialog_state_;
+}
+
+
+
+
 // ============================================
 // Windows with renderable plots
 // ============================================

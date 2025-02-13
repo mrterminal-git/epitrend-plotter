@@ -270,6 +270,50 @@ struct SaveWindowAsPopupState {
     }
 };
 
+struct LoadWindowFileDialogState {
+    std::string current_path = "";
+    std::string current_file = "";
+    std::string current_folder = "";
+    std::string error = "";
+    char path_buffer[255] = "";
+    std::vector<std::filesystem::directory_entry> files;
+    std::vector<std::filesystem::directory_entry> folders;
+    int file_select_index = 0;
+    int folder_select_index = 0;
+    bool open = false;
+    bool initial_path_set = false;
+
+    void reset() {
+        current_path.clear();
+        current_file.clear();
+        current_folder.clear();
+        error.clear();
+        std::fill(std::begin(path_buffer), std::end(path_buffer), '\0');
+        files.clear();
+        folders.clear();
+        file_select_index = 0;
+        folder_select_index = 0;
+        open = false;
+        initial_path_set = false;
+
+        // Reinitialize path_buffer with the user's "Downloads" folder path
+        PWSTR default_path = NULL;
+        if (SUCCEEDED(SHGetKnownFolderPath(FOLDERID_Desktop, 0, NULL, &default_path))) {
+            wcstombs(path_buffer, default_path, sizeof(path_buffer));
+            CoTaskMemFree(default_path);
+        }
+    }
+
+    LoadWindowFileDialogState() {
+        // Initialize path_buffer with the user's "Downloads" folder path
+        PWSTR default_path = NULL;
+        if (SUCCEEDED(SHGetKnownFolderPath(FOLDERID_Desktop, 0, NULL, &default_path))) {
+            wcstombs(path_buffer, default_path, sizeof(path_buffer));
+            CoTaskMemFree(default_path);
+        }
+    }
+};
+
 class GraphViewModel {
 public:
     // Constructor
@@ -291,6 +335,13 @@ public:
     // Get downsampled data for a specific sensor
     std::pair<std::vector<DataManager::Timestamp>, std::vector<DataManager::Value>> getDownsampledData(
     RenderablePlot& plot, const std::string& sensor, double range, int num_pixels);
+
+
+
+    // ============================================
+    // Load Window from file
+    // ============================================
+    LoadWindowFileDialogState& getLoadWindowFileDialogState();
 
 
 
@@ -325,6 +376,14 @@ private:
 
     // "Plot options" popup state
     PlotOptionsPopupState plot_options_popup_state_;
+
+
+
+    // ============================================
+    // Load Window from file
+    // ============================================
+    LoadWindowFileDialogState load_window_file_dialog_state_;
+
 
 
     // ============================================
