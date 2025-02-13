@@ -79,6 +79,7 @@ std::string WindowPlots::getLabel() const {
 // ============================================
 // Window Properties
 // ============================================
+
 void WindowPlots::setXPosition(float x) {
     if (x < 0) {
         pos_x_ = 0;
@@ -102,6 +103,7 @@ void WindowPlots::setWidth(float width) {
         width_ = width;
     }
 }
+
 void WindowPlots::setHeight(float height){
     if (height < 0) {
         height_ = 720;
