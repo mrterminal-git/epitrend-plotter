@@ -394,6 +394,60 @@ void GraphView::renderAddPlotPopup() {
 
 
 // ==============================
+// renderAddWindowPopup
+// ==============================
+
+void ActionSubmitLoadWindowPopup(LoadWindowFileDialogState file_dialog_state) {
+    // Load and create window from file
+}
+
+// Render the "Load window" popup
+void GraphView::renderLoadWindowPopup() {
+    if (ImGui::Button("Load Window", ImVec2(100, 30))) {
+        // Open the file dialog
+        FileDialog::file_dialog_open = true;
+        FileDialog::file_dialog_open_type = FileDialog::FileDialogType::OpenFile;
+    }
+
+    // Render the file dialog if it is open
+    if (FileDialog::file_dialog_open) {
+        // Create file dialog state
+        auto& load_window_file_dialog_state = viewModel_.getLoadWindowFileDialogState();
+
+        // Render the file dialog
+        FileDialog::ShowFileDialog(&FileDialog::file_dialog_open, load_window_file_dialog_state.path_buffer,
+            sizeof(load_window_file_dialog_state.path_buffer), FileDialog::file_dialog_open_type);
+
+        // Copy the selected path to the save window as popup state if it exists
+        if (!FileDialog::file_dialog_open && std::filesystem::exists(load_window_file_dialog_state.path_buffer)) {
+            std::cout << "Selected path: " << load_window_file_dialog_state.path_buffer << "\n";
+
+            // Copy current folder, file name, and entire file path into the file dialog state
+            std::filesystem::path selected_path = load_window_file_dialog_state.path_buffer;
+            load_window_file_dialog_state.current_folder = selected_path.parent_path().string();
+            load_window_file_dialog_state.current_file = selected_path.filename().string();
+            load_window_file_dialog_state.current_path = selected_path.string();
+
+            std::cout << "Current folder: " << load_window_file_dialog_state.current_folder << "\n";
+            std::cout << "Current file: " << load_window_file_dialog_state.current_file << "\n";
+            std::cout << "Current path: " << load_window_file_dialog_state.current_path << "\n";
+
+            // Load window action
+            ActionSubmitLoadWindowPopup(load_window_file_dialog_state);
+
+            // Copy the current folder path into the file dialog state
+            std::strncpy(load_window_file_dialog_state.path_buffer,
+                load_window_file_dialog_state.current_folder.c_str(),
+                sizeof(load_window_file_dialog_state.path_buffer));
+
+        }
+    }
+}
+
+
+
+
+// ==============================
 // renderAllWindowPlots
 // ==============================
 
@@ -2265,6 +2319,9 @@ void GraphView::renderAllWindowPlots(){
 void GraphView::renderAll() {
     // Render "Add plot" button and popup
     renderAddPlotPopup();
+
+    // Render "Load Window" button and popup
+    renderLoadWindowPopup();
 
     // Render all window plots
     renderAllWindowPlots();

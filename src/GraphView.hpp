@@ -45,6 +45,14 @@ private:
     void renderAddPlotPopup();
 
 
+
+    // ==============================
+    // renderAddWindowPopup
+    // ==============================
+    void renderLoadWindowPopup();
+
+
+
     // ==============================
     // renderAllWindowPlots
     // ==============================
