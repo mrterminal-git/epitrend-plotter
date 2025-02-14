@@ -316,6 +316,14 @@ struct LoadWindowFileDialogState {
     }
 };
 
+struct LoadWindowState {
+    bool open_file_diag = false;
+
+    void reset() {
+        open_file_diag = false;
+    }
+};
+
 class GraphViewModel {
 public:
     // Constructor
@@ -344,7 +352,7 @@ public:
     // Load Window from file
     // ============================================
     LoadWindowFileDialogState& getLoadWindowFileDialogState();
-
+    LoadWindowState& getLoadWindowState();
 
 
     // ============================================
@@ -385,7 +393,7 @@ private:
     // Load Window from file
     // ============================================
     LoadWindowFileDialogState load_window_file_dialog_state_;
-
+    LoadWindowState load_window_state_;
 
 
     // ============================================

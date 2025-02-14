@@ -99,6 +99,10 @@ LoadWindowFileDialogState& GraphViewModel::getLoadWindowFileDialogState() {
     return load_window_file_dialog_state_;
 }
 
+LoadWindowState& GraphViewModel::getLoadWindowState() {
+    return load_window_state_;
+}
+
 
 
 
