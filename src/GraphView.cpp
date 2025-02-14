@@ -397,8 +397,15 @@ void GraphView::renderAddPlotPopup() {
 // renderAddWindowPopup
 // ==============================
 
-void ActionSubmitLoadWindowPopup(LoadWindowFileDialogState file_dialog_state) {
+void GraphView::actionSubmitLoadWindowPopup(LoadWindowFileDialogState file_dialog_state) {
     // Load and create window from file
+    WindowPlots window_plot_loaded_from_json =
+        WindowPlotsSaveLoad::loadFromFile(file_dialog_state.path_buffer);
+
+    // Add the loaded window to the view model
+    std::string window_label_copy = window_plot_loaded_from_json.getLabel();
+    viewModel_.addWindowPlots(window_label_copy,
+        std::make_unique<WindowPlots>(std::move(window_plot_loaded_from_json)));
 }
 
 // Render the "Load window" popup
@@ -419,7 +426,8 @@ void GraphView::renderLoadWindowPopup() {
             sizeof(load_window_file_dialog_state.path_buffer), FileDialog::file_dialog_open_type);
 
         // Copy the selected path to the save window as popup state if it exists
-        if (!FileDialog::file_dialog_open && std::filesystem::exists(load_window_file_dialog_state.path_buffer)) {
+        if (!FileDialog::file_dialog_open && std::filesystem::exists(load_window_file_dialog_state.path_buffer)
+             && std::filesystem::is_regular_file(load_window_file_dialog_state.path_buffer)) {
             std::cout << "Selected path: " << load_window_file_dialog_state.path_buffer << "\n";
 
             // Copy current folder, file name, and entire file path into the file dialog state
@@ -433,7 +441,7 @@ void GraphView::renderLoadWindowPopup() {
             std::cout << "Current path: " << load_window_file_dialog_state.current_path << "\n";
 
             // Load window action
-            ActionSubmitLoadWindowPopup(load_window_file_dialog_state);
+            actionSubmitLoadWindowPopup(load_window_file_dialog_state);
 
             // Copy the current folder path into the file dialog state
             std::strncpy(load_window_file_dialog_state.path_buffer,

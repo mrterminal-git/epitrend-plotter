@@ -47,8 +47,9 @@ private:
 
 
     // ==============================
-    // renderAddWindowPopup
+    // renderLoadWindowPopup
     // ==============================
+    void actionSubmitLoadWindowPopup(LoadWindowFileDialogState file_dialog_state);
     void renderLoadWindowPopup();
 
 
