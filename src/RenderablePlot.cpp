@@ -282,6 +282,14 @@ std::string RenderablePlot::getYAxisLabel(ImAxis y_axis) const {
     return y_axis_properties_.at(y_axis).label;
 }
 
+std::vector<std::string> RenderablePlot::getAllSensorLabels() const {
+    std::vector<std::string> sensors;
+    for (const auto& [sensor, _] : data_to_y_axis_) {
+        sensors.push_back(sensor);
+    }
+    return sensors;
+}
+
 
 // ============================================
 // Plotline properties

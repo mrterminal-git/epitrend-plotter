@@ -115,6 +115,7 @@ public:
     double getYAxisPropertiesLogBase(ImAxis y_axis) const;
     bool getYAxisPropertiesUserSetRange(ImAxis y_axis) const;
     std::string getYAxisLabel(ImAxis y_axis) const;
+    std::vector<std::string> getAllSensorLabels() const;
 
 
 
