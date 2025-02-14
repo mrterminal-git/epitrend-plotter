@@ -167,54 +167,84 @@ RenderablePlot WindowPlotsSaveLoad::deserializeRenderablePlot(const nlohmann::js
 
     // Deserialize Y axis labels
     for (const auto& [axis_str, label] : j.at("y_axis_labels").items()) {
-        ImAxis axis = static_cast<ImAxis>(std::stoi(axis_str));
+        // Extracting the ImAxis enum from the string
+        ImAxis axis = static_cast<ImAxis>(std::stoi(axis_str.substr(axis_str.size() - 1)) + 2); // +2 because ImAxis_Y1 = 3
+
+        // Set the Y axis label
         plot.setYAxisPropertiesLabel(axis, label.get<std::string>());
     }
 
     // Deserialize Y axis properties
-    for (const auto& [axis_str, properties_json] : j.at("y_axis_properties").items()) {
-        ImAxis axis = static_cast<ImAxis>(std::stoi(axis_str));
+    for (const auto& [y_axis_str, properties_json] : j.at("y_axis_properties").items()) {
+        // Extracting the ImAxis enum from the string
+        ImAxis axis = static_cast<ImAxis>(std::stoi(y_axis_str.substr(y_axis_str.size() - 1)) + 2); // +2 because ImAxis_Y1 = 3
+
+        // Prepare the Y axis properties
         RenderablePlot::YAxisProperties properties;
-        properties.label = properties_json.at("label").get<std::string>();
         properties.min = properties_json.at("min").get<double>();
         properties.max = properties_json.at("max").get<double>();
         properties.scale_type = properties_json.at("scale_type").get<RenderablePlot::ScaleType>();
         properties.log_base = properties_json.at("log_base").get<double>();
         properties.user_set_range = properties_json.at("user_set_range").get<bool>();
+
+        // Set the Y axis properties
         plot.setYAxisProperties(axis, properties);
     }
 
     // Deserialize data series names for each Y axis
-    for (const auto& [series_label, y_axis] : j.at("data_to_y_axis").items()) {
-        plot.addYAxisForSensor(series_label, y_axis.get<ImAxis>());
+    for (const auto& [y_axis_str, sensor_label_array] : j.at("data_to_y_axis").items()) {
+        // Extracting the ImAxis enum from the string
+        ImAxis im_axis = static_cast<ImAxis>(std::stoi(y_axis_str.substr(y_axis_str.size() - 1)) + 2); // +2 because ImAxis_Y1 = 3);
+
+        for (const auto& sensor_label : sensor_label_array) {
+
+            // Add sensors to data_to_y_axis_ attribute
+            plot.addYAxisForSensor(sensor_label, im_axis);
+
+            // Add sensors to data_ attribute
+            plot.setData(sensor_label, {});
+
+        }
+
     }
 
     // Deserialize data series properties
-    for (const auto& [series_label, properties_json] : j.at("data_to_plotline_properties").items()) {
-        RenderablePlot::PlotLineProperties properties;
-        properties.colour = ImVec4(
-            properties_json.at("colour")[0].get<float>(),
-            properties_json.at("colour")[1].get<float>(),
-            properties_json.at("colour")[2].get<float>(),
-            properties_json.at("colour")[3].get<float>()
-        );
-        properties.thickness = properties_json.at("thickness").get<double>();
-        properties.marker_style = properties_json.at("marker_style").get<ImPlotMarker>();
-        properties.marker_size = properties_json.at("marker_size").get<double>();
-        properties.fill = ImVec4(
-            properties_json.at("fill")[0].get<float>(),
-            properties_json.at("fill")[1].get<float>(),
-            properties_json.at("fill")[2].get<float>(),
-            properties_json.at("fill")[3].get<float>()
-        );
-        properties.fill_weight = properties_json.at("fill_weight").get<double>();
-        properties.fill_outline = ImVec4(
-            properties_json.at("fill_outline")[0].get<float>(),
-            properties_json.at("fill_outline")[1].get<float>(),
-            properties_json.at("fill_outline")[2].get<float>(),
-            properties_json.at("fill_outline")[3].get<float>()
-        );
-        plot.setPlotLineProperties(series_label, properties);
+    for (const auto& [y_axis_str, all_series_properties_array] : j.at("data_to_plotline_properties").items()) {
+
+        // Loop through all the series properties for each Y axis
+        for (const auto& series_properties : all_series_properties_array) {
+            // Prepare the PlotLineProperties object
+            RenderablePlot::PlotLineProperties properties;
+            properties.colour = ImVec4(
+                series_properties.at("colour")[0].get<float>(),
+                series_properties.at("colour")[1].get<float>(),
+                series_properties.at("colour")[2].get<float>(),
+                series_properties.at("colour")[3].get<float>()
+            );
+
+            properties.thickness = series_properties.at("thickness").get<double>();
+            properties.marker_style = series_properties.at("marker_style").get<ImPlotMarker>();
+            properties.marker_size = series_properties.at("marker_size").get<double>();
+
+            properties.fill = ImVec4(
+                series_properties.at("fill")[0].get<float>(),
+                series_properties.at("fill")[1].get<float>(),
+                series_properties.at("fill")[2].get<float>(),
+                series_properties.at("fill")[3].get<float>()
+            );
+
+            properties.fill_weight = series_properties.at("fill_weight").get<double>();
+            properties.fill_outline = ImVec4(
+                series_properties.at("fill_outline")[0].get<float>(),
+                series_properties.at("fill_outline")[1].get<float>(),
+                series_properties.at("fill_outline")[2].get<float>(),
+                series_properties.at("fill_outline")[3].get<float>()
+            );
+
+            // Add the plotline properties of the data series
+            plot.addPlotLineProperties(series_properties.at("data_series_label").get<std::string>(), properties);
+        }
+
     }
 
     return plot;
@@ -256,10 +286,9 @@ WindowPlots WindowPlotsSaveLoad::deserializeV1(const nlohmann::json& j) {
     window.setHeight(j.at("height").get<float>());
 
     for (const auto& item : j.at("renderable_plots")) {
-        std::string plot_label = item.at("label").get<std::string>();
         auto plot = std::make_unique<RenderablePlot>(deserializeRenderablePlot(item.at("plot")));
+        std::string plot_label = plot->getLabel();
         window.addRenderablePlot(plot_label, std::move(plot));
     }
-
     return window;
 }
