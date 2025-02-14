@@ -49,7 +49,7 @@ private:
     // ==============================
     // renderLoadWindowPopup
     // ==============================
-    void actionSubmitLoadWindowPopup(LoadWindowFileDialogState file_dialog_state);
+    void actionSubmitLoadWindowPopup(LoadWindowFileDialogState& file_dialog_state);
     void renderLoadWindowPopup();
 
 

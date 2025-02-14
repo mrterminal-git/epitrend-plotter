@@ -397,15 +397,43 @@ void GraphView::renderAddPlotPopup() {
 // renderAddWindowPopup
 // ==============================
 
-void GraphView::actionSubmitLoadWindowPopup(LoadWindowFileDialogState file_dialog_state) {
-    // Load and create window from file
-    WindowPlots window_plot_loaded_from_json =
-        WindowPlotsSaveLoad::loadFromFile(file_dialog_state.path_buffer);
+// render File Open Error Popup
+void renderLoadWindowFileOpenErrorPopup(LoadWindowFileDialogState& load_window_file_dialog_state) {
 
-    // Add the loaded window to the view model
-    std::string window_label_copy = window_plot_loaded_from_json.getLabel();
-    viewModel_.addWindowPlots(window_label_copy,
-        std::make_unique<WindowPlots>(std::move(window_plot_loaded_from_json)));
+    if (ImGui::BeginPopupModal("###Load Window File Open Error", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::Text(("There was an error opening the file: " + load_window_file_dialog_state.current_path).c_str());
+        ImGui::Text("Error: %s", load_window_file_dialog_state.error.c_str());
+
+        if (ImGui::Button("OK", ImVec2(120, 0))) {
+            load_window_file_dialog_state.file_open_error_popup = false;
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+
+    }
+
+}
+
+// Handle submit action for "Add window" popup
+void GraphView::actionSubmitLoadWindowPopup(LoadWindowFileDialogState& file_dialog_state) {
+    // Load and create window from file
+    try {
+        // Load window from file
+        WindowPlots window_plot_loaded_from_json =
+            WindowPlotsSaveLoad::loadFromFile(file_dialog_state.path_buffer);
+
+        // Add the loaded window to the view model
+        std::string window_label_copy = window_plot_loaded_from_json.getLabel();
+        viewModel_.addWindowPlots(window_label_copy,
+            std::make_unique<WindowPlots>(std::move(window_plot_loaded_from_json)));
+    } catch (const std::exception& e) {
+        // Prompt a popup message if an error occurs
+        file_dialog_state.file_open_error_popup = true;
+        file_dialog_state.error = e.what();
+    }
+
+
+
 }
 
 // Render the "Load window" popup
@@ -449,7 +477,16 @@ void GraphView::renderLoadWindowPopup() {
                 sizeof(load_window_file_dialog_state.path_buffer));
 
         }
+
+
     }
+
+    // Render the file open error popup
+    LoadWindowFileDialogState& load_window_file_dialog_state = viewModel_.getLoadWindowFileDialogState();
+    if (load_window_file_dialog_state.file_open_error_popup) {
+        ImGui::OpenPopup("###Load Window File Open Error");
+    }
+    renderLoadWindowFileOpenErrorPopup(load_window_file_dialog_state);
 }
 
 

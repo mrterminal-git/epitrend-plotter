@@ -282,6 +282,7 @@ struct LoadWindowFileDialogState {
     int folder_select_index = 0;
     bool open = false;
     bool initial_path_set = false;
+    bool file_open_error_popup = false;
 
     void reset() {
         current_path.clear();
@@ -295,6 +296,7 @@ struct LoadWindowFileDialogState {
         folder_select_index = 0;
         open = false;
         initial_path_set = false;
+        file_open_error_popup = false;
 
         // Reinitialize path_buffer with the user's "Downloads" folder path
         PWSTR default_path = NULL;
