@@ -11,9 +11,9 @@ void CurlHeaders::append(const std::string& header) {
 
 InfluxDatabase::InfluxDatabase() : isConnected(false), serverInfo("localhost", 8086, ""){}
 
-InfluxDatabase::InfluxDatabase(const std::string& host, int port, 
-                   const std::string& org, const std::string& bucket, 
-                   const std::string& user, const std::string& password, 
+InfluxDatabase::InfluxDatabase(const std::string& host, int port,
+                   const std::string& org, const std::string& bucket,
+                   const std::string& user, const std::string& password,
                    const std::string& precision, const std::string& token,
                    bool verbose)
      : isConnected(false), serverInfo("localhost", 8086, ""){
@@ -25,22 +25,12 @@ InfluxDatabase::~InfluxDatabase() {
     disconnect();
 }
 
-bool InfluxDatabase::connect(const std::string& host, int port, 
+bool InfluxDatabase::connect(const std::string& host, int port,
                             const std::string& org, const std::string& bucket,
                             const std::string& user, const std::string& password,
                             const std::string& precision, const std::string& token,
                             bool verbose) {
     serverInfo = influxdb_cpp::server_info(host, port, bucket, user, password, precision, token);
-    
-    // Test connection by sending a simple query or ping
-    std::string response;
-    int result = influxdb_cpp::query(response, "SHOW DATABASES", serverInfo);
-    if (result != 0) {
-        if (verbose) {
-            std::cerr << "Failed to connect to InfluxDB: " << response << "\n";
-        }
-        throw std::runtime_error("Failed to connect to InfluxDB: " + response);
-    }
 
     host_ = host;
     port_ = port;
@@ -68,15 +58,10 @@ void InfluxDatabase::disconnect(bool verbose) {
 }
 
 bool InfluxDatabase::checkConnection(bool verbose) {
-    if (!isConnected) {
-        if (verbose) {
-            std::cerr << "Not connected to InfluxDB." << "\n";
-        }
-        return false;
-    }
+    std::string query = "buckets()";
     std::string response;
-    int result = influxdb_cpp::query(response, "SHOW DATABASES", serverInfo);
-    if (result != 0) {
+    queryData2(response, query);
+    if (response.empty()) {
         if (verbose) {
             std::cerr << "Connection test failed: " << response << "\n";
         }
@@ -324,7 +309,7 @@ std::vector<std::unordered_map<std::string, std::string>> InfluxDatabase::parseQ
 
 std::vector<std::unordered_map<std::string,std::string>> InfluxDatabase::parseQueryResponse(std::string& response, bool verbose) {
     std::vector<std::unordered_map<std::string,std::string>> out;
-    
+
     std::istringstream responseStream(response);
     std::string line;
 
@@ -354,7 +339,7 @@ std::vector<std::unordered_map<std::string,std::string>> InfluxDatabase::parseQu
             std::cerr << "Error in InfluxDatabase::parseQueryResponse call: number of headers does not match number of entries\n";
             throw std::runtime_error("Error in InfluxDatabase::parseQueryResponse call: number of headers does not match number of entries\n");
         }
-        
+
         std::unordered_map<std::string,std::string> headers_entries;
         for(int i = 0; i < entries.size(); i++) {
             headers_entries[headers.at(i)] = entries.at(i);
@@ -463,8 +448,8 @@ bool InfluxDatabase::copyEpitrendToBucket(EpitrendBinaryData data, bool verbose)
         std::string num;  // MUST BE A DECIMAL
         std::string timestamp;
         std::string write_query;
-        void set_write_query(){write_query ="ts,sensor_id_=" + 
-            sensor_id + " num=" + 
+        void set_write_query(){write_query ="ts,sensor_id_=" +
+            sensor_id + " num=" +
             num + " " + timestamp;
         }
     };
@@ -477,9 +462,9 @@ bool InfluxDatabase::copyEpitrendToBucket(EpitrendBinaryData data, bool verbose)
         std::string sensor_id;
         std::string default_timestamp = "2000000000000";
         std::string write_query;
-        void set_write_query(){write_query = "ns,machine_=" + escapeSpecialChars(machine_name) + 
-            ",sensor_=" + escapeSpecialChars(sensor_name) + 
-            " sensor_id=\"" + sensor_id + 
+        void set_write_query(){write_query = "ns,machine_=" + escapeSpecialChars(machine_name) +
+            ",sensor_=" + escapeSpecialChars(sensor_name) +
+            " sensor_id=\"" + sensor_id +
             "\" " + default_timestamp;
         }
     };
@@ -496,7 +481,7 @@ bool InfluxDatabase::copyEpitrendToBucket(EpitrendBinaryData data, bool verbose)
         std::string read_query;
         void set_read_query(){read_query = "from(bucket: \"" + bucket + "\") "
             "|> range(start: -50y, stop: 100y)"
-            "|> filter(fn: (r) => r[\"_measurement\"] == \"ns\")" 
+            "|> filter(fn: (r) => r[\"_measurement\"] == \"ns\")"
             "|> filter(fn: (r) => r[\"sensor_\"] == \"" + sensor_name + "\")"
             "|> filter(fn: (r) => r[\"machine_\"] == \"" + machine_name + "\")";
         }
@@ -522,27 +507,27 @@ bool InfluxDatabase::copyEpitrendToBucket(EpitrendBinaryData data, bool verbose)
         // IF IT IS
             // GET THE SENSOR_ID
         // ENTER ALL ASSOCIATED DATA INTO TS TABLE WITH ASSOCIATE SENSOR ID
-        
+
         if(verbose)
             std::cout << "--------------------\n Current name: " <<
             name_data_map.first << "\n";
-        
+
         // Set the ns read query
         ns_read_struct ns_read =
         {
             .bucket = bucket_,
             .machine_name = epitrend_machine_name,
             .sensor_name = name_data_map.first
-        }; 
+        };
         ns_read.set_read_query();
-        
+
         // Query the ns table
         std::string response;
         queryData2(response, ns_read.read_query);
-        
+
         // Parse the response
         std::vector<std::unordered_map<std::string,std::string>> parsed_response = parseQueryResponse(response);
-        
+
         // Prepare the sensor id associated with the current sensor name
         int valid_sensor_id = -1;
 
@@ -592,7 +577,7 @@ bool InfluxDatabase::copyEpitrendToBucket(EpitrendBinaryData data, bool verbose)
             }
 
             // Set the ns write query
-            ns_write_struct ns_write = 
+            ns_write_struct ns_write =
             {
                 .machine_name = epitrend_machine_name,
                 .sensor_name = name_data_map.first,
@@ -606,7 +591,7 @@ bool InfluxDatabase::copyEpitrendToBucket(EpitrendBinaryData data, bool verbose)
 
         } else {
             if(verbose) std::cout << "Entry found for sensor: " << name_data_map.first << "\n";
-            
+
             // Get the sensor_id
             valid_sensor_id = stoi(parsed_response[0]["_value"]);
             if(verbose) std::cout << "Sensor_id: " << valid_sensor_id << "\n";
@@ -614,7 +599,7 @@ bool InfluxDatabase::copyEpitrendToBucket(EpitrendBinaryData data, bool verbose)
         }
 
         // Prepare ts query write statement
-        ts_write_struct ts_write = 
+        ts_write_struct ts_write =
         {
             .sensor_id = std::to_string(valid_sensor_id),
         };
@@ -626,7 +611,7 @@ bool InfluxDatabase::copyEpitrendToBucket(EpitrendBinaryData data, bool verbose)
             ts_write.num = std::to_string(time_value.second);
             ts_write.timestamp = std::to_string(convertDaysFromEpochToPrecisionFromUnix(time_value.first));
             ts_write.set_write_query();
-            
+
             // Batch the data
             batch_data.push_back(ts_write.write_query);
 
@@ -637,7 +622,7 @@ bool InfluxDatabase::copyEpitrendToBucket(EpitrendBinaryData data, bool verbose)
                 batch_data.clear();
             }
         }
-        
+
         // Write the remaining data
         if(batch_data.size() > 0) {
             if(verbose) std::cout << "Writing batch data...\n";
@@ -664,8 +649,8 @@ bool InfluxDatabase::copyEpitrendToBucket2(EpitrendBinaryData data, bool verbose
         std::string num;  // MUST BE A DECIMAL
         std::string timestamp;
         std::string write_query;
-        void set_write_query(){write_query ="ts,sensor_id_=" + 
-            sensor_id + " num=" + 
+        void set_write_query(){write_query ="ts,sensor_id_=" +
+            sensor_id + " num=" +
             num + " " + timestamp;
         }
     };
@@ -678,9 +663,9 @@ bool InfluxDatabase::copyEpitrendToBucket2(EpitrendBinaryData data, bool verbose
         std::string sensor_id;
         std::string default_timestamp = "2000000000000";
         std::string write_query;
-        void set_write_query(){write_query = "ns,machine_=" + escapeSpecialChars(machine_name) + 
-            ",sensor_=" + escapeSpecialChars(sensor_name) + 
-            " sensor_id=\"" + sensor_id + 
+        void set_write_query(){write_query = "ns,machine_=" + escapeSpecialChars(machine_name) +
+            ",sensor_=" + escapeSpecialChars(sensor_name) +
+            " sensor_id=\"" + sensor_id +
             "\" " + default_timestamp;
         }
     };
@@ -697,7 +682,7 @@ bool InfluxDatabase::copyEpitrendToBucket2(EpitrendBinaryData data, bool verbose
         std::string read_query;
         void set_read_query(){read_query = "from(bucket: \"" + bucket + "\") "
             "|> range(start: -50y, stop: 100y)"
-            "|> filter(fn: (r) => r[\"_measurement\"] == \"ns\")" 
+            "|> filter(fn: (r) => r[\"_measurement\"] == \"ns\")"
             "|> filter(fn: (r) => r[\"sensor_\"] == \"" + sensor_name + "\")"
             "|> filter(fn: (r) => r[\"machine_\"] == \"" + machine_name + "\")";
         }
@@ -753,7 +738,7 @@ bool InfluxDatabase::copyEpitrendToBucket2(EpitrendBinaryData data, bool verbose
         // IF IT IS
             // GET THE SENSOR_ID
         // ENTER ALL ASSOCIATED DATA INTO TS TABLE WITH ASSOCIATE SENSOR ID
-        
+
         if(verbose)
             std::cout << "--------------------\n Current name: " <<
             name_data_map.first << "\n";
@@ -762,7 +747,7 @@ bool InfluxDatabase::copyEpitrendToBucket2(EpitrendBinaryData data, bool verbose
         int valid_sensor_id = -1;
 
         // Check if sensor_ name exists in the ns table
-        int found_sensor_name_in_ns = 
+        int found_sensor_name_in_ns =
             !(sensor_names_to_ids.find(escapeSpecialChars(name_data_map.first)) == sensor_names_to_ids.end());
 
         // Check if data is found
@@ -788,7 +773,7 @@ bool InfluxDatabase::copyEpitrendToBucket2(EpitrendBinaryData data, bool verbose
             }
 
             // Set the ns write query
-            ns_write_struct ns_write = 
+            ns_write_struct ns_write =
             {
                 .machine_name = epitrend_machine_name,
                 .sensor_name = name_data_map.first,
@@ -813,7 +798,7 @@ bool InfluxDatabase::copyEpitrendToBucket2(EpitrendBinaryData data, bool verbose
         }
 
         // Prepare ts query write statement
-        ts_write_struct ts_write = 
+        ts_write_struct ts_write =
         {
             .sensor_id = std::to_string(valid_sensor_id),
         };
@@ -830,14 +815,14 @@ bool InfluxDatabase::copyEpitrendToBucket2(EpitrendBinaryData data, bool verbose
             ts_write.timestamp = timestamp_stream.str();
 
             ts_write.set_write_query();
-            
+
             // Batch the data
             batch_data.push_back(ts_write.write_query);
 
             if(batch_data.size() >= batchSize) {
                 // Write the time-value pair to the ts table
                 if(verbose) std::cout << "Writing batch data...\n";
-                
+
                 for(int i = 0; i < retryCalls; i++){
                     try {
                         writeBatchData2(batch_data, false);
@@ -858,7 +843,7 @@ bool InfluxDatabase::copyEpitrendToBucket2(EpitrendBinaryData data, bool verbose
                 batch_data.clear();
             }
         }
-        
+
     }
 
     // Write the remaining data
@@ -905,8 +890,8 @@ bool InfluxDatabase::copyRGADataToBucket(RGAData data, bool verbose) {
         std::string num;  // MUST BE A DECIMAL
         std::string timestamp;
         std::string write_query;
-        void set_write_query(){write_query ="ts,sensor_id_=" + 
-            sensor_id + " num=" + 
+        void set_write_query(){write_query ="ts,sensor_id_=" +
+            sensor_id + " num=" +
             num + " " + timestamp;
         }
     };
@@ -919,9 +904,9 @@ bool InfluxDatabase::copyRGADataToBucket(RGAData data, bool verbose) {
         std::string sensor_id;
         std::string default_timestamp = "2000000000000";
         std::string write_query;
-        void set_write_query(){write_query = "ns,machine_=" + escapeSpecialChars(machine_name) + 
-            ",sensor_=" + escapeSpecialChars(sensor_name) + 
-            " sensor_id=\"" + sensor_id + 
+        void set_write_query(){write_query = "ns,machine_=" + escapeSpecialChars(machine_name) +
+            ",sensor_=" + escapeSpecialChars(sensor_name) +
+            " sensor_id=\"" + sensor_id +
             "\" " + default_timestamp;
         }
     };
@@ -938,7 +923,7 @@ bool InfluxDatabase::copyRGADataToBucket(RGAData data, bool verbose) {
         std::string read_query;
         void set_read_query(){read_query = "from(bucket: \"" + bucket + "\") "
             "|> range(start: -50y, stop: 100y)"
-            "|> filter(fn: (r) => r[\"_measurement\"] == \"ns\")" 
+            "|> filter(fn: (r) => r[\"_measurement\"] == \"ns\")"
             "|> filter(fn: (r) => r[\"sensor_\"] == \"" + sensor_name + "\")"
             "|> filter(fn: (r) => r[\"machine_\"] == \"" + machine_name + "\")";
         }
@@ -994,7 +979,7 @@ bool InfluxDatabase::copyRGADataToBucket(RGAData data, bool verbose) {
         // IF IT IS
             // GET THE SENSOR_ID
         // ENTER ALL ASSOCIATED DATA INTO TS TABLE WITH ASSOCIATE SENSOR ID
-        
+
         std::string name = "RGA." + name_data_map.first.binsString();
 
         if(verbose)
@@ -1005,7 +990,7 @@ bool InfluxDatabase::copyRGADataToBucket(RGAData data, bool verbose) {
         int valid_sensor_id = -1;
 
         // Check if sensor_ name exists in the ns table
-        int found_sensor_name_in_ns = 
+        int found_sensor_name_in_ns =
             !(sensor_names_to_ids.find(escapeSpecialChars(name)) == sensor_names_to_ids.end());
 
         // Check if data is found
@@ -1031,7 +1016,7 @@ bool InfluxDatabase::copyRGADataToBucket(RGAData data, bool verbose) {
             }
 
             // Set the ns write query
-            ns_write_struct ns_write = 
+            ns_write_struct ns_write =
             {
                 .machine_name = epitrend_machine_name,
                 .sensor_name = name,
@@ -1056,7 +1041,7 @@ bool InfluxDatabase::copyRGADataToBucket(RGAData data, bool verbose) {
         }
 
         // Prepare ts query write statement
-        ts_write_struct ts_write = 
+        ts_write_struct ts_write =
         {
             .sensor_id = std::to_string(valid_sensor_id),
         };
@@ -1081,7 +1066,7 @@ bool InfluxDatabase::copyRGADataToBucket(RGAData data, bool verbose) {
             ts_write.timestamp = timestamp_stream.str();
 
             ts_write.set_write_query();
-            
+
             // Batch the data
             batch_data.push_back(ts_write.write_query);
 
@@ -1091,7 +1076,7 @@ bool InfluxDatabase::copyRGADataToBucket(RGAData data, bool verbose) {
             if(batch_data.size() >= batchSize) {
                 // Write the time-value pair to the ts table
                 if(verbose) std::cout << "Writing batch data...\n";
-                
+
                 for(int i = 0; i < retryCalls; i++){
                     try {
                         writeBatchData2(batch_data, false);
@@ -1112,7 +1097,7 @@ bool InfluxDatabase::copyRGADataToBucket(RGAData data, bool verbose) {
                 batch_data.clear();
             }
         }
-        
+
     }
 
     // Write the remaining data
