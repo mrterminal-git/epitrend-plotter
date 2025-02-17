@@ -131,6 +131,10 @@ void DataManager::addSensor(const std::string& sensor_id) {
 
 // Update range for a specific machine. Callback is used to preload data and clean up old data according to the new range
 void DataManager::updateSensorRange(const std::string& sensor_id, int plot_id, DataManager::Timestamp start, DataManager::Timestamp end) {
+    // Lock the buffer and sensor_ranges mutex
+    std::lock_guard<std::mutex> lock1(buffer_mutex_);
+    std::lock_guard<std::mutex> lock2(sensor_ranges_mutex_);
+
     auto& ranges = sensor_ranges_[sensor_id];
     ranges[plot_id] = {start, end}; // Update the specific plot's range
 
@@ -157,21 +161,110 @@ void DataManager::preloadData(const std::string& sensor_id, Timestamp start, Tim
     // Simulate data loading (replace with actual data loading logic)
     std::vector<std::pair<Timestamp, Value>> new_data;
     if (sensor_id == "sensor_1") {
+        // FOR DEVELOPMENT PURPOSES ONLY, REMOVE IF STATEMENT AND REPLACE WITH ACTUAL DATA LOADING LOGIC
         for (Timestamp t = start; t <= end; t += 1.0) {
             new_data.emplace_back(t, std::sin(t));
         }
 
     } else if (sensor_id == "sensor_2") {
+        // FOR DEVELOPMENT PURPOSES ONLY, REMOVE IF STATEMENT AND REPLACE WITH ACTUAL DATA LOADING LOGIC
         for (Timestamp t = start; t <= end; t += 1.0) {
             new_data.emplace_back(t, 2.0 * std::cos(t / 1.5));
         }
 
     } else {
-        // STOP PROGRAM
-        std::exit(1);
+        // *** Load data from InfluxDB ***
+        // Prepare the time-series (ts) query to read data statement
+        struct ts_read_struct {
+            std::string bucket;
+            std::string sensor_id;
+            std::string timestamp_start;
+            std::string timestamp_end;
+            std::string read_query;
+            void set_read_query(){read_query = "from(bucket: \"" + bucket + "\") "
+                "|> range(start: " + timestamp_start + ", stop: " + timestamp_end + ")"
+                "|> filter(fn: (r) => r[\"_measurement\"] == \"ts\")"
+                "|> filter(fn: (r) => r[\"sensor_id_\"] == \"" + sensor_id + "\")";
+            }
+        };
+
+        // Prepare influx_time_struct and object
+        struct influx_time_struct {
+            Timestamp unix_timestamp;
+            std::string influx_timestamp;
+
+            void set_influx_timestamp() {
+                // Convert unix_timestamp to influx_timestamp
+                std::time_t time = unix_timestamp;
+                std::tm* tm = std::gmtime(&time);
+                int year = tm->tm_year + 1900;
+                int month = tm->tm_mon + 1;
+                int day = tm->tm_mday;
+                int hour = tm->tm_hour;
+                int minute = tm->tm_min;
+                double second = tm->tm_sec + (unix_timestamp - std::floor(unix_timestamp));
+
+                std::ostringstream oss;
+                oss << std::setfill('0') << std::setw(4) << year << "-"
+                    << std::setw(2) << month << "-"
+                    << std::setw(2) << day << "T"
+                    << std::setw(2) << hour << ":"
+                    << std::setw(2) << minute << ":"
+                    << std::fixed << std::setprecision(2) << std::setw(5) << second << "Z";
+                influx_timestamp = oss.str();
+            }
+        };
+        influx_time_struct start_time = {.unix_timestamp = start};
+        start_time.set_influx_timestamp();
+        influx_time_struct end_time = {.unix_timestamp = end};
+        end_time.set_influx_timestamp();
+
+        // Prepare the ts query object
+        // Lock the sensor_name_to_id_ mutex
+        ts_read_struct ts_read;
+        {
+            std::lock_guard<std::mutex> lock(sensor_name_to_id_mutex_);
+            ts_read = {
+                    .bucket = "EPITREND", // REPLACE WITH CONFIG FILE
+                    .sensor_id = sensor_name_to_id_[sensor_id],
+                    .timestamp_start = start_time.influx_timestamp,
+                    .timestamp_end = end_time.influx_timestamp
+            };
+        }
+        ts_read.set_read_query();
+
+        // Query the data from the database
+        std::string response;
+        std::cout << "Querying data for sensor: " << sensor_id << "\n";
+        std::cout << "Query: " << ts_read.read_query << "\n";
+        influxdb_.queryData2(response, ts_read.read_query);
+
+        // Parse the response
+        std::vector<std::unordered_map<std::string,std::string>> parsed_response =
+            influxdb_.parseQueryResponse(response);
+
+        // Extract the data from the parsed response
+        for (const auto& element: parsed_response) {
+            // Convert the time string to Unix time double
+            std::string time_str = element.at("_time");
+            std::tm tm = {};
+            std::istringstream ss(time_str);
+            ss >> std::get_time(&tm, "%Y-%m-%dT%H:%M:%S.%fZ");
+            std::time_t time = std::mktime(&tm);
+
+            // Append time and value to the data vector
+            new_data.push_back(std::make_pair(time, std::stod(element.at("_value"))));
+        }
 
     }
-    addSensorData(sensor_id, new_data);
+
+    // Create a copy of sensor_id
+    std::string sensor_id_copy = sensor_id;
+
+    std::cout << "Preloaded data for sensor: " << sensor_id_copy << "\n";
+    std::cout << "Start: " << start << ", End: " << end << "\n";
+
+    addSensorData(sensor_id_copy, new_data);
 }
 
 // Merge ranges across all plots for a specific sensor
@@ -224,24 +317,31 @@ void DataManager::setInfluxDBSensors() {
     std::vector<std::unordered_map<std::string, std::string>> parsed_response = influxdb_.parseQueryResponse(response);
 
     // Add the sensors to the DataManager
-    for(const auto& element : parsed_response) {
-        // Check sensor_ and sensor_id_ keys exist (ns table should contain these keys)
-        if(element.find("sensor_") == element.end() || element.find("_value") == element.end()) {
-            std::cerr << "Error in InfluxDatabase::copyEpitrendToBucket2 call: "
-            "sensor_ or sensor_id key not found in ns table\n";
-            throw std::runtime_error("Error in DataManager::setInfluxDBSensors call: "
-            "sensor_ or sensor_id key not found in ns table\n");
+    // Lock the sensor_name_to_id_ and sensor_id_to_name_ mutexes
+    {
+        std::lock_guard<std::mutex> lock1(sensor_name_to_id_mutex_);
+        std::lock_guard<std::mutex> lock2(sensor_id_to_name_mutex_);
+
+        for(const auto& element : parsed_response) {
+            // Check sensor_ and sensor_id_ keys exist (ns table should contain these keys)
+            if(element.find("sensor_") == element.end() || element.find("_value") == element.end()) {
+                std::cerr << "Error in InfluxDatabase::copyEpitrendToBucket2 call: "
+                "sensor_ or sensor_id key not found in ns table\n";
+                throw std::runtime_error("Error in DataManager::setInfluxDBSensors call: "
+                "sensor_ or sensor_id key not found in ns table\n");
+            }
+
+            // Cache the sensor-name and sensor-id pairs
+            sensor_name_to_id_[element.at("sensor_")] = element.at("_value");
+            sensor_id_to_name_[element.at("_value")] = element.at("sensor_");
+
         }
-
-        // Cache the sensor-name and sensor-id pairs
-        sensor_name_to_id_[element.at("sensor_")] = element.at("_value");
-        sensor_id_to_name_[element.at("_value")] = element.at("sensor_");
-
     }
 
-    // Lock the buffer mutex
+    // Lock the buffer and sensor_name_to_id_ mutexes
     {
-        std::lock_guard<std::mutex> lock(buffer_mutex_);
+        std::lock_guard<std::mutex> lock1(buffer_mutex_);
+        std::lock_guard<std::mutex> lock2(sensor_name_to_id_mutex_);
 
         // Add the sensors to the DataManager
         for(const auto& [sensor_name, sensor_id] : sensor_name_to_id_) {

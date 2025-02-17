@@ -63,5 +63,7 @@ private:
     InfluxDatabase influxdb_;
     std::map<std::string, std::string> sensor_name_to_id_;
     std::map<std::string, std::string> sensor_id_to_name_;
+    std::mutex sensor_name_to_id_mutex_;
+    std::mutex sensor_id_to_name_mutex_;
 
 };
