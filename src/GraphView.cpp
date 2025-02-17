@@ -442,10 +442,18 @@ void GraphView::renderLoadWindowPopup() {
         // Open the file dialog
         FileDialog::file_dialog_open = true;
         FileDialog::file_dialog_open_type = FileDialog::FileDialogType::OpenFile;
+
+        // Get the load window state
+        LoadWindowState& load_window_state = viewModel_.getLoadWindowState();
+        load_window_state.reset();
+        load_window_state.open_file_diag = true;
     }
 
-    // Render the file dialog if it is open
-    if (FileDialog::file_dialog_open) {
+    // Render the file dialog if user has selected to open a file
+    if (viewModel_.getLoadWindowState().open_file_diag) {
+        // Get the load window state
+        LoadWindowState& load_window_state = viewModel_.getLoadWindowState();
+
         // Create file dialog state
         auto& load_window_file_dialog_state = viewModel_.getLoadWindowFileDialogState();
 
@@ -476,6 +484,8 @@ void GraphView::renderLoadWindowPopup() {
                 load_window_file_dialog_state.current_folder.c_str(),
                 sizeof(load_window_file_dialog_state.path_buffer));
 
+            // Reset the open file dialog state
+            load_window_state.open_file_diag = false;
         }
 
 
