@@ -32,6 +32,9 @@ public:
     // ==================================================
     // InfluxDB connection
     // ==================================================
+    void setInfluxDBSensors();
+
+
 
 
 private:
@@ -58,5 +61,7 @@ private:
     // InfluxDB connection
     // ==================================================
     InfluxDatabase influxdb_;
+    std::map<std::string, std::string> sensor_name_to_id_;
+    std::map<std::string, std::string> sensor_id_to_name_;
 
 };

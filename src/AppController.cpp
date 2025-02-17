@@ -8,6 +8,9 @@ AppController::AppController()
     dataManager.addSensor("sensor_1"); // for testing
     dataManager.addSensor("sensor_2"); // for testing
 
+    // Add the sensors from the InfluxDB
+    dataManager.setInfluxDBSensors();
+
     // Start background updates on the DataManager
     dataManager.startBackgroundUpdates();
 

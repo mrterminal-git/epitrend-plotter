@@ -193,3 +193,59 @@ void DataManager::setSensorRange(const std::string& sensor_id, int plot_id, Time
     std::lock_guard<std::mutex> lock(sensor_ranges_mutex_);
     sensor_ranges_[sensor_id][plot_id] = {start, end};
 }
+
+
+
+
+// ==================================================
+// InfluxDB connection
+// ==================================================
+void DataManager::setInfluxDBSensors() {
+    // Prepare name-series (ns) query read all data statement
+    struct ns_read_all_struct {
+        std::string bucket;
+        std::string read_query;
+        void set_read_query(){read_query = "from(bucket: \"" + bucket + "\") "
+            "|> range(start: -50y, stop: 100y)"
+            "|> filter(fn: (r) => r[\"_measurement\"] == \"ns\")";
+        }
+    };
+
+    // Prepare the query structs. REPLACE WITH CONFIG FILE
+    ns_read_all_struct ns_read_all_epitrend = {.bucket = "EPITREND"};
+    ns_read_all_epitrend.set_read_query();
+
+    // Read the InfluxDB "ns" table for all data
+    std::string response;
+    response = "";
+    influxdb_.queryData2(response, ns_read_all_epitrend.read_query);
+
+    // Parse the response
+    std::vector<std::unordered_map<std::string, std::string>> parsed_response = influxdb_.parseQueryResponse(response);
+
+    // Add the sensors to the DataManager
+    for(const auto& element : parsed_response) {
+        // Check sensor_ and sensor_id_ keys exist (ns table should contain these keys)
+        if(element.find("sensor_") == element.end() || element.find("_value") == element.end()) {
+            std::cerr << "Error in InfluxDatabase::copyEpitrendToBucket2 call: "
+            "sensor_ or sensor_id key not found in ns table\n";
+            throw std::runtime_error("Error in DataManager::setInfluxDBSensors call: "
+            "sensor_ or sensor_id key not found in ns table\n");
+        }
+
+        // Cache the sensor-name and sensor-id pairs
+        sensor_name_to_id_[element.at("sensor_")] = element.at("_value");
+        sensor_id_to_name_[element.at("_value")] = element.at("sensor_");
+
+    }
+
+    // Lock the buffer mutex
+    {
+        std::lock_guard<std::mutex> lock(buffer_mutex_);
+
+        // Add the sensors to the DataManager
+        for(const auto& [sensor_name, sensor_id] : sensor_name_to_id_) {
+            buffers_.emplace(sensor_name, TimeSeriesBuffer<Timestamp, Value>());
+        }
+    }
+}
