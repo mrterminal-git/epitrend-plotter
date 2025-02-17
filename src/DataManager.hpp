@@ -3,6 +3,7 @@
 #include <string>
 
 #include "TimeSeriesBuffer.hpp"
+#include "InfluxDatabase.hpp"
 
 class DataManager {
 public:
@@ -26,6 +27,13 @@ public:
     void setSensorRange(const std::string& sensor_id, int plot_id, Timestamp start, Timestamp end);
 
 
+
+
+    // ==================================================
+    // InfluxDB connection
+    // ==================================================
+
+
 private:
     std::unordered_map<std::string, TimeSeriesBuffer<Timestamp, Value>> buffers_;
     std::unordered_map<std::string, std::unordered_map<int, std::pair<Timestamp, Timestamp>>> sensor_ranges_; // sensor -> plot_id -> range
@@ -42,5 +50,13 @@ private:
     std::pair<Timestamp, Timestamp> mergeRanges(
         const std::unordered_map<int, std::pair<Timestamp, Timestamp>>& ranges
         );
+
+
+
+
+    // ==================================================
+    // InfluxDB connection
+    // ==================================================
+    InfluxDatabase influxdb_;
 
 };

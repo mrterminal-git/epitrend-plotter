@@ -3,7 +3,33 @@
 #include <iomanip> // FOR TESTING
 
 // Constructor
-DataManager::DataManager() : background_thread_running_(false) {}
+DataManager::DataManager() : background_thread_running_(false) {
+    // Hard-coding the influxdb connection details for now. REPLACE WITH CONFIG FILE
+    const std::string& org = "au-mbe-eng";
+    const std::string& host = "127.0.0.1";
+    const int port = 8086;
+    const std::string& epitrend_bucket = "EPITREND";
+    const std::string& user = "";
+    const std::string& password = "";
+    const std::string& precision = "ms";
+    const std::string& token = "142ce8c4d871f807e6f8c3c264afcb5588d7c82ecaad305d8fde09f3f5dec642";
+
+    // Initialize the InfluxDB connection
+    influxdb_ = InfluxDatabase(host, port, org, epitrend_bucket, user, password, precision, token, true);
+
+    // Check connection for a maximum of 10 seconds
+    for (int i = 0; i < 10; i++) {
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+        if (influxdb_.checkConnection(false)) {
+            break;
+        } else if (i == 9) {
+            // If connection fails after 10 seconds, stop the program
+            std::cerr << "Failed to connect to InfluxDB" << "\n";
+            std::exit(1);
+        }
+    }
+
+}
 
 // Destructor
 DataManager::~DataManager() {
