@@ -39,6 +39,7 @@ find_package(imgui CONFIG REQUIRED)
 find_package(implot CONFIG REQUIRED)
 find_package(OpenGL REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
+find_package(CURL CONFIG REQUIRED)
 
 add_executable(${PROJECT_NAME}
     src/main.cpp
@@ -50,6 +51,10 @@ add_executable(${PROJECT_NAME}
     src/RenderablePlot.cpp
     src/WindowPlots.cpp
     src/WindowPlotsSaveLoad.cpp
+    src/Config.cpp
+    src/EpitrendBinaryData.cpp
+    src/InfluxDatabase.cpp
+    src/RGAData.cpp
 )
 
 add_compile_definitions(NOMINMAX)
@@ -67,3 +72,4 @@ target_link_libraries(${PROJECT_NAME} PRIVATE OpenGL::GL)
 target_link_libraries(${PROJECT_NAME} PRIVATE imgui::imgui)
 target_link_libraries(${PROJECT_NAME} PRIVATE implot::implot)
 target_link_libraries(${PROJECT_NAME} PRIVATE nlohmann_json::nlohmann_json)
+target_link_libraries(${PROJECT_NAME} PRIVATE CURL::libcurl)
