@@ -23,9 +23,9 @@ private:
 class InfluxDatabase {
 public:
     // Constructors and destructors
-    InfluxDatabase(const std::string& host, int port, 
-                   const std::string& org, const std::string& bucket, 
-                   const std::string& user = "", const std::string& password = "", 
+    InfluxDatabase(const std::string& host, int port,
+                   const std::string& org, const std::string& bucket,
+                   const std::string& user = "", const std::string& password = "",
                    const std::string& precision = "ms", const std::string& token = "",
                    bool verbose = false);
     InfluxDatabase();
@@ -33,7 +33,7 @@ public:
 
     // Connection and disconnections
     bool connect(const std::string& host, int port,
-                const std::string& org, const std::string& bucket, 
+                const std::string& org, const std::string& bucket,
                 const std::string& user = "", const std::string& password = "",
                 const std::string& precision = "ms", const std::string& token = "",
                 bool verbose = false);
@@ -45,7 +45,7 @@ public:
     // Writing to bucket
     bool writeData(const std::string& measurement, const std::string& tags,
                    const std::string& fields, long long timestamp = 0, bool verbose = false);
-    
+
     // Querying data
     std::string queryData(const std::string& query, bool verbose = false);
     bool queryData2(std::string& response, const std::string& query);
@@ -81,9 +81,9 @@ private:
     // Internal using of splitting by delimiter
     static std::vector<std::string> split(std::string s, const std::string& delimiter);
 
-    // Internal trim function 
+    // Internal trim function
     static std::string trimInternal(const std::string& str);
-    
+
     // Internal function to escape special characters for influxDB
     static std::string escapeSpecialChars(const std::string& str);
 

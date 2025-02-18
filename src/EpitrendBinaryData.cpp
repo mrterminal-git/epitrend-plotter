@@ -1,10 +1,10 @@
 #include "EpitrendBinaryData.hpp"
 
 // Setters
-void EpitrendBinaryData::addDataItem( std::string name, 
-    std::pair<double,double> time_series, 
+void EpitrendBinaryData::addDataItem( std::string name,
+    std::pair<double,double> time_series,
     bool verbose
-) { 
+) {
     // Check if name already exists in map
     if (allTimeSeriesData.find(name) == allTimeSeriesData.end()) {
         // Key does not exist so add name and time-series data
@@ -24,11 +24,11 @@ void EpitrendBinaryData::addDataItem( std::string name,
             // Give user a warning
             if (verbose) {
                 std::cerr << std::setprecision(15) << "Warning in EpitrendBinaryData::addDataItem call: time-series data " << time_series.first << " already exists for " << name << ".\n";
-                
+
             }
-        
+
         }
-    
+
     }
 
     // Increment byteSize of object
@@ -37,7 +37,7 @@ void EpitrendBinaryData::addDataItem( std::string name,
 
 // Getters
 std::unordered_map<std::string, std::unordered_map<double,double>> EpitrendBinaryData::getAllTimeSeriesData() {
-    return allTimeSeriesData; 
+    return allTimeSeriesData;
 }
 int EpitrendBinaryData::getByteSize() { return byteSize;}
 
@@ -45,22 +45,22 @@ int EpitrendBinaryData::getByteSize() { return byteSize;}
 void EpitrendBinaryData::printAllTimeSeriesData(){
         for(auto element : allTimeSeriesData){
             std::cout << element.first << "\n";
-            
+
             for(auto inner_element : element.second){
                 std::cout << "  " << inner_element.first << "," << inner_element.second << "\n";
             }
         }
 }
 
-void EpitrendBinaryData::printFileAllTimeSeriesData(const std::string& filename){
-    std::string fullpath = Config::getOutputDir() + filename;
+void EpitrendBinaryData::printFileAllTimeSeriesData(const Config& config, const std::string& filename){
+    std::string fullpath = config.getOutputDir() + filename;
     std::ofstream outFile(fullpath);
     for(auto element : allTimeSeriesData) {
         outFile << element.first << "\n";
-        
+
         for(auto inner_element : element.second) {
             outFile << std::setprecision(15) << inner_element.first << "," << inner_element.second << "\n";
-        
+
         }
 
     }
@@ -93,5 +93,5 @@ EpitrendBinaryData EpitrendBinaryData::difference(EpitrendBinaryData& other) con
     }
 
     return diff_data;
-    
+
 }

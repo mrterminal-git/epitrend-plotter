@@ -4,15 +4,17 @@
 
 // Constructor
 DataManager::DataManager() : background_thread_running_(false) {
-    // Hard-coding the influxdb connection details for now. REPLACE WITH CONFIG FILE
-    const std::string& org = "au-mbe-eng";
-    const std::string& host = "127.0.0.1";
-    const int port = 8086;
-    const std::string& epitrend_bucket = "ALL";
-    const std::string& user = "";
-    const std::string& password = "";
-    const std::string& precision = "ms";
-    const std::string& token = "142ce8c4d871f807e6f8c3c264afcb5588d7c82ecaad305d8fde09f3f5dec642";
+    const Config config_("config.txt");
+
+    // Get the InfluxDB connection parameters
+    const std::string host = config_.getHost();
+    const int port = config_.getPort();
+    const std::string org = config_.getOrg();
+    const std::string epitrend_bucket = config_.getEpitrendBucket();
+    const std::string user = config_.getUser();
+    const std::string password = config_.getPassword();
+    const std::string precision = config_.getPrecision();
+    const std::string token = config_.getToken();
 
     // Initialize the InfluxDB connection
     influxdb_ = InfluxDatabase(host, port, org, epitrend_bucket, user, password, precision, token, true);

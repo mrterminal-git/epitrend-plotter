@@ -4,6 +4,7 @@
 
 #include "TimeSeriesBuffer.hpp"
 #include "InfluxDatabase.hpp"
+#include "Config.hpp"
 
 class DataManager {
 public:
@@ -66,4 +67,11 @@ private:
     std::mutex sensor_name_to_id_mutex_;
     std::mutex sensor_id_to_name_mutex_;
 
+
+
+
+    // ==================================================
+    // Configuration file parsing
+    // ==================================================
+    // Config config_;
 };
