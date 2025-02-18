@@ -54,7 +54,7 @@ std::pair<std::vector<DataManager::Timestamp>, std::vector<DataManager::Value>> 
         return {timestamps, values};
     }
 
-    int step_size = static_cast<int>(range / num_pixels) * 4;
+    int step_size = static_cast<int>(range / num_pixels / 10);
     if (step_size <= 0) {
         step_size = 1;
     }

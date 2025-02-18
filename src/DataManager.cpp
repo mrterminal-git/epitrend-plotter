@@ -8,7 +8,7 @@ DataManager::DataManager() : background_thread_running_(false) {
     const std::string& org = "au-mbe-eng";
     const std::string& host = "127.0.0.1";
     const int port = 8086;
-    const std::string& epitrend_bucket = "EPITREND";
+    const std::string& epitrend_bucket = "ALL";
     const std::string& user = "";
     const std::string& password = "";
     const std::string& precision = "ms";
@@ -225,7 +225,7 @@ void DataManager::preloadData(std::string sensor_id, Timestamp start, Timestamp 
         {
             std::lock_guard<std::mutex> lock(sensor_name_to_id_mutex_);
             ts_read = {
-                    .bucket = "EPITREND", // REPLACE WITH CONFIG FILE
+                    .bucket = "ALL", // REPLACE WITH CONFIG FILE
                     .sensor_id = sensor_name_to_id_[sensor_id],
                     .timestamp_start = start_time.influx_timestamp,
                     .timestamp_end = end_time.influx_timestamp
@@ -310,7 +310,7 @@ void DataManager::setInfluxDBSensors() {
     };
 
     // Prepare the query structs. REPLACE WITH CONFIG FILE
-    ns_read_all_struct ns_read_all_epitrend = {.bucket = "EPITREND"};
+    ns_read_all_struct ns_read_all_epitrend = {.bucket = "ALL"};
     ns_read_all_epitrend.set_read_query();
 
     // Read the InfluxDB "ns" table for all data
@@ -330,7 +330,7 @@ void DataManager::setInfluxDBSensors() {
         for(const auto& element : parsed_response) {
             // Check sensor_ and sensor_id_ keys exist (ns table should contain these keys)
             if(element.find("sensor_") == element.end() || element.find("_value") == element.end()) {
-                std::cerr << "Error in InfluxDatabase::copyEpitrendToBucket2 call: "
+                std::cerr << "Error in DataManager::setInfluxDBSensors call: "
                 "sensor_ or sensor_id key not found in ns table\n";
                 throw std::runtime_error("Error in DataManager::setInfluxDBSensors call: "
                 "sensor_ or sensor_id key not found in ns table\n");

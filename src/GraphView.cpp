@@ -835,7 +835,8 @@ void GraphView::renderAllPlotsInWindow(WindowPlots* window) {
                 ImAxis plot_axis = renderable_plot.getYAxisForSensor(series_label);
                 ImPlot::SetupAxis(plot_axis, nullptr, ImPlotAxisFlags_AuxDefault);
                 if (renderable_plot.getYAxisPropertiesUserSetRange(plot_axis)) {
-                    std::cout << "Setting axis limits for " << series_label << " to " << renderable_plot.getYAxisPropertiesMin(plot_axis) << " - " << renderable_plot.getYAxisPropertiesMax(plot_axis) << "\n";
+                    std::cout << "Setting axis limits for " << series_label << " to " << renderable_plot.getYAxisPropertiesMin(plot_axis)
+                        << " - " << renderable_plot.getYAxisPropertiesMax(plot_axis) << "\n";
                     ImPlot::SetupAxisLimits(plot_axis, renderable_plot.getYAxisPropertiesMin(plot_axis),
                         renderable_plot.getYAxisPropertiesMax(plot_axis), ImGuiCond_Always);
                     renderable_plot.setYAxisPropertiesUserSetRange(plot_axis, false);
