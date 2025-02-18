@@ -157,7 +157,7 @@ void DataManager::addSensorData(const std::string& sensor_id, const std::vector<
 }
 
 /// Preload data outside the existing range for a specific machine. CURRENTLY IN TESTING
-void DataManager::preloadData(const std::string& sensor_id, Timestamp start, Timestamp end) {
+void DataManager::preloadData(std::string sensor_id, Timestamp start, Timestamp end) {
     // Simulate data loading (replace with actual data loading logic)
     std::vector<std::pair<Timestamp, Value>> new_data;
     if (sensor_id == "sensor_1") {
@@ -252,6 +252,9 @@ void DataManager::preloadData(const std::string& sensor_id, Timestamp start, Tim
             ss >> std::get_time(&tm, "%Y-%m-%dT%H:%M:%S.%fZ");
             std::time_t time = std::mktime(&tm);
 
+            // Convert from UTC to AEST time
+            time += 10 * 3600; // 10 hours
+
             // Append time and value to the data vector
             new_data.push_back(std::make_pair(time, std::stod(element.at("_value"))));
         }
@@ -262,6 +265,8 @@ void DataManager::preloadData(const std::string& sensor_id, Timestamp start, Tim
     std::string sensor_id_copy = sensor_id;
 
     std::cout << "Preloaded data for sensor: " << sensor_id_copy << "\n";
+    // Set precision for output
+    std::cout << std::fixed << std::setprecision(10);
     std::cout << "Start: " << start << ", End: " << end << "\n";
 
     addSensorData(sensor_id_copy, new_data);

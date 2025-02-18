@@ -47,7 +47,7 @@ private:
     std::mutex buffer_mutex_;
     std::mutex sensor_ranges_mutex_;
 
-    void preloadData(const std::string& sensor_id, Timestamp start, Timestamp end);
+    void preloadData(std::string sensor_id, Timestamp start, Timestamp end);
     void backgroundUpdateTask();
 
     std::pair<Timestamp, Timestamp> mergeRanges(
