@@ -6,6 +6,15 @@
 #include <condition_variable>
 #include <functional>
 #include <map>
+#include <iterator>
+
+#include "lttb.hpp"
+
+// For LTTB downsampling
+struct TimeSeriesPoint {
+    double timestamp;
+    double value;
+};
 
 template<typename Timestamp, typename Value>
 class TimeSeriesBuffer {
@@ -29,8 +38,10 @@ public:
 
 private:
     void cleanup();
+    void enforceSizeLimit();
 
     std::map<Timestamp, Value> data_;
+    int max_data_points_{655360}; // Takes 10MB of memory for double precision
     Timestamp current_start_{}, current_end_{};
     double preload_factor_;
     std::mutex data_mutex_;

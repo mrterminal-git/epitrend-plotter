@@ -1,4 +1,5 @@
 #include "TimeSeriesBuffer.hpp"
+#include <iostream>
 #include <algorithm>
 #include <cmath>
 
@@ -93,6 +94,7 @@ void TimeSeriesBuffer<Timestamp, Value>::addData(const std::vector<std::pair<Tim
         data_.insert(new_data.begin(), new_data.end());
     }
     cleanup();
+    enforceSizeLimit();
 }
 
 template<typename Timestamp, typename Value>
@@ -128,6 +130,42 @@ void TimeSeriesBuffer<Timestamp, Value>::cleanup() {
     if (it != data_.end()) {
         data_.erase(it, data_.end());
     }
+}
+
+template<typename Timestamp, typename Value>
+void TimeSeriesBuffer<Timestamp, Value>::enforceSizeLimit() {
+    // Check if the data size exceeds the maximum limit
+    if (data_.size() <= max_data_points_) {
+        return;
+    }
+
+    // DEBUG
+    std::cout << "-----------------------------Enforcing size limit-----------------------------\n";
+
+    // Convert the map to a vector of TimeSeriesPoint
+    std::vector<TimeSeriesPoint> points;
+    points.reserve(data_.size());
+    for (const auto& entry : data_) {
+        points.push_back({static_cast<double>(entry.first), static_cast<double>(entry.second)});
+    }
+
+    // Prepare a vector to hold the downsampled data
+    std::vector<TimeSeriesPoint> downsampled_points;
+    downsampled_points.reserve(max_data_points_);
+
+    // Apply the LTTB algorithm
+    LargestTriangleThreeBuckets<TimeSeriesPoint, double, &TimeSeriesPoint::timestamp, &TimeSeriesPoint::value>::Downsample(
+        points.begin(), points.size(), std::back_inserter(downsampled_points), max_data_points_);
+
+    // Convert the downsampled vector back to a map
+    std::map<Timestamp, Value> downsampled_data;
+    for (const auto& point : downsampled_points) {
+        downsampled_data[static_cast<Timestamp>(point.timestamp)] = static_cast<Value>(point.value);
+    }
+
+    // Lock the data mutex and replace the data with the downsampled data
+    std::lock_guard<std::mutex> lock(data_mutex_);
+    data_ = std::move(downsampled_data);
 }
 
 template class TimeSeriesBuffer<double, double>;
