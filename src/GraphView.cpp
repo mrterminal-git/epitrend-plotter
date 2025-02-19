@@ -887,20 +887,17 @@ void GraphView::renderAllPlotsInWindow(WindowPlots* window) {
                 ImPlot::PlotStairs(series_label.c_str(), xs.data(), ys.data(), xs.size());
             }
 
-            // Callback plot range if plot range changes
-            // ImPlotRect limits = ImPlot::GetPlotLimits();
-            if (limits.X.Min != renderable_plot.getPlotRange().first || limits.X.Max != renderable_plot.getPlotRange().second) {
-                renderable_plot.notifyRangeChange(limits.X.Min, limits.X.Max);
+            // Callback plot range
+            renderable_plot.notifyRangeChange(limits.X.Min, limits.X.Max);
 
-                // Update the plot range
-                renderable_plot.setPlotRange(limits.X.Min, limits.X.Max);
+            // Update the plot range
+            renderable_plot.setPlotRange(limits.X.Min, limits.X.Max);
 
-                // Callback to update the range in the data manager
-                if (update_range_callback_) {
-                    // Update the range for all sensors in the plot
-                    for (const auto& sensor : sensors) {
-                        update_range_callback_(sensor, renderable_plot.getPlotId(), limits.X.Min, limits.X.Max);
-                    }
+            // Callback to update the range in the data manager
+            if (update_range_callback_) {
+                // Update the range for all sensors in the plot
+                for (const auto& sensor : sensors) {
+                    update_range_callback_(sensor, renderable_plot.getPlotId(), limits.X.Min, limits.X.Max);
                 }
             }
 
