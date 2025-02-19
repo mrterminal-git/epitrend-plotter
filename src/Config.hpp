@@ -25,6 +25,7 @@ public:
     std::string getPassword() const;
     std::string getPrecision() const;
     std::string getToken() const;
+    void debugPrintconfigMap() const;
 
 private:
     void loadConfig(const std::string& configFilePath);

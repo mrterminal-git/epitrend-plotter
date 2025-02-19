@@ -1,4 +1,5 @@
 #include "Config.hpp"
+#include <filesystem>
 
 Config::Config(const std::string& configFilePath) {
     loadConfig(configFilePath);
@@ -41,10 +42,33 @@ std::string removeNonVisible(const std::string& str) {
 }
 
 void Config::loadConfig(const std::string& configFilePath) {
-    std::ifstream configFile(configFilePath);
+    // // DEBUG Print the current directory
+    // std::cout << "Current directory: " << std::filesystem::current_path() << "\n";
+
+    // // DEBUG Print all the files in the current directory
+    // for (const auto& entry : std::filesystem::directory_iterator(".")) {
+    //     std::cout << entry.path() << "\n";
+    // }
+
+    // // DEBUG Check if configFilePath file exists using filesystem
+    // if (!std::filesystem::exists(configFilePath)) {
+    //     std::cout << "Config file does not exist: " + configFilePath << "\n";
+    // } else {
+    //     std::cout << "Config file exists: " + configFilePath << "\n";
+    // }
+
+    std::fstream configFile(configFilePath);
+    // Wait for the file to be opened
+    int attempts = 0;
+    while (!configFile.is_open() && attempts < 10) {
+        configFile.open(configFilePath);
+        attempts++;
+    }
     if (!configFile.is_open()) {
-        // throw std::runtime_error("Could not open config file: " + configFilePath);
-        exit(1);
+        // Stop the program with an exception
+        std::cerr << "Could not open config file: " + configFilePath << "\n";
+        std::cerr << "Current directory: " << std::filesystem::current_path() << "\n";
+        throw std::runtime_error("Could not open config file: " + configFilePath);
     }
 
     std::string line;
@@ -59,12 +83,13 @@ void Config::loadConfig(const std::string& configFilePath) {
         }
     }
 
-    // Print the config map
-    for (const auto& element : configMap) {
-        // Explicity print whitespace and newline characters as they are not visible
-        configMap[element.first] = removeNonVisible(element.second);
-        std::cout << element.first << " = " << makeVisible(element.second) << "\n";
-    }
+    // DEBUG Print the config map
+    // std::cout << "Print configMap: \n";
+    // for (const auto& element : configMap) {
+    //     // Explicity print whitespace and newline characters as they are not visible
+    //     configMap[element.first] = removeNonVisible(element.second);
+    //     std::cout << element.first << " = " << makeVisible(element.second) << "\n";
+    // }
 
 
     configFile.close();
@@ -120,4 +145,15 @@ std::string Config::getPrecision() const {
 
 std::string Config::getToken() const {
     return configMap.at("TOKEN");
+}
+
+void Config::debugPrintconfigMap() const {
+    std::cout << "KEYS: \n";
+    for (const auto& element : configMap) {
+        std::cout << makeVisible(element.first) << "\n";
+    }
+    std::cout << "VALUES: \n";
+    for (const auto& element : configMap) {
+        std::cout << makeVisible(element.second) << "\n";
+    }
 }

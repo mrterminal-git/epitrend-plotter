@@ -2,10 +2,9 @@
 #include <iostream> // FOR TESTING
 #include <iomanip> // FOR TESTING
 
-// Constructor
-DataManager::DataManager() : background_thread_running_(false) {
-    const Config config_("config.txt");
 
+// Constructor
+DataManager::DataManager() : background_thread_running_(false), config_("config.txt") {
     // Get the InfluxDB connection parameters
     const std::string host = config_.getHost();
     const int port = config_.getPort();
