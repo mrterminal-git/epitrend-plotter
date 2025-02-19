@@ -82,7 +82,7 @@ void DataManager::backgroundUpdateTask() {
                 }
             }
         }
-        std::this_thread::sleep_for(std::chrono::seconds(1)); // Update every second
+        std::this_thread::sleep_for(std::chrono::milliseconds(50)); // Update every half-second
     }
 }
 
