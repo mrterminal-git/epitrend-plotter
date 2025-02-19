@@ -182,10 +182,12 @@ void DataManager::preloadData(std::string sensor_id, Timestamp start, Timestamp 
             std::string timestamp_start;
             std::string timestamp_end;
             std::string read_query;
+            std::string aggregate_period_ms;
             void set_read_query(){read_query = "from(bucket: \"" + bucket + "\") "
                 "|> range(start: " + timestamp_start + ", stop: " + timestamp_end + ")"
                 "|> filter(fn: (r) => r[\"_measurement\"] == \"ts\")"
-                "|> filter(fn: (r) => r[\"sensor_id_\"] == \"" + sensor_id + "\")";
+                "|> filter(fn: (r) => r[\"sensor_id_\"] == \"" + sensor_id + "\")"
+                "|> aggregateWindow(every: " + aggregate_period_ms + "ms, fn: max, createEmpty: false)";
             }
         };
 
@@ -229,7 +231,8 @@ void DataManager::preloadData(std::string sensor_id, Timestamp start, Timestamp 
                     .bucket = "ALL", // REPLACE WITH CONFIG FILE
                     .sensor_id = sensor_name_to_id_[sensor_id],
                     .timestamp_start = start_time.influx_timestamp,
-                    .timestamp_end = end_time.influx_timestamp
+                    .timestamp_end = end_time.influx_timestamp,
+                    .aggregate_period_ms = std::to_string(static_cast<int>(std::ceil((end - start) * 0.10)))
             };
         }
         ts_read.set_read_query();
