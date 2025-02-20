@@ -232,7 +232,7 @@ void DataManager::preloadData(std::string sensor_id, Timestamp start, Timestamp 
                     .sensor_id = sensor_name_to_id_[sensor_id],
                     .timestamp_start = start_time.influx_timestamp,
                     .timestamp_end = end_time.influx_timestamp,
-                    .aggregate_period_ms = std::to_string(static_cast<int>(std::ceil((end - start) * 0.10)))
+                    .aggregate_period_ms = std::to_string(static_cast<int>(std::ceil((end - start) * 0.25)))
             };
         }
         ts_read.set_read_query();
