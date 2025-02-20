@@ -247,9 +247,21 @@ void DataManager::preloadData(std::string sensor_id, Timestamp start, Timestamp 
         std::vector<std::unordered_map<std::string,std::string>> parsed_response =
             influxdb_.parseQueryResponse(response);
 
+        // Check if parsed_response is empty
+        if (parsed_response.empty()) {
+            std::cout << "Parsed response is empty----------!!!-------------\n";
+            return;
+        } else {
+            std::cout << "Size of parsed response: " << parsed_response.size() << "\n";
+        }
+
         // Extract the data from the parsed response
         for (const auto& element: parsed_response) {
             // Convert the time string to Unix time double
+            if (element.find("_time") == element.end() || element.find("_value") == element.end()) {
+                std::cout << "No _time or _value key found in parsed query----------!!!-------------\n";
+                break;
+            }
             std::string time_str = element.at("_time");
             std::tm tm = {};
             std::istringstream ss(time_str);
