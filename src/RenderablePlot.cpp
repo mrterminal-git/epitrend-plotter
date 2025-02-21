@@ -67,6 +67,14 @@ void RenderablePlot::setRangeCallback(const RangeCallback& callback) {
 
 void RenderablePlot::setPlotId(long long id) { plot_id_ = id; }
 
+void RenderablePlot::setRealTimeRangeHour(int hour) {
+    real_time_plot_range_hour_ = hour;
+}
+
+void RenderablePlot::setRealTimeRangeMinute(int minute) {
+    real_time_plot_range_minute_ = minute;
+}
+
 const std::string& RenderablePlot::getLabel() const {
     return label_;
 }
@@ -118,7 +126,13 @@ const std::vector<std::string> RenderablePlot::getAllSensors() const {
     return sensors;
 }
 
+int& RenderablePlot::getRealTimeRangeHour() {
+    return real_time_plot_range_hour_;
+}
 
+int& RenderablePlot::getRealTimeRangeMinute() {
+    return real_time_plot_range_minute_;
+}
 
 
 // ============================================

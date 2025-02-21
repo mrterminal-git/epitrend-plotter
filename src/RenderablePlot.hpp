@@ -41,6 +41,8 @@ public:
     void setPlotRange(Timestamp start, Timestamp end);
     void setRealTime(bool real_time);
     void setPlotId(long long id);
+    void setRealTimeRangeHour(int hour);
+    void setRealTimeRangeMinute(int day);
 
     // Getters
     const std::string& getLabel() const;
@@ -49,6 +51,8 @@ public:
     bool isRealTime() const;
     long long getPlotId() const;
     const std::vector<std::string> getAllSensors() const;
+    int& getRealTimeRangeHour();
+    int& getRealTimeRangeMinute();
 
     // Print object
     void print() const;
@@ -176,6 +180,8 @@ private:
     std::map<std::string, DataSeries> data_; // Data for each sensor and corresponding time-series
     RangeCallback range_callback_; // Callback for range changes
     long long plot_id_;
+    int real_time_plot_range_hour_ = 0; // Real-time plot range in hours
+    int real_time_plot_range_minute_ = 15; // Real-time plot range in minutes
 
     // ============================================
     // Data Management
