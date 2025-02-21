@@ -801,6 +801,13 @@ void GraphView::renderAllPlotsInWindow(WindowPlots* window) {
             std::time_t current_time = std::time(nullptr) + 10 * 3600; // Brisbane time
             std::time_t max_data_time_range = 1000;
 
+            // Get real-time plot range
+            int real_time_hour_axis = renderable_plot.getRealTimeRangeHour();
+            int real_time_minute_axis = renderable_plot.getRealTimeRangeMinute();
+
+            // Calculate the max data time range
+            max_data_time_range = real_time_hour_axis * 3600 + real_time_minute_axis * 60;
+
             plot_start = current_time - max_data_time_range;
             plot_end = current_time;
 
@@ -820,6 +827,38 @@ void GraphView::renderAllPlotsInWindow(WindowPlots* window) {
             renderable_plot.setRealTime(is_real_time);
         }
         ImGui::SameLine();
+
+        // Create input boxes for real-time plot range
+        int real_time_hour = renderable_plot.getRealTimeRangeHour();
+        int real_time_minute = renderable_plot.getRealTimeRangeMinute();
+        float width = ImGui::CalcTextSize("000000000").x + ImGui::GetStyle().FramePadding.x * 2.0f;
+        ImGui::PushItemWidth(width);
+        ImGui::InputInt(
+            ("hours###" + renderable_plot.getLabel() + window->getLabel() + "H")
+                .c_str(),
+            &real_time_hour);
+        ImGui::PopItemWidth();
+        ImGui::SameLine();
+        ImGui::PushItemWidth(width);
+        ImGui::InputInt(
+            ("minutes###" + renderable_plot.getLabel() + window->getLabel() + "M")
+                .c_str(),
+            &real_time_minute);
+        ImGui::PopItemWidth();
+        ImGui::SameLine();
+        // Check if the real-time range is within bounds
+        if (real_time_hour < 0) {
+            real_time_hour = 0;
+        } else if (real_time_hour > 48) {
+            real_time_hour = 48;
+        }
+        if (real_time_minute < 1) {
+            real_time_minute = 1;
+        } else if (real_time_minute > 59) {
+            real_time_minute = 59;
+        }
+        renderable_plot.setRealTimeRangeHour(real_time_hour);
+        renderable_plot.setRealTimeRangeMinute(real_time_minute);
 
         // Create a button to open the plot options popup
         renderPlotOptions(("###" + renderable_plot.getLabel()), renderable_plot);
