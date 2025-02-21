@@ -51,6 +51,7 @@ void end_cycle(GLFWwindow *const window)
     glfwSwapBuffers(window);
 }
 
+//int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 int main(int, char **)
 {
     // Setup window
