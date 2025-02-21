@@ -559,21 +559,52 @@ void SetPlotRangeState(PlotOptionsPopupState& plot_option_pop_up_state) {
 
 // Handle submit action for plot options popup
 void ActionSubmitPlotOptionsPopup(RenderablePlot& renderable_plot, PlotOptionsPopupState& plot_options_popup_state) {
-    // Add all the selected sensors to their respective Y-axis
     renderable_plot.clearYAxes();
-    std::map<std::string, RenderablePlot::DataSeries> temp_data_series;
+    int color_index = 0;  // For rotating colours
 
+    // Add all the selected sensors to their respective Y-axis
+    std::map<std::string, RenderablePlot::DataSeries> temp_data_series;
     for (const auto& Y1_sensor : plot_options_popup_state.sensors_in_Y1_list_box) {
         renderable_plot.addYAxisForSensor(Y1_sensor, ImAxis_Y1);
         temp_data_series[Y1_sensor] = RenderablePlot::DataSeries();
+
+        // Check if plotline properties exist for the sensor and add if not
+        if (!renderable_plot.hasPlotLineProperties(Y1_sensor)) {
+            renderable_plot.addPlotLineProperties(Y1_sensor, RenderablePlot::PlotLineProperties());
+
+            // Set the colour of the plotline (rotate through colour pallette)
+            ImVec4 color = ImPlot::GetColormapColor(color_index);
+            renderable_plot.setPlotLinePropertiesColour(Y1_sensor, color);
+            color_index = (color_index + 1) % 10;
+        }
     }
     for (const auto& Y2_sensor : plot_options_popup_state.sensors_in_Y2_list_box) {
         renderable_plot.addYAxisForSensor(Y2_sensor, ImAxis_Y2);
         temp_data_series[Y2_sensor] = RenderablePlot::DataSeries();
+
+        // Check if plotline properties exist for the sensor and add if not
+        if (!renderable_plot.hasPlotLineProperties(Y2_sensor)) {
+            renderable_plot.addPlotLineProperties(Y2_sensor, RenderablePlot::PlotLineProperties());
+
+            // Set the colour of the plotline (rotate through colour pallette)
+            ImVec4 color = ImPlot::GetColormapColor(color_index);
+            renderable_plot.setPlotLinePropertiesColour(Y2_sensor, color);
+            color_index = (color_index + 1) % 10;
+        }
     }
     for (const auto& Y3_sensor : plot_options_popup_state.sensors_in_Y3_list_box) {
         renderable_plot.addYAxisForSensor(Y3_sensor, ImAxis_Y3);
         temp_data_series[Y3_sensor] = RenderablePlot::DataSeries();
+
+        // Check if plotline properties exist for the sensor and add if not
+        if (!renderable_plot.hasPlotLineProperties(Y3_sensor)) {
+            renderable_plot.addPlotLineProperties(Y3_sensor, RenderablePlot::PlotLineProperties());
+
+            // Set the colour of the plotline (rotate through colour pallette)
+            ImVec4 color = ImPlot::GetColormapColor(color_index);
+            renderable_plot.setPlotLinePropertiesColour(Y3_sensor, color);
+            color_index = (color_index + 1) % 10;
+        }
     }
     renderable_plot.setAllData(temp_data_series);
 
