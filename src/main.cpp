@@ -51,8 +51,8 @@ void end_cycle(GLFWwindow *const window)
     glfwSwapBuffers(window);
 }
 
-//int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
-int main(int, char **)
+//int main(int, char **)
+int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
     // Setup window
     glfwSetErrorCallback(glfw_error_callback);
