@@ -896,7 +896,7 @@ void GraphView::renderAllPlotsInWindow(WindowPlots* window) {
         renderPlotOptions(("###" + renderable_plot.getLabel()), renderable_plot);
 
         // Render the plot
-        if (ImPlot::BeginPlot(("###" + renderable_plot.getLabel()).c_str())) {
+        if (ImPlot::BeginPlot(("###" + renderable_plot.getLabel()).c_str(), nullptr, nullptr, ImVec2(-1, 250 * g_scale))) {
             // Get all sensors in the plot
             const std::vector<std::string> sensors = renderable_plot.getAllSensors();
 
