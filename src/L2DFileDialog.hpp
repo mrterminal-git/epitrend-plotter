@@ -25,6 +25,8 @@
 #include <filesystem>
 #include <sstream>
 
+#include "Globals.hpp"
+
 using namespace std::chrono_literals;
 
 namespace FileDialog {
@@ -79,7 +81,7 @@ namespace FileDialog {
 				initial_path_set = true;
 			}
 
-			ImGui::SetNextWindowSize(ImVec2(740.0f, 410.0f));
+			ImGui::SetNextWindowSize(ImVec2(740.0f * g_scale, 410.0f * g_scale));
 			const char* window_title = (type == FileDialogType::OpenFile ? "Select a file" : "Select a folder");
 			ImGui::Begin(window_title, nullptr, ImGuiWindowFlags_NoResize);
 
@@ -99,7 +101,7 @@ namespace FileDialog {
 
 			ImGui::Text("%s", file_dialog_current_path.c_str());
 
-			ImGui::BeginChild("Directories##1", ImVec2(200, 300), true, ImGuiWindowFlags_HorizontalScrollbar);
+			ImGui::BeginChild("Directories##1", ImVec2(200 * g_scale, 300 * g_scale), true, ImGuiWindowFlags_HorizontalScrollbar);
 
 			if (ImGui::Selectable("..", false, ImGuiSelectableFlags_AllowDoubleClick, ImVec2(ImGui::GetContentRegionAvail().x, 0))) {
 				if (ImGui::IsMouseDoubleClicked(0)) {
@@ -126,7 +128,7 @@ namespace FileDialog {
 
 			ImGui::SameLine();
 
-			ImGui::BeginChild("Files##1", ImVec2(516, 300), true, ImGuiWindowFlags_HorizontalScrollbar);
+			ImGui::BeginChild("Files##1", ImVec2(516 * g_scale, 300 * g_scale), true, ImGuiWindowFlags_HorizontalScrollbar);
 			ImGui::Columns(4);
 			static float initial_spacing_column_0 = 230.0f;
 			if (initial_spacing_column_0 > 0) {
@@ -318,7 +320,7 @@ namespace FileDialog {
 				ImGui::EndPopup();
 			}
 			ImGui::SameLine();
-			ImGui::SetCursorPosX(ImGui::GetWindowWidth() - 120);
+			ImGui::SetCursorPosX(ImGui::GetWindowWidth() - 120 * g_scale);
 
 			static auto reset_everything = [&]() {
 				file_dialog_file_select_index = 0;

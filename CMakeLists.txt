@@ -55,6 +55,7 @@ add_executable(${PROJECT_NAME}
     src/EpitrendBinaryData.cpp
     src/InfluxDatabase.cpp
     src/RGAData.cpp
+    src/Globals.cpp
 )
 
 add_compile_definitions(NOMINMAX)

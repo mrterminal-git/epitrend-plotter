@@ -13,6 +13,7 @@
 
 #include "GraphView.hpp"
 #include "L2DFileDialog.hpp"
+#include "Globals.hpp"
 
 // Constructor
 GraphView::GraphView(GraphViewModel& viewModel) : viewModel_(viewModel) {}
@@ -182,7 +183,7 @@ void GraphView::actionSubmitAddPlotPopup(AddPlotPopupState& state) {
 // Render the "Add plot" popup
 void GraphView::renderAddPlotPopup() {
     // Example of creating a popup window with textbox input fields
-    if (ImGui::Button("Add new plot", ImVec2(100, 30))) {
+    if (ImGui::Button("Add new plot", ImVec2(100 * g_scale, 30 * g_scale))) {
         ImGui::OpenPopup("Add new plot");
     }
 
@@ -404,7 +405,7 @@ void renderLoadWindowFileOpenErrorPopup(LoadWindowFileDialogState& load_window_f
         ImGui::Text(("There was an error opening the file: " + load_window_file_dialog_state.current_path).c_str());
         ImGui::Text("Error: %s", load_window_file_dialog_state.error.c_str());
 
-        if (ImGui::Button("OK", ImVec2(120, 0))) {
+        if (ImGui::Button("OK", ImVec2(120 * g_scale, 0))) {
             load_window_file_dialog_state.file_open_error_popup = false;
             ImGui::CloseCurrentPopup();
         }
@@ -438,7 +439,7 @@ void GraphView::actionSubmitLoadWindowPopup(LoadWindowFileDialogState& file_dial
 
 // Render the "Load window" popup
 void GraphView::renderLoadWindowPopup() {
-    if (ImGui::Button("Load Window", ImVec2(100, 30))) {
+    if (ImGui::Button("Load Window", ImVec2(100 * g_scale, 30 * g_scale))) {
         // Open the file dialog
         FileDialog::file_dialog_open = true;
         FileDialog::file_dialog_open_type = FileDialog::FileDialogType::OpenFile;
@@ -862,7 +863,7 @@ void GraphView::renderAllPlotsInWindow(WindowPlots* window) {
         // Create input boxes for real-time plot range
         int real_time_hour = renderable_plot.getRealTimeRangeHour();
         int real_time_minute = renderable_plot.getRealTimeRangeMinute();
-        float width = ImGui::CalcTextSize("000000000").x + ImGui::GetStyle().FramePadding.x * 2.0f;
+        float width = (ImGui::CalcTextSize("000000000").x + ImGui::GetStyle().FramePadding.x * 2.0f) * g_scale;
         ImGui::PushItemWidth(width);
         ImGui::InputInt(
             ("hours###" + renderable_plot.getLabel() + window->getLabel() + "H")
@@ -2202,7 +2203,7 @@ void GraphView::renderWindowPlotAddPlotPopup(WindowPlots *window){
     // Measure the width of the title text
     ImVec2 title_size = ImGui::CalcTextSize(popup_label.c_str());
     // Set minimum size constraints for the popup modal based on the title text width
-    ImGui::SetNextWindowSizeConstraints(ImVec2(title_size.x + 20, 100), ImVec2(FLT_MAX, FLT_MAX));
+    ImGui::SetNextWindowSizeConstraints(ImVec2((title_size.x + 20) * g_scale, 100 * g_scale), ImVec2(FLT_MAX, FLT_MAX));
 
     // Begin the popup modal
     if (ImGui::BeginPopupModal(popup_label.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
@@ -2410,8 +2411,8 @@ void GraphView::renderAllWindowPlots(){
     for (const std::string& window_label : viewModel_.getWindowPlotLabels()) {
         // Set up the window
         WindowPlots& window = viewModel_.getWindowPlot(window_label);
-        ImGui::SetNextWindowSize(ImVec2(1080, 600), ImGuiCond_FirstUseEver);
-        ImGui::SetNextWindowPos(ImVec2(100, 100), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowSize(ImVec2(1080 * g_scale, 600 * g_scale), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowPos(ImVec2(100 * g_scale, 100 * g_scale), ImGuiCond_FirstUseEver);
         ImGuiWindowFlags flags =
             ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_MenuBar;
 
