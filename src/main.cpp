@@ -14,6 +14,7 @@
 
 #include "GraphView.hpp"
 #include "AppController.hpp"
+#include "Globals.hpp"
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1900) &&                                 \
     !defined(IMGUI_DISABLE_WIN32_FUNCTIONS)
@@ -51,8 +52,13 @@ void end_cycle(GLFWwindow *const window)
     glfwSwapBuffers(window);
 }
 
+<<<<<<< Updated upstream
 //int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 int main(int, char **)
+=======
+int main(int, char **)
+// int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
+>>>>>>> Stashed changes
 {
     // Setup window
     glfwSetErrorCallback(glfw_error_callback);
@@ -95,16 +101,38 @@ int main(int, char **)
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1); // Enable vsync
 
+    // Detect monitor resolution and compute scale
+    GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+    const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+    int screenWidth = mode->width;
+    int screenHeight = mode->height;
+
+    // Choose a reference resolution (e.g., 2560x1440)
+    float refWidth = 2560.0f;
+    float refHeight = 1440.0f;
+    g_scale = std::min(screenWidth / refWidth, screenHeight / refHeight) * 1.5f;
+
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
+
+    // Load a font at a size proportional to screen resolution
+    // and scale it based on the monitor resolution
+    ImGuiIO& io = ImGui::GetIO();
+    io.Fonts->Clear();
+    io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\segoeui.ttf", 15.0f * g_scale * 0.75f);
+    io.Fonts->Build();
+
+    // Scale all ImGui style sizes
+    ImGuiStyle& style = ImGui::GetStyle();
+    style.ScaleAllSizes(g_scale);
+
     ImGui::StyleColorsDark();
 
     // Setup Platform/Renderer backends
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init(glsl_version);
 
-    auto &style = ImGui::GetStyle();
     style.Colors[ImGuiCol_TableBorderStrong] = ImVec4(1.0, 1.0, 1.0, 1.0);
     style.Colors[ImGuiCol_TableBorderLight] = ImVec4(1.0, 1.0, 1.0, 1.0);
 
