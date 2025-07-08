@@ -52,13 +52,8 @@ void end_cycle(GLFWwindow *const window)
     glfwSwapBuffers(window);
 }
 
-<<<<<<< Updated upstream
-//int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
-int main(int, char **)
-=======
-int main(int, char **)
-// int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
->>>>>>> Stashed changes
+int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
+//int main(int, char **)
 {
     // Setup window
     glfwSetErrorCallback(glfw_error_callback);
