@@ -1,0 +1,1672 @@
+\documentclass{article}
+
+% Language setting
+% Replace `english' with e.g. `spanish' to change the document language
+\usepackage[english]{babel}
+\usepackage{hyperref}
+\usepackage{listings}
+\lstset{
+basicstyle=\small\ttfamily,
+columns=flexible,
+breaklines=true
+}
+
+% Set page size and margins
+% Replace `letterpaper' with `a4paper' for UK/EU standard size
+\usepackage[letterpaper,top=2cm,bottom=2cm,left=3cm,right=3cm,marginparwidth=1.75cm]{geometry}
+
+% Useful packages
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage[colorlinks=true, allcolors=blue]{hyperref}
+
+\title{MBE Time-Series GUI Documentation}
+\author{Volter Entoma}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent
+This document provides comprehensive technical documentation for the MBE Time-Series GUI system, a platform designed for the ingestion, processing, and visualization of time-series data from various measurement systems. It serves as a practical guide for users, developers, and system administrators involved in the deployment, configuration, and use of the system across real-time and historical data workflows.
+
+\vspace{10pt}
+\noindent
+The purpose of this document is to:
+\begin{itemize}
+    \item \textbf{Outline the system architecture}, including the roles of data sources, processing nodes, and visualization clients.
+    \item \textbf{Guide users through the setup and configuration} of the InfluxDB database and supporting infrastructure.
+    \item \textbf{Detail the installation of development tools} such as Visual Studio, CMake, and Ubuntu for Windows.
+    \item \textbf{Describe the structure and behavior} of the data parsing and GUI components, including class-level documentation and runtime behavior.
+    \item \textbf{Provide usage instructions for the GUI}, including how to create, manage, and customize time-series plots.
+    \item \textbf{Document known issues and limitations}, particularly with real-time data handling and sensor anomalies.
+    \item \textbf{Offer a quick-start guide} for restarting the system following scheduled server maintenance.
+\end{itemize}
+
+
+\vspace{10pt}
+\noindent
+This documentation is intended to support both onboarding and ongoing development efforts for the MBE Time-Series system.
+\end{abstract}
+
+
+\tableofcontents
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% System Architecture Diagram
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{System Architecture}
+The overall architecture which outlines the data flow and integration between various data sources, processing node, and user interfaces within this project is shown in Figure \ref{fig:program_pc_structure}.
+
+\subsection{Components}
+\begin{itemize}
+    \item \textbf{Data sources}
+    \begin{itemize}
+        \item Currently, EpiTrend and RGA time-series data has been integrated into the InfluxDB database.
+
+        \item Other possible data sources include BMS, SpectR, MOS, etc.
+    \end{itemize}
+
+    \item \textbf{FAB Node PC (SB-WKS-053-W11)}:
+    \begin{itemize}
+        \item Acts as a data aggregator, and reduces stress on file servers.
+
+        \item Collects data from all source PCs and the BMS database.
+
+        \item Prepares and forwards data to the InfluxDB host.
+    \end{itemize}
+
+    \item \textbf{InfluxDB Host Server (SC-SB-ENGDB02)}:
+    \begin{itemize}
+        \item Hosts the \textbf{InfluxDB database}.
+
+        \item Receives structured data from the FAB node.
+
+        \item Serves as the core data storage and query engine
+    \end{itemize}
+
+    \item \textbf{Time-Series GUI Clients:}
+    \begin{itemize}
+        \item Multiple interfaces connect to the InfluxDB database.
+
+        \item Allow users to visualize, analyze, and interact with time-series data in real-time.
+    \end{itemize}
+    
+\end{itemize}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=1.0\linewidth]{figures/program_pc_structure.png}
+    \caption{The architecture of the entire project}
+    \label{fig:program_pc_structure}
+\end{figure}
+
+\subsection{FAB Node PC}
+
+The FAB node PC was set up to avoid direct access to the file server, which could cause unnecessary traffic and strain on company resources. Constant read access to the file server may result in performance degradation and resource contention. To mitigate this, the FAB PCs copy relevant time-series data directly to the FAB node PC. This setup eliminates the need for direct file server access, ensuring efficient data handling and reducing the load on the file server.
+
+\vspace{5pt}
+\noindent
+The FAB Node PC has been set-up in a way such that FAB PCs can transfer data into it, however, the FAB Node PC cannot directly see any data on the FAB PCs. This one-way relationship was set-up to protect the raw data inside the FAB PCs.
+
+\vspace{5pt}
+\noindent
+The intended use of the FAB node PC to allow FAB PCs copy files into the \texttt{D:} drive of the FAB Node PC. 
+
+\vspace{5pt}
+\noindent
+\textbf{Note:} as of the time of writing this document, none of the FAB PCs copy data directly into the FAB Node PC due to concerns about the load on the EpiTrend and RGA PCs. Instead, the FAB Node PC retrieves data (EpiTrend and RGA) from the file server and processes it into the InfluxDB database.
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Setting up InfluxDB
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Setting up InfluxDB}
+\label{sec:Setting_up_InfluxDB}
+InfluxDB is hosted on a Microsoft Server computer mananged by Silanna. This server acts as the central repository for time-series data collected from various time-series systems. The database is configured to support real-time and historical data ingestion.
+
+\vspace{10pt}
+\noindent
+To ensure proper functionality, users must set up InfluxDB on the server with the following considerations:
+
+\begin{enumerate}
+    \item \textbf{Server Configuration:}
+    \begin{itemize}
+        \item Ensure the Microsoft Server computer has sufficient resources (CPU, memory, and, most importantly, storage) to handle the expected data load.
+        \item Verify network connectivity to allow authorized clients to access the InfluxDB instance.
+    \end{itemize}
+    \item \textbf{InfluxDB Installation:}
+    \begin{itemize}
+        \item Install InfluxDB 2.X on the server using the official installation guide for Windows (as outlined below).
+        \item Configure the database to listen on the desired port (default is 8086) and bind it to the server's IP address.
+    \end{itemize}
+    \item \textbf{Authentication and Security:}
+    \begin{itemize}
+        \item Set up authentication tokens for secure access to the database.
+        \item Enable HTTPS using a self-signed or trusted SSL certificate to encrypt communication - this has yet to be done.
+    \end{itemize}
+    \item \textbf{Database Initialization:}
+    \begin{itemize}
+        \item Create the required buckets (RGA, EPITREND, etc.) for organizing data.
+        \item Define retention policies to manage data lifecycle.
+    \end{itemize}
+    \item \textbf{Client Configuration:}
+    \begin{itemize}
+        \item Provide users with the server's IP address, port, organization name, and authentication token to connect to InfluxDB.
+        \item Ensure client applications are configured to use the correct precision (ms) for timestamps.
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Starting the InfluxDB database on SC-SB-ENGDB02 (or any Silanna Server)}
+\label{sec:Starting_the_InfluxDB_database_on_SC_SB}
+Currently, Silanna has a Microsoft server virtual machine hosting the InfluxDB server. The name of this server is \textbf{SC-SB-ENGDB02}. You should ensure that the Remote Desktop  Connection application uses the \texttt{svcEng-EpiTrend} credentials to connect to the server (refer to \texttt{MBE -> General -> Office PC -> New epitrend} in KeePass for the credentials and server password).
+
+\vspace{5pt}
+\noindent
+The server hosting InfluxDB requires the appropriate InfluxDB files. The current code base is compatible with InfluxDB v2. While InfluxDB may release later versions, compatibility with these versions is not guaranteed, and aspects of InfluxDB described in this documentation may become invalid.
+
+\begin{enumerate} 
+    \item \textbf{Download InfluxDB v2:}\\
+    Visit the Windows installation section of InfluxDB v2 documentation at InfluxDB's Windows installation page \href{https://docs.influxdata.com/influxdb/v2/install/?t=Windows}{\underline{https://docs.influxdata.com/influxdb/v2/install/?t=Windows}}. Download the latest version of InfluxDB v2.
+        
+    \item \textbf{ Create the Installation Directory:}\\
+    Create the directory \texttt{C:/Program Files/InfluxData/influxdb} on the server.
+    
+    \item \textbf{Transfer InfluxDB Files:}\\  
+    After downloading the InfluxDB v2 files (\textbf{Step 1}), transfer them into the directory you created in \textbf{Step 2}, i.e., \texttt{C:/Program Files/InfluxData/influxdb}. For example, if you downloaded version \texttt{influxdb2-2.7.12}, the directory should now contain the following files:  
+    - \texttt{influxdb.exe}  
+    - \texttt{LICENSE}  
+    - \texttt{README.md}  
+    
+    The number of files may vary across versions, but \texttt{influxdb.exe} \textbf{MUST} exist for the server to function.
+
+    \item \textbf{Open PowerShell as Administrator.}
+    
+    \item \textbf{Set the Current Directory in PowerShell:}\\  
+    Open PowerShell and navigate to the \texttt{influxdb} directory using the following command:  
+    \begin{verbatim}
+    cd "C:\Program Files\InfluxData\influxdb"
+    \end{verbatim}
+    
+    \item \textbf{Start the InfluxDB Server:}\\  
+    Start hosting the InfluxDB database by running the following command in PowerShell:  
+    \begin{verbatim}
+    ./influxd --http-bind-address=:443
+    \end{verbatim}
+
+    If the server starts successfully, PowerShell will display a message similar to the one shown in Figure~\ref{fig:InfluxDBstart}.    
+    \begin{figure}[h]
+    \centering
+    \includegraphics[width=1.0\linewidth]{figures/InfluxDB_server_start.png}
+    \caption{InfluxDB server successfully started.}
+    \label{fig:InfluxDBstart}
+    \end{figure}
+
+    \noindent
+    Note that the port \texttt{8086} is the default port, however, the user may change this by using the \texttt{--http-bind-address=:443} flag when starting the influxDB database (e.g. \texttt{./influxd --http-bind-address=:443}). Currently, only port 443 is configured to allow the flow of data. If you prefer to use a different port, you must consult with the IT team to ensure proper configuration and security measures are in place.
+\end{enumerate}
+
+\subsection{Access the Database via Web-Browser}
+After the InfluxDB server has successfully started, you can access the database via web browser on the host computer using the address \texttt{http://localhost:443}. The last three numbers refer to the port, and can be changing specifying \texttt{XXX} in the flag \texttt{--http-bind-address=:XXX}.
+
+\vspace{5pt}
+\noindent
+The user may also access the server using a computer connected the Silanna network by using the IP address of the host computer. The IP address of the host computer can be found by opening PowerShell, and running the command \texttt{ipconfig}. The IP address can then be used in the address \texttt{http://XX.XX.XX.XX:443} on the remote computer's web browser. Currently, \texttt{10.20.50.81} is the IP address of the host computer.
+
+\subsection{Set up Initial User, Organization and Bucket}
+
+\begin{enumerate}
+    \item \textbf{Create an Initial User:}
+    \begin{itemize}
+        \item Enter a username. The current convention is to use "MBEengineer" as the username.
+        \item Enter a password. The current convention is to use the associated password to "MBEengineer".
+        \item Click \textbf{Continue}.
+    \end{itemize}
+    \item \textbf{Create an Organization:}
+    \begin{itemize}
+        \item Enter the name of your organization. The current convention is to use "au-mbe-eng".
+        \item Click \textbf{Continue}.
+    \end{itemize}
+    \item \textbf{Create a Bucket:}
+    \begin{itemize}
+        \item Create the first bucket (e.g., EPITREND, RGA). Currently, each time-series system (e.g., EPITREND, RGA), is assigned a bucket to itself. The reason why this is the case will become clear later in this document.
+        \item Buckets are where the time-series data will be stored.
+        \item Click \textbf{Continue}.
+    \end{itemize}
+    \item \textbf{Finish Setup:}
+    \begin{itemize}
+    \item InfluxDB will finalize the setup and redirect you to the dashboard.
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Verify the Setup}
+\begin{enumerate}
+    \item On the InfluxDB dashboard, verify that:
+    \begin{itemize}
+        \item The user, organization, and bucket you created are listed.
+        \item The server is running without errors.
+    \end{itemize}
+    \item Check the \textbf{Data Explorer} tab:
+    \begin{itemize}
+        \item Navigate to the \textbf{Data Explorer} tab.
+        \item Verify that the bucket you created is available.
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Configure the Authentication Tokens}
+InfluxDB uses tokens for authentication; tokens are required to interact with the database programmatically. Here are the steps to create a new token:
+
+\begin{enumerate}
+    \item Navigate to the \textbf{Load Data} tab.
+    \item Navigate to \textbf{API TOKENS}.
+    \item Select \textbf{GENERATE API TOKEN}.
+    \item Select \textbf{All Access API Token} or \textbf{Custom API Token} based on your needs.
+    \item Copy the generated token and save it securely. You will use this token in the both the \\ \texttt{epitrend-database-parse} and \texttt{epitrend-plotter} program, as laid out later in this document.
+\end{enumerate}
+
+\noindent
+\textbf{Note:} the \texttt{epitrend-database-parse} program needs read/write tokens to the InfluxDB database, therefore it is advised to provide the program with the \texttt{All Access API Token}. The \texttt{epitrend-plotter} only requires read access to the InfluxDB database.
+
+\subsection{Configure Retention Policies}
+Retention policies define how long data is stored in a bucket.
+
+\begin{enumerate}
+    \item Navigate to the \textbf{Load Data} tab.
+    \item Navigate to \textbf{BUCKETS}.
+    \item Select \textbf{SETTINGS} under the relevant bucket.
+    \item Under \textbf{Delete Data}, select \textbf{OLDER THAN} to activate a retention period. Set the retention period (e.g. 30 days, infinite, etc.). The current convention is to use 540 days of retention for each bucket. 
+    \item Click \textbf{SAVE CHANGES} to save the changes.
+\end{enumerate}
+
+\subsection{Bucket structure}
+\begin{figure} [h]
+\centering
+\includegraphics[width=0.5\linewidth]{figures/InfluxDB_database_structure.png}
+\caption{\label{fig:InfluxDBstructure}Bucket structure to allow for efficient storage of data.}
+\end{figure}
+
+\begin{figure} [h]
+\centering
+\includegraphics[width=1.0\linewidth]{figures/InfluxDB_database_ns_ts_snippet.png}
+\caption{\label{fig:InfluxDBtablesnippet}Snippets of the time-series (bottom) and name-series (top) tables inside a bucket of the InfluxDB database.}
+\end{figure}
+
+\noindent
+Each bucket contains two tables, the \textbf{time series}, and \textbf{name series} table. The current structure of each bucket is designed to store and manage time-series data collected from various sensors, along with metadata that maps sensor identifiers to machine-readable names.
+
+\begin{enumerate}
+    \item \textbf{Time Series Table}
+    \\ 
+    This table stores the actual sensor readings over time.
+    
+    \vspace{10pt}
+    \textbf{Columns:}
+    \begin{itemize}
+        \item \textbf{measurement:} The type of measurement. This will always be set to "ts" (time-series) for this table.
+        \item \textbf{\_start, \_end:} The time range for the data collection window. This will always be set to 100 years before and 100 years after the actual measurement collection time; however this choice largely arbitrary, and is inconsequential to the program.
+        \item \textbf{\_time:} The timestamp of the measurement.
+        \item \textbf{sensor\_id:} A unique identifier for the sensor.
+        \item \textbf{\_field:} For the name-series table, \textbf{\_field} will always returns "num". This can be ignored.
+        \item \textbf{value:} The numeric value recorded by the sensor.
+    \end{itemize}
+    \textbf{Purpose:}
+    \\
+    \noindent 
+    Captures raw time-series data from sensors, indexed by time and sensor ID.
+
+    \item \textbf{Name Series Table}
+    \\ 
+    This table provides human-readable context for the sensor data.
+    
+    \vspace{10pt}
+    \textbf{Columns:}
+    \begin{itemize}
+        \item \textbf{measurement:}  The type of measurement. This will always be set to "ns" (name-series) for this table.
+        
+        \item \textbf{\_start, \_end:} Same as with the time-series table.
+        
+        \item \textbf{\_time:} An arbitrary timestamp can be set to anything. This can be ignored.
+        
+        \item \textbf{\_value:} A unique integer identifier for the sensor.
+        
+        \item \textbf{\_field:} The specific field being measured. For the name-series table, \textbf{\_field} will always returns "sensor\_id". This can be ignored.
+
+        \item \textbf{sensor\_:} The physical name for the sensor.
+    \end{itemize}
+    \textbf{Purpose:}
+    \\
+    \noindent
+    Maps sensor IDs to meaningful names and machine associations, enabling easier interpretation of the data.
+\end{enumerate}
+
+\noindent
+The \textbf{sensor\_id\_} field in the time series table corresponds to the \textbf{sensor\_} field in the name series table. This relationship allows users to join the two tables, save database space (by avoiding large repeated strings in the time-series table). This database is normalized Third Normal Form to allow for flexibility and future restructuring.
+
+\vspace{5pt}
+\noindent
+A table representation of the each bucket (database structure) can be seen in Figure~\ref{fig:InfluxDBstructure}:
+
+\vspace{5pt}
+\noindent
+This data structure is the reason why each time-series system is associated with each one bucket; each bucket contains only two tables (time, and name series tables), that are unique to each time-series equipment.
+
+\subsection{Example Uses for InfluxDB Data Explorer Query Builder}
+
+Users can explore the InfluxDB database using the \textbf{Data Explorer} in the web-browser access of the database. Here is an example query in Data Explorer, that obtains the data for the sensor "Instances.CT1\_Vacuum.Reading":
+
+\begin{verbatim}
+from(bucket: "ALL")
+  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)
+  |> filter(fn: (r) => r["_measurement"] == "ts")
+  |> filter(fn: (r) => r["sensor_id_"] == "282")
+  |> aggregateWindow(every: 60s, fn: mean, createEmpty: false)
+  |> yield(name: "mean")
+\end{verbatim}
+
+\begin{itemize}
+    \item \texttt{from(bucket: "ALL")}: Selects data from the ALL bucket.
+    \item \texttt{range(...)}: Filters data within the selected time range.
+    \item \texttt{filter(...)}: Narrows the data to the \texttt{ts} table and a \texttt{sensor\_id}.
+    \item \texttt{aggregateWindow(...)} Aggregates the data into time windows (e.g., 1s, 10s, 5m, 10m) using the \texttt{mean} function.
+    \item \texttt{yield(...)} Outputs the result labeled as "\texttt{mean}".
+\end{itemize}
+
+\noindent
+This query is useful for visualisinng average sensor readings over time, for any \texttt{sensor\_id} and time range.
+
+\noindent The table of all sensor names with their associated \texttt{sensor\_id} can be found inside the file \\ \texttt{C:\textbackslash
+Users\textbackslash
+svceng-epitrend\textbackslash
+Documents\textbackslash
+ALL\_DB\_SENSOR\_NAMES} of the InfluxDB host server.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Setting up Visual Studio, Visual Studio Code, vcpkg, and CMake
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Setting up Visual Studio, Visual Studio Code, VCPKG, and CMake}
+This section outlines the necessary steps and programs required to run both the \texttt{epitrend-database-parse} program and the \texttt{epitrend-gui} program. 
+\\
+\noindent
+If you want to start inserting data into the InfluxDB database using the \texttt{epitrend-database-parse program}, you only need to complete the section titled \textbf{Installing Ubuntu for Windows}. To run the \texttt{epitrend-plotter} program, all steps outlined in this section must be completed. This includes installing additional dependencies, configuring the development environment, and ensuring proper integration with the InfluxDB database.
+
+\subsection{Installing Visual Studio}
+\begin{enumerate}
+    \item Download and install Visual studio from \href{https://visualstudio.microsoft.com/}{\underline{Microsoft's website}}
+    
+    \item During installation, select the \textbf{Desktop development with C++} workload.
+\end{enumerate}
+The list of computers that need to install Visual Studio is:
+\begin{itemize}
+    \item \textbf{Users} building, and compiling the \texttt{epitrend-plotter} program
+\end{itemize}
+
+\subsection{Installing CMake}
+CMake is a cross-platform build system generator that is essential for building and configuring \texttt{epitrend-plotter}. Below are the details for installing CMake:
+
+\begin{enumerate}
+    \item Download CMake:
+    \begin{itemize}
+        \item Visit the official CMake website: \href{https://cmake.org/download/}{\underline{https://cmake.org/download/}}
+        \item Select the appropriate version for your operating system (Windows).
+        \item Download the installer (e.g., \texttt{cmake-<version>-windows-x86\_64.msi}).
+    \end{itemize}
+    \item Run the installer:
+    \begin{itemize}
+        \item Double-click the \texttt{.msi} file to start the installation.
+        \item Follow the installation wizard. \textbf{Important}: select the option to add CMake to your system PATH for the current user.
+    \end{itemize}
+    \item Verify Installation:
+    \begin{itemize}
+        \item Open \texttt{cmd} and type the command \texttt{cmake --version}
+    \end{itemize}
+\end{enumerate}
+
+The list of computers that need to install CMake is:
+\begin{itemize}
+    \item \textbf{Users} building, and compiling the \texttt{epitrend-plotter} program
+\end{itemize}
+\subsection{Installing Ubuntu for Windows}
+\label{sec:Installing_Ubuntu_for_Windows}
+Ubuntu for Windows is required to compile and run the \texttt{epitrend-database-parse} program. Additionally, many of the packages and debugging tools—such as \texttt{valgrind}, which is particularly useful for diagnosing threading and memory-related issues used by this program—are native to Linux and offer more robust support in that environment.
+\begin{enumerate}
+    \item Enable Windows Subsystem for Linux (WSL).
+    \begin{itemize}
+        \item Open PowerShell as Administrator.
+        \item Run the following command \texttt{wsl --install}
+        \item Restart your machine.
+    \end{itemize}
+    
+    \item Set up Ubuntu
+    \begin{itemize}
+        \item After rebooting, open Ubuntu (Ubuntu may open itself after rebooting)
+        \item Create a UNIX username
+        \item Set a UNIX password
+    \end{itemize}
+
+    \item Install the required Ubuntu packages (namely Git for Linux). Open your Ubuntu terminal and run:
+    \begin{verbatim}
+        sudo apt update
+        sudo apt install git build-essential curl zip unzip tar
+    \end{verbatim}
+\end{enumerate}
+The list of computers that need to install Ubuntu for Windows is:
+\begin{itemize}
+    \item \textbf{Users} compiling and running the \texttt{epitrend-database-parse} program
+    \item \textbf{FAB node PC} to compile and run the \texttt{epitrend-database-parse} program
+\end{itemize}
+
+\subsection{Installing VCPKG}
+\label{sec:Installing_VCPKG}
+\textbf{VCPKG} is a library manager by Microsoft, and simplifies the process of acquiring and managing C and C++ library. It is required for this program.
+
+\vspace{10pt}
+\noindent
+\textbf{Important:}
+\\
+\noindent
+The directory where VCPKG is installed (e.g. \texttt{C:\textbackslash
+Users\textbackslash
+YourName\textbackslash
+Documents\textbackslash
+vcpkg}) will be referenced later by your build system and development tools. This path is important later when VCPKG is integrated with CMake.
+
+\begin{enumerate}
+    \item Install Git for windows at \href{https://git-scm.com}{\underline{https://git-scm.com}} (if you want to skip this step, see Step 3 for details).
+    
+    \item Navigate to the directory where you want to install VCPKG and install VCPKG:
+    \begin{verbatim}
+        cd "C:\Users\VolterE\path\to\directory"
+        git clone https://github.com/Microsoft/vcpkg.git
+        .\vcpkg\bootstrap-vcpkg.bat
+    \end{verbatim}
+
+    \item If you have not installed Git for Windows, you can also download VCPKG from the Github using the link \href{https://github.com/Microsoft/vcpkg.git}{\underline{https://github.com/Microsoft/vcpkg.git}}
+\end{enumerate}
+
+The list of computers that need to install VCPKG is:
+\begin{itemize}
+    \item \textbf{Users} building, and compiling the \texttt{epitrend-plotter} program
+\end{itemize}
+
+\subsection{Installing Visual Studio Code}
+
+\begin{enumerate}
+    \item Download the Visual Studio Code IDE at \href{https://code.visualstudio.com/download}{\underline{https://code.visualstudio.com/download}}
+    
+    \item Run the Visual Studio Code installer and set-up
+\end{enumerate} 
+The list of computers that need to install Visual Studio Code is:
+\begin{itemize}
+    \item \textbf{Users} developing \texttt{epitrend-database-parse} and/or the \texttt{epitrend-plotter} program.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Parsing Time-Series Data Files
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Parsing Time-Series Data Files}
+This section provides documentation for the \texttt{epitrend-database-parse} program. It describes the core classes, attributes, and methods, and explains how these components interact to parse various time-series data files and insert the processed data into an InfluxDB database. 
+
+\subsection{Forking the Repository}
+The program files can be forked using the link:
+\begin{lstlisting}
+    https://AU-Silanna-Semiconductor-Engineering@dev.azure.com/AU-Silanna-Semiconductor-Engineering/MBE%20Process/_git/Epitrend
+\end{lstlisting}
+
+\subsection{Directory Layout}
+\begin{verbatim}
+epitrend-database-parse/
++-- bin/
+|   +-- main
++-- include/
+|   +-- Common.hpp
+|   +-- Config.hpp
+|   +-- EpitrendBinaryData.hpp
+|   +-- EpitrendBinaryFormat.hpp
+|   +-- FileReader.hpp
+|   +-- InfluxDatabase.hpp
+|   +-- influxdb.hpp
+|   +-- RGAData.hpp
++-- obj/
+|   +-- Config.o
+|   +-- EpitrendBinaryData.o
+|   +-- EpitrendBinaryFormat.o
+|   +-- FileReader.o
+|   +-- InfluxDatabase.o
+|   +-- main.o
+|   +-- RGAData.o
++-- src/
+|   +-- Config.cpp
+|   +-- EpitrendBinaryData.cpp
+|   +-- EpitrendBinaryFormat.cpp
+|   +-- FileReader.cpp
+|   +-- InfluxDatabase.cpp
+|   +-- main.cpp
+|   +-- RGAData.cpp
++-- config.txt
++-- Makefile
+\end{verbatim}
+
+\subsection{Class Descriptions}
+\texttt{Config} \textbf{Class}
+
+\vspace{5pt}
+\noindent
+\textbf{File:} \texttt{Config.hpp} / \texttt{Config.cpp} 
+
+\vspace{5pt}
+\noindent
+\textbf{Description:}
+\\
+\noindent
+The \texttt{Config} class is responsible for managing configuration settings for the program. It loads key-value pairs from a configuration file (\texttt{config.txt}) and provides getter methods to access these settings. The class also includes helper functions to handle non-visible characters in strings for debugging purposes.
+
+\vspace{5pt}
+\noindent
+\textbf{Key Features:}
+\begin{itemize}
+    \item Load configuration from the \texttt{config.txt} file.
+    \item Provide access to settings such as directories, server details, and credentials.
+    \item Debugging utilities to print configuration data.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+\vspace{15pt}
+\noindent
+\texttt{RGAData} \textbf{Class}
+
+\vspace{5pt}
+\noindent
+\textbf{File:} \texttt{RGAData.hpp} / \texttt{RGAData.cpp} 
+
+\vspace{5pt}
+\noindent
+\textbf{Description:}
+\\
+\noindent
+The \texttt{RGAData} class represents data related to RGA (Residual Gas Analyzer). It provides functionality to manage bins for atomic mass units (AMU) and store time-series data associated with these bins.
+
+\vspace{5pt}
+\noindent
+\textbf{Key Features:}
+\begin{itemize}
+    \item Constructor to initialize bins per unit.
+    \item Methods to add data to bins with associated timestamps and values.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+\vspace{15pt}
+\noindent
+\texttt{InfluxDatabase} \textbf{Class}
+
+\vspace{5pt}
+\noindent
+\textbf{File:} \texttt{InfluxDatabase.hpp} / \texttt{InfluxDatabase.cpp} 
+
+\vspace{5pt}
+\noindent
+\textbf{Description:}
+\\
+\noindent
+The \texttt{InfluxDatabase} class handles interactions with an InfluxDB database. It provides functionality to manage HTTP headers, send requests, and process responses for database operations.
+
+\vspace{5pt}
+\noindent
+\textbf{Key Features:}
+\begin{itemize}
+    \item Manage HTTP headers for database requests.
+    \item Send queries and write data to InfluxDB.
+    \item Handle responses and errors.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+\vspace{15pt}
+\noindent
+\texttt{FileReader} \textbf{Class}
+
+\vspace{5pt}
+\noindent
+\textbf{File:} \texttt{FileReader.hpp} / \texttt{FileReader.cpp} 
+
+\vspace{5pt}
+\noindent
+\textbf{Description:}
+\\
+\noindent
+The \texttt{FileReader} class provides functionality to read and parse binary data files. It includes helper functions for string manipulation and supports parsing files in the Epitrend binary format.
+
+\vspace{5pt}
+\noindent
+\textbf{Key Features:}
+\begin{itemize}
+    \item Trim and clean strings for parsing.
+    \item Parse binary data files into structured formats.
+    \item Handle file paths and directories using std::filesystem.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+\vspace{15pt}
+\noindent
+\texttt{EpitrendBinaryFormat} \textbf{Class}
+
+\vspace{5pt}
+\noindent
+\textbf{File:} \texttt{EpitrendBinaryFormat.hpp} / \texttt{EpitrendBinaryFormat.cpp} 
+
+\vspace{5pt}
+\noindent
+\textbf{Description:}
+\\
+\noindent
+The \texttt{EpitrendBinaryFormat} class represents the structure of Epitrend binary data files. It provides methods to set and retrieve metadata about the binary file, such as the current day and total data items.
+
+\vspace{5pt}
+\noindent
+\textbf{Key Features:}
+\begin{itemize}
+    \item Setters and getters for metadata fields.
+    \item Manage binary file structure for parsing.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+\vspace{15pt}
+\noindent
+\texttt{EpitrendBinaryData} \textbf{Class}
+
+\vspace{5pt}
+\noindent
+\textbf{File:} \texttt{EpitrendBinaryData.hpp} / \texttt{EpitrendBinaryData.cpp} 
+
+\vspace{5pt}
+\noindent
+\textbf{Description:}
+\\
+\noindent
+The \texttt{EpitrendBinaryData} class represents parsed data from Epitrend binary files. It provides methods to manage and manipulate the data extracted from these files.
+
+\vspace{5pt}
+\noindent
+\textbf{Key Features:}
+\begin{itemize}
+    \item Store and retrieve parsed binary data.
+    \item Provide setters for data fields.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+\vspace{15pt}
+\noindent
+\texttt{Common} \textbf{Utilities}
+
+\vspace{5pt}
+\noindent
+\textbf{File:} \texttt{Common.hpp}
+
+\vspace{5pt}
+\noindent
+\textbf{Description:}
+\\
+\noindent
+The \texttt{Common} utility contains utility functions and includes commonly used headers. It provides shared functionality across the program, such as mathematical operations, string manipulation, and error handling.
+
+\vspace{5pt}
+\noindent
+\textbf{Key Features:}
+\begin{itemize}
+    \item Shared utility functions.
+    \item Common includes for standard libraries.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+\vspace{15pt}
+\noindent
+\texttt{influxdb} \textbf{Utilities}
+
+\vspace{5pt}
+\noindent
+\textbf{File:} \texttt{influxdb.hpp}
+
+\vspace{5pt}
+\noindent
+\textbf{Description:}
+\\
+\noindent
+The \texttt{influxdb} utility provides platform-specific utilities and definitions for interacting with InfluxDB. It includes compatibility adjustments for Windows and non-Windows platforms.
+
+\vspace{5pt}
+\noindent
+\textbf{Key Features:}
+\begin{itemize}
+    \item Platform-specific adjustments for socket handling.
+    \item Definitions for interacting with InfluxDB.
+\end{itemize}
+
+
+\subsection{Behavior at Launch}
+The \texttt{epitrend-database-parse} program is designed to run in the background at all times. Its primary function is to continuously monitor the file server for new real-time time-series data and insert this data into the InfluxDB database. This ensures that the database remains up-to-date with the latest data from all connected time-series systems.
+
+\vspace{10pt}
+\noindent
+\begin{enumerate}
+    \item \textbf{Historical Data Insertion:}
+    \begin{itemize}
+        \item Upon launching, the program will insert historical time-series data into InfluxDB database for all configured time-series systems.
+        \item To keep the InfluxDB database up-to-date, the program will overwrite existing historical data with the current data that each time-series system contains.
+    \end{itemize}
+    
+    \item \textbf{Real-Time Data Monitoring:}
+    \begin{itemize}
+        \item The historical data insertion will work in parallel with monitoring the file server for new real-time data.
+        \item Any new data detected will be inserted into the InfluxDB database immediately.
+    \end{itemize}
+\end{enumerate}
+
+\subsubsection*{Adding New Time-Series Machines}
+\begin{itemize}
+    \item For each new machine:
+    \begin{itemize}
+        \item The program should insert historical data associated with the machine into the InfluxDB database.
+        \item Real-time data monitoring should be performed in parallel, for the new machine.
+    \end{itemize}
+\end{itemize}
+
+\subsection{Compiling, and Running the Program}
+\label{sec:Compiling_and_Running_the_program}
+This program is intended to run on a dedicated \textbf{FAB node PC}, whose sole responsibility is to read time-series data directly from the FAB PCs and insert it into the InfluxDB database. Currently, the designated FAB node PC for this task is \textbf{SB-WKS-053-W11} (refer to the KeePass location: \texttt{MBE -> General -> Fab PC -> Laptop, Surface, LL PCs -> Data node PC} for credentials).
+
+\subsubsection*{Compiling and running the program}
+Before completing this section, the user should ensure that the InfluxDB database is currently running on the host Silanna server - refer to section \textbf{\nameref{sec:Setting_up_InfluxDB}} for details on how to do this.
+
+\vspace{5pt}
+\noindent
+On the \textbf{FAB node PC}:
+\begin{enumerate}
+    \item Set-up Ubuntu on Windows (refer to the earlier section \textbf{\nameref{sec:Installing_Ubuntu_for_Windows}} for set-up instructions).
+    
+    \item Open Ubuntu and install the necessary packages using the following commands:
+    \begin{verbatim}
+        sudo apt-get install sql
+        sudo apt-get install unixodbc-dev
+        sudo apt-get install curl
+        sudo apt-get install libcurl4-openssl-dev install
+    \end{verbatim}
+    
+    \item Mount the file drives that contain the time-series data to Ubuntu. For example, if the time-series data was contained the in the \texttt{D:} drive, you should mount the \texttt{D:} drive to the address \texttt{/mnt/d} using the following commands:
+    \begin{verbatim}
+        sudo mkdir -p /mnt/d
+        sudo mount -t drvfs D: /mnt/d
+    \end{verbatim}
+    \noindent
+    The user can mount multiple drives if the time-series data is contained multiple drives. However, best practices suggest consolidating all time-series data onto a single drive on the node PC to simplify data management and reduce complexity.
+    
+    \item Download the \texttt{epitrend-database-parse} program files and place them into any Windows directory.
+    
+    \item Mount the Windows drive which contains the \texttt{epitrend-database-parse} program files - for example, if the user placed the program files in the windows address-
+
+    \vspace{5pt}
+    \noindent
+    \texttt{C:\textbackslash{Users}\textbackslash{MBEengineer}\textbackslash{Documents}\textbackslash{epitrend-database-parse}}
+
+    \vspace{5pt}
+    \noindent
+    -then the user would run the Linux commands:
+    \begin{verbatim}
+        sudo mkdir -p /mnt/c
+        sudo mount -t drvfs D: /mnt/d
+        cd /mnt/c/Users/MBEengineer/Documents/database-parse
+    \end{verbatim}
+    
+    
+    \item Ensure the \texttt{config.txt}, located inside the \texttt{epitrend-database-parse} program, contains the correct configurations. As the current epitrend-database-parse is currently designed, you need to ensure that:
+    \begin{itemize}
+        \item \texttt{SERVER\_EPITREND\_DATA\_DIR} has the node PC's address of the EpiTrend files (e.g. \texttt{/mnt/d/EpiTrend/}).
+        \item \texttt{SERVER\_RGA\_DATA\_DIR} has the node PC's address of the RGA files (e.g. \texttt{/mnt/d/RGA/}).
+        \item \texttt{ORG} has the InfluxDB database organisation name that contains time-series data (e.g. \texttt{au-mbe-eng}.
+        
+        \item \texttt{HOST} has the IP address of the server computer hosting the InfluxDB database.
+        
+        \item \texttt{PORT} has the port that the InfluxDB database is connected to on the hosting server PC.
+
+        \item \texttt{TOKEN} has the global read/write access for the InfluxDB database.
+    \end{itemize}
+
+    \noindent
+    For configuration fields \texttt{ORG}, \texttt{HOST}, \texttt{PORT}, and \texttt{TOKEN} - refer to section \textbf{\nameref{sec:Starting_the_InfluxDB_database_on_SC_SB}} for details.
+
+    \item Compile and run the project by executing the following command on Ubuntu:
+    \begin{verbatim}
+        make run
+    \end{verbatim}
+    \noindent
+    If the program is working, the Ubuntu console should continuously display new messages, and there will be no obvious critical error messages. 
+    
+    Users can also check that data is successfully inserted into the InfluxDB database by going to the InfluxDB host computer and checking the PowerShell console that is running the database. If the data is being successfully inserted into the InfluxDB database, there will be a flow of messages indicating so.
+    
+\end{enumerate}
+
+\subsection{Improvement/Fixes}
+
+Currently there are a number of issues, and future implementations -
+
+\begin{itemize}
+    \item There is a problem with "invalid" data that EpiTrend produces. This problem is observed \texttt{epitrend-database-parse}'s real-time insertion of EpiTrend into the InfluxDB database. EpiTrend seems to produce erroneous values for the equipment. For example, users may notice that values like \texttt{GM2\_Vacuum.Reading}, that should stay within the magnitudes of $10^{-9}$ may, in short periods of times, show values in magnitudes of $10^{-3}$. However, it seems that EpiTrend is able to amend these erroneous values almost immediately, or shortly after, these erroneous appear. The problem arises because the real-time data insertion of EpiTrend into the InfluxDB database happens only once - when the program detects that EpiTrend has appended to most recent time-series file (i.e. the binary files). This problem can be rectified by ensuring that the \texttt{epitrend-data-parse} periodically checks for differences between the InfluxDB database and the EpiTrend binary data files. 
+    
+    \vspace{5pt}
+    \noindent
+    The theory that EpiTrend is able to amend these erroneous values comes from the fact that Veeco's EpiTrend viewer also plots these erroneous values (i.e. when watching the plotter in real-time), but plots an realistic curve shortly after the erroneous values appear. 
+    These erroneous values may due to one or combination of factors such as interference in the wiring, network disconnecting, or real values but extreme signals taken from the sensors.
+
+    \item Currently, EpiTrend and RGA are the only time-series data sources that are being inserted into the database. Future work will aim to include all other time-series data sources (e.g. BMS).
+\end{itemize}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Time-Series GUI
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Time-Series GUI}
+This section provides documentation for the \texttt{epitrend-plotter} program. It describes the core classes, attributes, and methods, and explains how these components interact to call on the InfluxDB database and create the GUI.
+
+\subsection{Forking the Repository}
+The program files can be forked using the link:
+\begin{lstlisting}
+    https://AU-Silanna-Semiconductor-Engineering@dev.azure.com/AU-Silanna-Semiconductor-Engineering/MBE%20Process/_git/Epitrend-plotter
+\end{lstlisting}
+
+
+\subsection{Directory Layout}
+\begin{verbatim}
+epitrend-plotter/
++-- build/
+|   ...
++-- cmake/
+|   +-- ConfigSafeGuards.cmake
+|   +-- Docs.cmake
+|   +-- Tools.cmake
+|   +-- Warnings.cmake
++-- implot-master/
+|   +-- implot-master/
+|   |   +-- implot.cpp
+|   |   +-- implot.h
+|   |   +-- implot_demo.cpp
+|   |   +-- implot_internal.h
+|   |   +-- implot_items.cpp
+|   |   +-- LICENSE
+|   |   +-- README.md
+|   |   +-- TODO.md
++-- out/
+|   |   +-- build
+|   |   +-- x64-Debug/
+|   |   |   +-- ...
+|   |   |   +-- ImGuiHelloWorld.exe
+|   |   +-- x64-Release/
+|   |   |   +-- ...
+|   |   |   +-- ImGuiHelloWorld.exe
++-- src/
+|   +-- AppController.cpp
+|   +-- AppController.hpp
+|   +-- Common.hpp
+|   +-- Config.cpp
+|   +-- Config.hpp
+|   +-- DataManager.cpp
+|   +-- DataManager.hpp
+|   +-- EpitrendBinaryData.cpp
+|   +-- EpitrendBinaryData.hpp
+|   +-- GraphView.cpp
+|   +-- GraphView.hpp
+|   +-- GraphViewModel.cpp
+|   +-- GraphViewModel.hpp
+|   +-- InfluxDatabase.cpp
+|   +-- InfluxDatabase.hpp
+|   +-- L2DFileDialog.hhp
+|   +-- main.cpp
+|   +-- RenderablePlot.cpp
+|   +-- RenderablePlot.hhp
+|   +-- RGAData.cpp
+|   +-- RGAData.hhp
+|   +-- TimeSeriesBuffer.cpp
+|   +-- TimeSeriesBuffer.hpp
+|   +-- WindowPlots.cpp
+|   +-- WindowPlots.hpp
+|   +-- WindowPlotsSaveLoad.cpp
+|   +-- WindowPlotsSaveLoad.hpp
++-- CMakeLists.txt
++-- CMakeSettings.json
++-- config.cmake
++-- README.md
++-- vcpkg.json
+\end{verbatim}
+
+\newpage
+
+\subsection{Program Paradigm}
+The GUI follows a \textbf{Model-View-ViewModel (MVVM)} paradigm with an additional \textbf{Controller} functionality provided by \texttt{AppController}, as shown in Figure \ref{fig:epitrend_plotter_paradigm}.
+
+\begin{figure} [h]
+    \centering
+    \includegraphics[width=1.0\linewidth]{figures/epitrend_plotter_paradigm.png}
+    \caption{\label{fig:epitrend_plotter_paradigm} The MVVM paradigm that the \texttt{epitrend-plotter} program follows. There is an extra Controller component to clearly separate roles, and decrease development complexity.}
+\end{figure}
+
+\subsection{Class Descriptions}
+\subsubsection{AppController Class}
+\textbf{File:} \texttt{AppController.hpp} / \texttt{AppController.cpp} 
+
+\vspace{5pt}
+\noindent
+\textbf{Description:}
+\\
+\noindent
+The \texttt{AppController} class serves as the central controller for managing the interaction between the \texttt{DataManager}, \texttt{GraphViewModel}, and \texttt{GraphView} components of the program. It initializes the sensors, handles background updates, manages the plottable sensors, and ensures the \texttt{GraphView} is updated with real-time data. The class also provides threading support for updating the \texttt{GraphViewModel} independently of the main rendering loop.
+
+\vspace{5pt}
+\noindent
+\textbf{Key Features:}
+\begin{itemize}
+    \item \textbf{Sensor Initialization} - automatically loads sensors from the InfluxDB database using the \texttt{DataManager}.
+    
+    \item \textbf{Background Updates}:
+    \begin{itemize}
+        \item Starts a background thread to update the \texttt{GraphViewModel} with data from the \texttt{DataManager}.
+
+        \item Ensure real-time updates to the plottable sensors and their data.
+    \end{itemize}
+    
+    \item \textbf{Plottable Sensor Management} - updates the list of plottable sensors in the \texttt{GraphViewModel} based on the available buffers in the \texttt{DataManager}.
+
+    \item \textbf{Callback Integration:} - sets a callback for the \texttt{GraphView} to notify the DataManager when the view range changes, ensuring efficient data preloading.
+
+    \item \textbf{Threading Support}: - manages a separate thread for updating the \texttt{GraphViewModel} to ensure smooth rendering and data updates.
+\end{itemize}
+
+\vspace{5pt}
+\noindent
+\textbf{Usage Notes:}
+\begin{itemize}
+    \item The \texttt{AppController} class is designed to be instantiated once and serves as the main entry point for managing the program's data flow and rendering.
+
+    \item Ensure the \texttt{DataManager} is properly configured to load sensors from the InfluxDB database before running the program.
+
+    \item The background thread for updating the \texttt{GraphViewModel} is automatically started and stopped by the constructor and destructor, respectively.
+\end{itemize}
+
+
+\vspace{10pt}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{DataManager Class}
+\textbf{File:} \texttt{DataManager.hpp} / \texttt{DataManager.cpp} 
+
+\vspace{5pt}
+\noindent
+\textbf{Description:}
+\\
+\noindent
+The \texttt{DataManager} class is responsible for managing time-series data buffers and interacting with the InfluxDB database. It provides functionality to preload data, update sensor ranges, and manage real-time updates for sensors. The class acts as the central data handler, ensuring access to time-series data for plotting and analysis.
+
+\vspace{5pt}
+\noindent
+\textbf{Key Features:}
+\begin{itemize}
+    \item \textbf{Time-Series Buffer Management:}
+    \begin{itemize}
+        \item Maintains buffers for each sensor, storing time-series data in memory for access.
+
+        \item Provides safe and unsafe access methods to retrieve data from buffers.
+    \end{itemize}
+    
+    \item \textbf{Sensor Management:}
+    \begin{itemize}
+        \item Adds new sensors and updates their data ranges.
+
+        \item Handles merging of ranges across multiple plots for a single sensor.
+    \end{itemize}
+    
+    \item \textbf{Data Preloading} - preloads data from the InfluxDB database for sensors based on specified ranges.
+
+    \item \textbf{Background Updates:} - runs a background thread to update sensor data and manage ranges dynamically.
+
+    \item \textbf{InfluxDB Integration:}
+    \begin{itemize}
+        \item Interacts with the InfluxDB database to query and load time-series data.
+
+        \item Provides functionality to set up sensors from the database.
+    \end{itemize}
+\end{itemize}
+
+\vspace{5pt}
+\noindent
+\textbf{Usage Notes:}
+\begin{itemize}
+    \item The \texttt{DataManager} class is designed to be instantiated once and serves as the central data handler for the program.
+
+    \item Ensure the InfluxDB database is properly configured and accessible before using the class.
+
+    \item Use \texttt{getBuffersSnapshot()} for thread-safe access to sensor data, especially in multi-threaded environments.
+
+    \item The background update thread is automatically started and stopped by the \texttt{startBackgroundUpdates()} and \texttt{stopBackgroundUpdates()} methods, respectively.
+\end{itemize}
+
+
+\vspace{10pt}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{GraphView Class}
+\textbf{File:} \texttt{GraphView.hpp} / \texttt{GraphView.cpp} 
+
+\vspace{5pt}
+\noindent
+\textbf{Description:}
+\\
+\noindent
+The \texttt{GraphView} class is responsible for rendering the graphical user interface (GUI) for plotting and managing time-series data. It interacts with the \texttt{GraphViewModel} to display plots, manage user interactions, and handle callbacks for updating data ranges. The class provides methods to render individual plots, manage windows, and handle popups for adding and loading plots.
+
+\vspace{5pt}
+\noindent
+\textbf{Key Features:}
+\begin{itemize}
+    \item \textbf{Rendering Plots:}
+    \begin{itemize}
+        \item Draws all plots and windows using the state provided by the \texttt{GraphViewModel}.
+
+        \item Provides safe and unsafe access methods to retrieve data from buffers.
+    \end{itemize}
+    
+    \item \textbf{Popup Management:}
+    \begin{itemize}
+        \item Handles popups for adding new plots and loading saved windows.
+
+        \item Includes actions for submitting user input from popups.
+    \end{itemize}
+    
+    \item \textbf{Window Management:}
+    \begin{itemize}
+        \item Renders all windows containing plots and provides menu bars for managing them.
+
+        \item Supports adding plots to specific windows and rendering all plots within a window.
+    \end{itemize}
+
+    \item \textbf{Callback Integration} - allows setting a callback to notify external components (e.g., \texttt{DataManager}) when the view range changes for a plot.
+\end{itemize}
+
+\vspace{5pt}
+\noindent
+\textbf{Usage Notes:}
+\begin{itemize}
+    \item The \texttt{GraphView} class is designed to be instantiated once and serves as the main rendering component for the GUI.
+
+    \item Ensure the \texttt{GraphViewModel} is properly initialized and populated with data before calling \texttt{Draw()}.
+
+    \item Use \texttt{setUpdateRangeCallback()} to integrate the \texttt{GraphView} with external components like \texttt{DataManager} for efficient data handling.
+
+    \item The popup methods (\texttt{renderAddPlotPopup}, \texttt{renderLoadWindowPopup}) are essential for user interaction and should be used to manage dynamic plot creation and loading.
+\end{itemize}
+
+
+\vspace{10pt}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{GraphViewModel Class}
+\textbf{File:} \texttt{GraphViewModel.hpp} / \texttt{GraphViewModel.cpp} 
+
+\vspace{5pt}
+\noindent
+\textbf{Description:}
+\\
+\noindent
+The \texttt{GraphViewModel} class acts as the intermediary between the \texttt{DataManager} and the \texttt{GraphView}. It is responsible for managing the state and properties of plots that are rendered in the GUI. The class provides functionality to update plots with data, manage plottable sensors, and handle plot-specific properties such as ranges, labels, and styles.
+
+\vspace{5pt}
+\noindent
+\textbf{Key Features:}
+\begin{itemize}
+    \item \textbf{Plot Management:}
+    \begin{itemize}
+        \item Maintains a collection of \texttt{RenderablePlot} objects, each representing a plot in the GUI.
+
+        \item Provides methods to add, update, and remove plots dynamically.
+    \end{itemize}
+    
+    \item \textbf{Sensor Management:}
+    \begin{itemize}
+        \item Tracks plottable sensors and associates them with specific plots.
+
+        \item Updates sensor data and properties based on input from the \texttt{DataManager}.
+    \end{itemize}
+    
+    \item \textbf{Data Updates:}
+    \begin{itemize}
+        \item Updates plots with real-time data from the \texttt{DataManager}.
+
+        \item Handles range changes and ensures efficient data preloading.
+    \end{itemize}
+
+    \item \textbf{Plot Properties:}
+    \begin{itemize}
+        \item Manages plot-specific properties such as labels, ranges, and styles.
+
+        \item Provides methods to customize plot appearance and behavior.
+    \end{itemize}
+\end{itemize}
+
+\vspace{5pt}
+\noindent
+\textbf{Usage Notes:}
+\begin{itemize}
+    \item The \texttt{GraphViewModel} class is designed to be instantiated once and serves as the data handler for the \texttt{GraphView}.
+
+    \item Ensure the \texttt{DataManager} is properly initialized and populated with sensor data before using the \texttt{GraphViewModel}.
+
+    \item Use \texttt{setPlottableSensors()} to dynamically update the list of sensors available for plotting.
+
+    \item The \texttt{updatePlotsWithData()} method should be called periodically (e.g., in a background thread) to ensure real-time updates to the plots.
+\end{itemize}
+
+
+\vspace{10pt}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{RenderablePlots Class}
+\textbf{File:} \texttt{RenderablePlots.hpp} / \texttt{RenderablePlots.cpp} 
+
+\vspace{5pt}
+\noindent
+\textbf{Description:}
+\\
+\noindent
+The \texttt{RenderablePlots} class represents a single plot in the GUI, providing functionality to manage its data, axes, and visual properties. It serves as the core component for rendering time-series data and supports multiple axes, customizable plotline properties, and real-time updates. The class is designed to handle both static and dynamic data efficiently, with thread-safe methods for data access and manipulation.
+
+\vspace{5pt}
+\noindent
+\textbf{Key Features:}
+\begin{itemize}
+    \item \textbf{Data Management:}
+    \begin{itemize}
+        \item Stores time-series data for multiple sensors in a thread-safe manner.
+
+        \item Provides methods to set, retrieve, and snapshot data for individual sensors.
+    \end{itemize}
+    
+    \item \textbf{Axis Management:}
+    \begin{itemize}
+        \item Supports multiple Y-axes (\texttt{ImAxis\_Y1}, \texttt{ImAxis\_Y2}, \texttt{ImAxis\_Y3}) for plotting data.
+
+        \item Allows customization of axis properties such as labels, ranges, scales, and log bases.
+    \end{itemize}
+    
+    \item \textbf{Plotline Customization:}
+    \begin{itemize}
+        \item Enables customization of plotline properties, including color, thickness, marker style, fill, and outline.
+
+        \item Provides methods to reset or remove plotline properties for specific sensors.
+    \end{itemize}
+
+    \item \textbf{Real-Time Plotting:}
+    \begin{itemize}
+        \item Supports real-time updates with configurable ranges and callbacks for range changes.
+
+        \item Handles dynamic data updates efficiently.
+    \end{itemize}
+
+    \item \textbf{Thread-Safe Operations} - uses mutexes to ensure safe access to data and properties in multi-threaded environments.
+\end{itemize}
+
+\vspace{5pt}
+\noindent
+\textbf{Usage Notes:}
+\begin{itemize}
+    \item The \texttt{RenderablePlot} class is designed to be instantiated for each plot in the GUI.
+
+    \item Use thread-safe methods (\texttt{setData}, \texttt{getDataSnapshot}) for accessing and modifying data in multi-threaded environments.
+
+    \item Customize plotline properties and axis settings to tailor the appearance and behavior of each plot.
+
+    \item Real-time plotting features are ideal for applications requiring dynamic updates, such as monitoring live data streams.
+\end{itemize}
+
+
+\vspace{10pt}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{TimeSeriesBuffer Class}
+\textbf{File:} \texttt{TimeSeriesBuffer.hpp} / \texttt{TimeSeriesBuffer.cpp} 
+
+\vspace{5pt}
+\noindent
+\textbf{Description:}
+\\
+\noindent
+The \texttt{TimeSeriesBuffer} class is responsible for managing time-series data in memory. It provides efficient storage, retrieval, and manipulation of timestamp-value pairs, making it ideal for handling real-time and historical data. The class supports range-based operations, data preloading, and thread-safe access, ensuring integration with other components like \texttt{DataManager} and \texttt{RenderablePlot}.
+
+\vspace{5pt}
+\noindent
+\textbf{Key Features:}
+\begin{itemize}
+    \item \textbf{Efficient Data Storage:}
+    \begin{itemize}
+        \item Stores time-series data as timestamp-value pairs in a sorted container for fast access.
+
+        \item Ensures data integrity and efficient range-based queries.
+    \end{itemize}
+    
+    \item \textbf{Range Management:}
+    \begin{itemize}
+        \item Maintains a range of timestamps for the stored data.
+
+        \item Provides methods to set, update, and retrieve ranges dynamically.
+    \end{itemize}
+    
+    \item \textbf{Data Preloading:}
+    \begin{itemize}
+        \item Supports callbacks for preloading data outside the current range.
+
+        \item Allows integration with external data sources like databases.
+    \end{itemize}
+
+    \item \textbf{Thread-Safe Operations} - uses mutexes to ensure safe access and manipulation of data in multi-threaded environments.
+\end{itemize}
+
+\vspace{5pt}
+\noindent
+\textbf{Usage Notes:}
+\begin{itemize}
+    \item The \texttt{RenderablePlot} class is designed to be instantiated for each plot in the GUI.
+
+    \item Use thread-safe methods (\texttt{setData}, \texttt{getDataSnapshot}) for accessing and modifying data in multi-threaded environments.
+
+    \item Customize plotline properties and axis settings to tailor the appearance and behavior of each plot.
+
+    \item Real-time plotting features are ideal for applications requiring dynamic updates, such as monitoring live data streams.
+\end{itemize}
+
+
+\vspace{10pt}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{WindowPlots Class}
+\textbf{File:} \texttt{WindowPlots.hpp} / \texttt{WindowPlots.cpp} 
+
+\vspace{5pt}
+\noindent
+\textbf{Description:}
+\\
+\noindent
+The \texttt{WindowPlots} class represents a container for managing multiple \texttt{RenderablePlot} objects within a single window in the GUI. It provides functionality to add, retrieve, and remove plots, as well as manage window-specific properties such as position, size, and label. The class supports dynamic plot management and ensures safe access to plots through unique ownership semantics.
+
+\vspace{5pt}
+\noindent
+\textbf{Key Features:}
+\begin{itemize}
+    \item \textbf{Plot Management:}
+    \begin{itemize}
+        \item Allows adding, retrieving, and removing \texttt{RenderablePlot} objects dynamically.
+
+        \item Ensures unique ownership of plots using \texttt{std::unique\_ptr}.
+    \end{itemize}
+    
+    \item \textbf{Window Properties:}
+    \begin{itemize}
+        \item Manages window-specific attributes such as position (x, y), size (width, height), and label.
+
+        \item Provides methods to set and retrieve these properties.
+    \end{itemize}
+    
+    \item \textbf{Move Semantics} - implements move constructor and move assignment operator for efficient transfer of ownership and resources.
+\end{itemize}
+
+\vspace{5pt}
+\noindent
+\textbf{Usage Notes:}
+\begin{itemize}
+    \item The \texttt{WindowPlots} class is designed to manage multiple plots within a single window, making it ideal for organizing and rendering grouped plots in the GUI.
+
+    \item Use \texttt{addRenderablePlot()} to dynamically add plots to the window, ensuring unique ownership through \texttt{std::unique\_ptr}.
+    
+    \item Use \texttt{getRenderablePlot()} and \texttt{hasRenderablePlot()} to safely access plots within the window.
+
+    \item Window properties such as position and size can be customized using the provided setter methods, ensuring valid values are enforced.
+\end{itemize}
+
+
+\vspace{10pt}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{WindowPlotsSaveLoad Class}
+\textbf{File:} \texttt{WindowPlotsSaveLoad.hpp} / \texttt{WindowPlotsSaveLoad.cpp} 
+
+\vspace{5pt}
+\noindent
+\textbf{Description:}
+\\
+\noindent
+The \texttt{WindowPlotsSaveLoad} class is responsible for managing the saving and loading of WindowPlots objects to and from files. It provides functionality to serialize and deserialize window properties and associated plots, enabling persistent storage and retrieval of GUI configurations. This class is essential for maintaining user-defined layouts and plot settings across program sessions.
+
+\vspace{5pt}
+\noindent
+\textbf{Key Features:}
+\begin{itemize}
+    \item \textbf{Serialization:}
+    \begin{itemize}
+        \item Saves \texttt{WindowPlots} objects, including their properties and associated plots, to a file.
+
+        \item Ensures all relevant data, such as window position, size, and plot configurations, are stored.
+    \end{itemize}
+    
+    \item \textbf{Deserialization:}
+    \begin{itemize}
+        \item Loads \texttt{WindowPlots} objects from a file, restoring their properties and associated plots.
+
+        \item Handles file parsing and error checking to ensure data integrity.
+    \end{itemize}
+    
+    \item \textbf{File Management:}
+    \begin{itemize}
+        \item Provides methods to specify file paths for saving and loading operations.
+
+        \item Supports user-defined file names and directories.
+    \end{itemize}
+\end{itemize}
+
+\vspace{5pt}
+\noindent
+\textbf{Usage Notes:}
+\begin{itemize}
+    \item The \texttt{WindowPlots} class is designed to manage multiple plots within a single window, making it ideal for organizing and rendering grouped plots in the GUI.
+
+    \item Use \texttt{addRenderablePlot()} to dynamically add plots to the window, ensuring unique ownership through \texttt{std::unique\_ptr}.
+    
+    \item Use \texttt{getRenderablePlot()} and \texttt{hasRenderablePlot()} to safely access plots within the window.
+
+    \item Window properties such as position and size can be customized using the provided setter methods, ensuring valid values are enforced.
+\end{itemize}
+
+
+\vspace{10pt}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Installing the Necessary Visual Studio Code Extensions}
+\begin{enumerate}
+    \item Open Visual Studio Code.
+    
+    \item Go to the Extensions view:
+    \begin{itemize}
+        \item You can click on the \textbf{Extensions} icon on the left sidebar (it looks like four squares).
+        \item Or press \texttt{Ctrl+Shift+X}.
+    \end{itemize}
+    
+    \item In the search bar at the top, type \texttt{franneck94}.
+    
+    \item Look for "C/C++ Extension Pack" by \textbf{franneck94}.
+
+    \item Install the Extension Pack:
+    \begin{itemize}
+        \item Click on the result to open the details page.
+        \item Click the \textbf{install} button.
+    \end{itemize}
+
+    \item Also install "Coding Tools Extension Pack" by \textbf{franneck94}.
+
+    \item Restart Visual Studio Code to activate the extensions.
+
+\end{enumerate}
+
+\subsection{Configure the \texttt{config.cmake} File}
+As previously mentioned in this document, this project uses VCPKG to handle the external packages that are required to run the program. Therefore, the project needs to be able to find the VCPKG that the user installed, as outlined in section \textbf{\nameref{sec:Installing_VCPKG}}.
+
+\begin{enumerate}
+    \item Open \texttt{config.cmake}
+    
+    \item Replace the address next to \texttt{VCPKG\_DIR} with the address of the VCPKG directory. For example:
+    \begin{verbatim}
+        set (VCPKG_DIR "C:/Users/VolterE/Documents/vcpkg")
+    \end{verbatim}
+\end{enumerate}
+
+\subsection{Configure the \texttt{config.txt} File}
+The \texttt{config.txt} contains the necessary information that the GUI needs to access the InfluxDB database. Therefore, the user needs to ensure that:
+
+\begin{itemize}
+        \item \texttt{ORG} has the InfluxDB database organisation name that contains time-series data (e.g. \texttt{au-mbe-eng}.
+        
+        \item \texttt{HOST} has the IP address of the server computer hosting the InfluxDB database.
+        
+        \item \texttt{PORT} has the port that the InfluxDB database is connected to on the hosting server PC.
+
+        \item \texttt{TOKEN} has the global read/write access for the InfluxDB database.
+\end{itemize}
+
+\noindent
+For configuration fields \texttt{ORG}, \texttt{HOST}, \texttt{PORT}, and \texttt{TOKEN} - refer to section \textbf{\nameref{sec:Starting_the_InfluxDB_database_on_SC_SB}} for details.
+
+\subsection{Building, and Debugging the Program}
+
+\subsubsection{Using Visual Studio Code}
+Visual Studio Code is a very good IDE when debugging and developing the program. As such, here are the instructions to build and debug the program using Visual Studio Code:
+\begin{enumerate}
+    \item Open Visual Studio Code
+
+    \item Open the project via \texttt{File -> Open Folder...} and choosing the \texttt{epitrend-plotter} program.
+
+    \item At the bottom-left of Visual Studio Code, a \textbf{Build} and "Play" icon will appear, as shown in Figure \ref{fig:VSCode_build_play_icon}. 
+    \begin{itemize}
+        \item First, click on the \textbf{Build} icon to build the project.
+        \item Click on the "Play" icon to run the program.
+    \end{itemize}
+
+    \item If the program was built and compiled successfully, there should be no errors in the \texttt{Output} terminal, and a build directory should be created in the project folder. If a \texttt{build} directory already exists, pressing the \textbf{Build} icon will write into the existing directory and overwrite any previous contents.
+    
+    \begin{figure} [h]
+        \centering
+        \includegraphics[width=0.7\linewidth]{figures/VSCode_build_play_icon.png}
+        \caption{\label{fig:VSCode_build_play_icon} The \textbf{Build} and "Play" icon that appears at the bottom-left of Visual Studio Code. This will only appear if the user has completed the steps outlined in section \textbf{Installing the Necessary Visual Studio Code Extensions}.}
+    \end{figure}
+\end{enumerate}
+
+\subsubsection{Using Visual Studio}
+Visual Studio is a powerful tool for diagnosing performance-related issues, including bottlenecks. Bottlenecks are particularly common when developing GUIs, as they often involve rendering, event handling, and data processing. Visual Studio can help pinpoint portions and functions of the code that consume the most runtime.
+
+\vspace{2pt}
+\noindent
+Additionally, since this program queries data directly from the InfluxDB database, Visual Studio can also assist in diagnosing issues related to over-querying or bottlenecks on the database side. By profiling the program and analyzing its runtime behavior, you can identify inefficiencies in database interactions and optimize query execution.
+
+\vspace{2pt}
+\noindent
+As such, here are the instructions to build and debug the program using Visual Studio:
+
+\begin{enumerate}
+    \item Open Visual Studio.
+
+    \item Open the project by selecting \texttt{File -> Open -> Folder}.
+
+    \item Build the project by selecting \texttt{Build -> Build All} or press \texttt{Ctrl+Shft+B}.
+
+    \item Press the "Play" icon next to the relevant executable's name, as shown in Figure \ref{fig:VS_play_icon}.
+    \begin{itemize}
+        \item This icon may not appear unless the user sets the executable as the startup item. This is done by locating the executable in the \textbf{Solution Explorer}, right-clicking on the executable and selecting \textbf{Set as Startup Item}.
+    \end{itemize}
+
+    \begin{figure} [h]
+        \centering
+        \includegraphics[width=1.0\linewidth]{figures/VS_play_icon.png}
+        \caption{\label{fig:VS_play_icon} The "Play" icon that appears with the executable name "ImGuiHelloWorld.exe" that at the top of Visual Studio.}
+    \end{figure}
+\end{enumerate}
+
+\newpage
+
+\subsection{Program User Guide}
+This subsection outlines how to use the current \texttt{epitrend-plotter}. The release version of the executable can be within the directory 
+\texttt{..\textbackslash
+epitrend-plotter\textbackslash
+out\textbackslash
+build\textbackslash
+x64-Release\textbackslash
+ImGuiHelloWorld.exe
+}. Users can the create a shortcut icon to this executable, and place that shortcut anywhere (i.e. the \texttt{Desktop} folder), however the executable must stay within this directory.
+
+\subsubsection{Main Dashboard}
+The main dashboard of the program contains two buttons, \textbf{\nameref{sec:Add_new_plot}} and \textbf{\nameref{sec:Load_window}}, as shown in Figure \ref{fig:ep_main_dashboard}.
+
+\begin{figure} [h]
+    \centering
+    \includegraphics[width=0.8\linewidth]{figures/ep_main_dashboard.png}
+    \caption{\label{fig:ep_main_dashboard} The main dashboard of the program.}
+\end{figure}
+
+\newpage
+
+\subsubsection{Add new plot}
+\label{sec:Add_new_plot}
+The "Add new plot" button opens a pop-up, as shown in Figure \ref{fig:ep_new_plot_popup}. The user must input a window name, and the first plot's title - both of which cannot be changed later. The user can specify which time-series sensors they want to plot, however, since there is no search-bar function within this pop-up, it is advised that the user specify the sensors that they want plot through \textbf{\nameref{sec:Plot_options}}.
+Selecting "Submit" will open a \textbf{\nameref{sec:Window_Plots}}.
+
+\begin{figure} [h]
+    \centering
+    \includegraphics[width=0.4\linewidth]{figures/ep_add_new_plot_popup.png}
+    \caption{\label{fig:ep_new_plot_popup} The "Add new plot" popup that opens in the main dashboard.}
+\end{figure}
+
+\newpage
+
+\subsubsection{Load Window}
+\label{sec:Load_window}
+The "Load Window" buttons opens a file explorer window, as shown in Figure \ref{fig:ep_load_window}. The user can navigate through directories using the left panel by selecting folders to move into subdirectories or selecting \texttt{..} to move up to the parent directory. The files within the currently selected directory are displayed in the right panel.
+
+\vspace{5pt}
+\noindent
+The only files that can be loaded are the files that saved using the \textbf{\nameref{sec:Save_window}} option. These files are \texttt{.json} files that are formatted in a specific structure - if the user tries to open any other files, or a \texttt{.json} that does not adhere to this specific structure, a pop-up error message will appear and the "Load Window" will close.
+
+\begin{figure} [h]
+    \centering
+    \includegraphics[width=1.0\linewidth]{figures/ep_load_window.png}
+    \caption{\label{fig:ep_load_window} The file explorer that open by pressing "Load Window" in the main dashboard.}
+\end{figure}
+
+\newpage
+
+\subsubsection{Window of Plots}
+\label{sec:Window_Plots}
+Once the user has selected either \textbf{\nameref{sec:Load_window}} or \textbf{\nameref{sec:Add_new_plot}}, a window of plots will open, as shown in Figure \ref{fig:window_of_plots}. The user can add plots within this window by clicking the "\textbf{+}" icon below the bottom-most plot - this opens up the \textbf{\nameref{sec:Add_new_plot_to_window}} pop-up. The user can change the properties of a plot by selecting the "Options" button located at the top of each plot - this button opens up the \textbf{\nameref{sec:Plot_options}} window associated to that plot. 
+
+\begin{figure} [h]
+    \centering
+    \includegraphics[width=0.9\linewidth]{figures/ep_window_of_plots.png}
+    \caption{\label{fig:window_of_plots} The windows of plots that contains the real-time and historical time-series plots for selected sensors.}
+\end{figure}
+
+\vspace{5pt}
+\noindent
+The user can switch between a real-time or a historical view of the plot by selecting the "Real-time (AEST)" check-box, located at the top of the plot. \\
+While in real-time mode, the plot will update every second to reflect the most recent time. The time-range can be adjusted using the "\textbf{+}" and "\textbf{-}" icons at the top the plot. \\
+While in historical mode, the user can freely explore the time range and plot range. The range may also be changed by right-clicking on the x-axis, selecting the "Min Time" and "Min Time" options, and selecting the date-time on the pop-up calendar. There are also other x-axis properties that can be changed by right-clicking on x-axis, as shown in Figure \ref{fig:ep_calendar_popup}.
+
+\begin{figure} [h]
+    \centering
+    \includegraphics[width=0.5\linewidth]{figures/ep_calendar_popup.png}
+    \caption{\label{fig:ep_calendar_popup} The calendar popup that appears after right-clicking the X-axis}
+\end{figure}
+
+The properties of the y-axis can also be changed by right-clicking the y-axis.
+
+\newpage
+
+\subsubsection{Adding new plot to window}
+\label{sec:Add_new_plot_to_window}
+The "Add new plot to window" pop-up appears when the user clicks on the "\textbf{+}" icon at the bottom of a \textbf{\nameref{sec:Window_Plots}}. The user can search for sensors using the search bar, and selecting them to the plot, as shown in Figure \ref{fig:ep_add_new_plot_to_window_popup}.
+
+\begin{figure} [h]
+    \centering
+    \includegraphics[width=1.0\linewidth]{figures/ep_add_new_plot_to_window_popup.png}
+    \caption{\label{fig:ep_add_new_plot_to_window_popup} The pop-up to add plots to a window of plots. The pop-up contains a search bar to search through all available sensors.}
+\end{figure}
+
+\newpage
+
+\subsubsection{Plot options}
+\begin{figure} [h]
+    \centering
+    \includegraphics[width=0.4\linewidth]{figures/ep_plot_options.png}
+    \caption{\label{fig:ep_plot_options} The pop-up to change various properties of a plot. The pop-up contains various properties that the user can change.}
+\end{figure}
+
+\label{sec:Plot_options}
+The "Plot options" pop-up appears when the users clicks "Options" at the top of a plot within a \textbf{\nameref{sec:Window_Plots}}, as shown in Figure \ref{fig:ep_plot_options}. The can change various properties of the plot within this window, such as:
+
+\begin{itemize}
+    \item The plot time-range
+    \item The sensors to plot.
+    \item The y-axis in which each sensor is plotted (three to pick from).
+    \item The y-axis range, and scale (linear or log).
+    \item Line properties (color, opacity, and marker) of each plotted sensor.
+\end{itemize}
+
+\newpage
+
+\subsubsection{Save Window}
+\label{sec:Save_window}
+\begin{figure} [h]
+    \centering
+    \includegraphics[width=1.0\linewidth]{figures/ep_save_window.png}
+    \caption{\label{fig:ep_save_window} The pop-up to save the current window of plots as a \texttt{.json} file.}
+\end{figure}
+
+The "Save Window As" window pop-up appears when the users clicks "File", and "Save Window As" within the \textbf{\nameref{sec:Window_Plots}}. The "File name" text field is set to the name of the window of plots, and cannot be changed - this name is determined in the \textbf{\nameref{sec:Add_new_plot}} window. \\
+The address inside of the "Folder path:" determines the address which that \texttt{.json} file will be saved to once the user selects "Save to folder" -
+the user can change the address inside of the "Folder path:" text field manually. \\
+Alternatively, the user can populate the "Folder path:" text file via a file explorer by selecting "Browse". The user can navigate through directories using the left panel by selecting folders to move into subdirectories or
+selecting \texttt{..} to move up to the parent directory. The files within the currently selected directory are
+displayed in the right panel. After the user has navigated to the directory they wish to save the window to, the user can select "Choose", and the current directory's address will be copied into the "Folder path:" text field.
+
+\newpage
+
+\subsection{Improvements/Fixes}
+Below is a list of requests made to improve the program, and a number of planned implementations:
+\begin{itemize}
+    \item The search bar that looks for sensor names, in the "Options" popup, is case sensitive. Future patches will remove the case sensitivity in the search bar.
+
+    \item Data points are not extrapolated outside of the plot domain, which means that the plot can sometimes plot "floating" lines. These floating lines can make it hard for the user to interpret. Future patches will ensure the lines are always extrapolated to the edges of the plot domain.
+
+    \item The buttons "Add Plot", "Remove Plot", and "Configure Window" under the "Options" drop-down menu, have yet to be implemented. Future patches will add functionalities to these buttons.
+
+    \item There is currently a bug where the "Cancel" button in the File Explorer does not exit the window. Currently, there is a workaround where the user can "Choose" any file in the File Explorer to exit the window (either the file is invalid and error popup will close the current window, or the file is valid and opens a plot window).
+\end{itemize}
+
+\section{Quick Guide for Server Restarts}
+Monthly server restarts will restart the FAB Node PC and the server that is hosting the InfluxDB database. This section assumes that you have completed setting up the \texttt{epitrend-database-parse} on the FAB Node PC, as outlined in section \textbf{\nameref{sec:Compiling_and_Running_the_program}}, and, completed setting up InfluxDB database on the host server, as outlined in section \textbf{\nameref{sec:Setting_up_InfluxDB}}. Therefore, here is a quick guide to restart everything after the servers restart:
+
+\begin{enumerate}
+    \item On your computer, open the \texttt{Remote Desktop Connection} application.
+
+    \item In the \texttt{Computer:} text field, insert the address of the host computer \texttt{SC-SB-EngDB02} and select \texttt{Connect}.
+
+    \item After accessing the host computer, open an instance of PowerShell as administrator.
+
+    \item Set the current directory to the influxdb program, and run it using the following commands:
+    \begin{verbatim}
+        cd "C:\Program Files\InfluxData\influxdb"
+        ./influxd --http-bind-address=:443
+    \end{verbatim}
+    The InfluxDB database should now be running on the host server.
+    
+    \item Next, minimize/close the \texttt{Remote Desktop Connection} and open the \texttt{TightVNC Connection} application.
+
+    \item In the \texttt{Remote Host:} text field, insert the address of the FAB Node PC \texttt{SB-WKS-053-W11} and select \texttt{Connect}.
+
+    \item The user will be prompted to enter the password for the connection (refer to the KeePass location: \texttt{MBE -> General -> Fab PC -> Laptop, Surface, LL PCs -> Data node PC} for credentials).
+
+    \item After you establish a connection, you will be prompted sign-in to the FAB Node PC, under the "MBE Engineer" account (refer to the KeePass location: \texttt{MBE -> General -> Office PC -> New epitrend -> InfluxDB Username and Password} for credentials).
+
+    \item Open an instance of the \texttt{Ubuntu 22.04.5 LTS} application.
+
+    \item Set the current directory to the \texttt{epitrend-database-parse} program and run it using the following commands:
+    \begin{verbatim}
+        cd /mnt/c/Users/MBEengineer/Documents/database-parse
+        make run
+    \end{verbatim}
+    The \texttt{epitrend-database-parse} program should now be running and inserting data into the InfluxDB database.
+
+\end{enumerate}
+
+\end{document}
