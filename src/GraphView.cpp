@@ -920,6 +920,16 @@ void GraphView::renderAllPlotsInWindow(WindowPlots* window) {
                 if (renderable_plot.getYAxisPropertiesScaleType(plot_axis) == RenderablePlot::ScaleType::Logirithmic) {
                     double log_base = renderable_plot.getYAxisPropertiesLogBase(plot_axis);
                     ImPlot::SetupAxisScale(plot_axis, TransformForward_Log, TransformInverse_Log, &log_base);
+
+                    // Set custom ticks for logarithmic scale
+                    double min = renderable_plot.getYAxisPropertiesMin(plot_axis);
+                    double max = renderable_plot.getYAxisPropertiesMax(plot_axis);
+                    auto [ticks, labels] = viewModel_.getLogTicks(min, max, log_base);
+                    if (!ticks.empty()) {
+                        std::vector<const char*> label_ptrs;
+                        for (auto& label : labels) label_ptrs.push_back(label.c_str());
+                        ImPlot::SetupAxisTicks(plot_axis, ticks.data(), ticks.size(), label_ptrs.data());
+                    }
                 } else {
                     ImPlot::SetupAxisScale(plot_axis, ImPlotScale_Linear);
                 }

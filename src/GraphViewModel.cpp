@@ -165,3 +165,73 @@ FileMenuState& GraphViewModel::getFileMenuState() {
 SaveWindowAsPopupState& GraphViewModel::getSaveWindowAsPopupState() {
     return save_window_as_popup_state_;
 }
+
+std::pair<std::vector<double>, std::vector<std::string>> GraphViewModel::getLogTicks(
+    double min, double max, double log_base) const
+{
+    std::vector<double> ticks;
+    std::vector<std::string> labels;
+
+    if (min <= 0 || max <= 0 || log_base <= 1.0) {
+        return {ticks, labels}; // Invalid input for log scale
+    }
+
+    int min_exp = static_cast<int>(std::floor(std::log(min) / std::log(log_base)));
+    int max_exp = static_cast<int>(std::ceil(std::log(max) / std::log(log_base)));
+
+    // Track if any major ticks are found
+    bool has_major = false;
+
+    for (int exp = min_exp; exp <= max_exp; ++exp) {
+        double major_tick = std::pow(log_base, exp);
+        if (major_tick >= min && major_tick <= max) {
+            has_major = true;
+            ticks.push_back(major_tick);
+            std::ostringstream oss;
+            oss << std::scientific << std::setprecision(4) << major_tick;
+            labels.push_back(oss.str());
+        }
+        // Minor ticks
+        for (int minor = 2; minor < static_cast<int>(log_base); ++minor) {
+            double minor_tick = major_tick * minor;
+            double next_major_tick = std::pow(log_base, exp + 1);
+            if (minor_tick >= min && minor_tick <= max && minor_tick < next_major_tick) {
+                ticks.push_back(minor_tick);
+                labels.push_back(""); // No label for minor ticks
+            }
+        }
+    }
+
+    // If no major ticks, interpolate log-spaced ticks between min and max
+    if (!has_major) {
+        int N = 5; // Number of ticks (adjust as needed)
+        double log_min = std::log(min);
+        double log_max = std::log(max);
+        for (int i = 0; i < N; ++i) {
+            double frac = (N == 1) ? 0.5 : static_cast<double>(i) / (N - 1);
+            double tick = std::exp(log_min + frac * (log_max - log_min));
+            ticks.push_back(tick);
+            std::ostringstream oss;
+            oss << std::scientific << std::setprecision(4) << tick;
+            labels.push_back(oss.str());
+        }
+    }
+
+    // Sort ticks and labels together
+    std::vector<std::pair<double, std::string>> tick_pairs;
+    for (size_t i = 0; i < ticks.size(); ++i) {
+        tick_pairs.emplace_back(ticks[i], labels[i]);
+    }
+    std::sort(tick_pairs.begin(), tick_pairs.end(),
+              [](const auto& a, const auto& b) { return a.first < b.first; });
+
+    // Unpack
+    ticks.clear();
+    labels.clear();
+    for (const auto& pair : tick_pairs) {
+        ticks.push_back(pair.first);
+        labels.push_back(pair.second);
+    }
+
+    return {ticks, labels};
+}

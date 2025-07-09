@@ -369,6 +369,7 @@ public:
     FileDialogState& getFileDialogState();
     FileMenuState& getFileMenuState();
     SaveWindowAsPopupState& getSaveWindowAsPopupState();
+    std::pair<std::vector<double>, std::vector<std::string>> getLogTicks(double min, double max, double log_base) const;
 
 
 private:
