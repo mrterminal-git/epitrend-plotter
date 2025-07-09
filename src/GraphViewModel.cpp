@@ -50,41 +50,45 @@ std::pair<std::vector<DataManager::Timestamp>, std::vector<DataManager::Value>> 
     std::vector<DataManager::Value> values;
     RenderablePlot::DataSeries data = plot.getDataSnapshot(sensor);
 
+    // If there is no data for the sensor, return empty vectors
     if (data.empty()) {
         return {timestamps, values};
     }
 
+    // Calculate the step size based on the range and number of pixels
     int step_size = static_cast<int>(range / num_pixels / 10);
     if (step_size <= 0) {
         step_size = 1;
     }
 
+    // Calculate how many points we need to render based on the step size
     int num_points_to_render = data.size() / step_size;
     if (num_points_to_render <= 0) {
         num_points_to_render = data.size();
     }
 
+    // Reserve space for the timestamps and values to avoid multiple reallocations
     timestamps.reserve(num_points_to_render);
     values.reserve(num_points_to_render);
 
+    // Check if the axis for this sensor is log scale
+    ImAxis axis = plot.getYAxisForSensor(sensor);
+    bool is_log = plot.getYAxisPropertiesScaleType(axis) == RenderablePlot::ScaleType::Logirithmic;
+
+    // Iterate through the data and downsample it
     int counter = 0;
     int data_pos = 0;
     for (int i = 0;
         i < num_points_to_render && data_pos < data.size();
         ++i, data_pos += step_size) {
-        timestamps.push_back(data.at(data_pos).first);
-        values.push_back(data.at(data_pos).second);
-        counter++;
+        auto ts = data.at(data_pos).first;
+        auto val = data.at(data_pos).second;
+        if (!is_log || val > 0) { // Only include positive values for log scale
+            timestamps.push_back(ts);
+            values.push_back(val);
+            counter++;
+        }
     }
-
-    // std::cout << "====================================\n";
-    // std::cout << "sensor: " << sensor << "\n";
-    // std::cout << "range: " << range << "\n";
-    // std::cout << "data.size(): " << data.size() << "\n";
-    // std::cout << "num_pixels: " << num_pixels << "\n";
-    // std::cout << "num_points_to_render: " << num_points_to_render << "\n";
-    // std::cout << "step_size: " << step_size << "\n";
-    // std::cout << "counter: " << counter << "\n";
 
     return {timestamps, values};
 }
